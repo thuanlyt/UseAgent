@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-03T18:40:26Z",
+  "updated_at": "2026-09-03T18:43:22Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -212,6 +212,34 @@
       "created_at": "2026-09-03T18:40:25Z",
       "updated_at": "2026-09-03T18:40:26Z",
       "last_result": "completed"
+    },
+    "UA-0004": {
+      "id": "UA-0004",
+      "title": "Refresh GitHub Actions runtime versions",
+      "objective": "Remove the Node 20 deprecation warning by using current Node 24-compatible checkout and setup-python action releases.",
+      "level": "L1",
+      "status": "in_progress",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        ".github"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "CI uses current Node 24-compatible checkout and setup-python action releases",
+        "All CI jobs remain green after the action refresh"
+      ],
+      "verification": [
+        "gh run watch <run-id> --repo thuanlyt/UseAgent --exit-status"
+      ],
+      "files": [],
+      "evidence": [],
+      "reports": [],
+      "attempts": 1,
+      "created_at": "2026-09-03T18:43:22Z",
+      "updated_at": "2026-09-03T18:43:22Z"
     }
   }
 }
