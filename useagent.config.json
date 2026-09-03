@@ -22,6 +22,10 @@
       "python -m unittest discover -s tests -v",
       "python tools/useagent.py validate"
     ],
+    "operational_readiness_files": [
+      "docs/operations.md",
+      "docs/autopilot.md"
+    ],
     "production_gates": [
       "All acceptance criteria are evidenced",
       "Focused and integration tests pass",

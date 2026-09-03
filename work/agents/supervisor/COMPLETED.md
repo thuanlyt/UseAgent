@@ -1,3 +1,4 @@
 # COMPLETED - supervisor
 
 - 2026-09-03T18:10:05Z - `UA-0001` - Audit and release UseAgent as bilingual MIT open source repository - pending review - `work/reports/inbox/UA-0001-20260903T181005Z-50bc07.md`
+- 2026-09-03T18:20:42Z - `UA-0002` - Make operational readiness gate evidence-aware - pending review - `work/reports/inbox/UA-0002-20260903T182042Z-c82ffd.md`

@@ -70,6 +70,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "auto_dispatch": True,
         "qa_timeout_seconds": 900,
         "qa_commands": [],
+        "operational_readiness_files": ["docs/operations.md", "docs/autopilot.md"],
         "production_gates": [
             "All acceptance criteria are evidenced",
             "Focused and integration tests pass",
@@ -941,11 +942,23 @@ def production_snapshot(config: dict[str, Any], data: dict[str, Any], state: dic
     qa_status = (state.get("last_qa") or {}).get("status", "not_configured")
     qa_gate = "pass" if qa_status == "pass" else "manual" if qa_status == "not_configured" else "fail"
     blocked_gate = "pass" if not any(item.get("status") == "blocked" for item in items) else "fail"
+    readiness_files = config["supervisor"].get("operational_readiness_files", [])
+    readiness_gate = "manual"
+    try:
+        if isinstance(readiness_files, list) and readiness_files:
+            readiness_gate = "pass"
+            for value in readiness_files:
+                candidate = safe_repo_path(value)
+                if not candidate.is_file() or not candidate.read_text(encoding="utf-8").strip():
+                    readiness_gate = "manual"
+                    break
+    except (OSError, TypeError, UseAgentError):
+        readiness_gate = "manual"
     gates = [
         ("all_tasks_done", task_gate),
         ("qa", qa_gate),
         ("no_blocked_tasks", blocked_gate),
-        ("operational_rollback_notes", "manual"),
+        ("operational_rollback_notes", readiness_gate),
     ]
     return gates, all(value == "pass" for _, value in gates)
 

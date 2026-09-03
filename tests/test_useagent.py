@@ -252,6 +252,24 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual((code, error), (0, ""))
         self.assertIn("create a scoped debug task", output)
 
+    def test_production_snapshot_checks_operational_readiness_files(self) -> None:
+        (useagent.ROOT / "docs").mkdir(parents=True, exist_ok=True)
+        (useagent.ROOT / "docs" / "operations.md").write_text("Operational runbook", encoding="utf-8")
+        (useagent.ROOT / "docs" / "rollback.md").write_text("Rollback plan", encoding="utf-8")
+        config = useagent.load_config()
+        config["supervisor"]["operational_readiness_files"] = ["docs/operations.md", "docs/rollback.md"]
+        data = useagent.load_registry()
+        data["items"]["UA-9999"] = {"status": "done"}
+        state = {"last_qa": {"status": "pass"}}
+        gates, ready = useagent.production_snapshot(config, data, state)
+        self.assertEqual(dict(gates)["operational_rollback_notes"], "pass")
+        self.assertTrue(ready)
+
+        config["supervisor"]["operational_readiness_files"] = ["docs/missing.md"]
+        gates, ready = useagent.production_snapshot(config, data, state)
+        self.assertEqual(dict(gates)["operational_rollback_notes"], "manual")
+        self.assertFalse(ready)
+
     def test_bounded_context_and_checkpoint(self) -> None:
         task_id = self.new_task("Context task", "docs/context.md")
         code, output, error = self.invoke(

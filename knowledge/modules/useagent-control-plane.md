@@ -20,7 +20,7 @@ Create and transition work items, serialize state changes, print bounded context
 
 ## Public interfaces / contracts
 
-See `knowledge/contracts/work-registry.md` and `knowledge/contracts/supervisor-protocol.md`. State lives in `work/registry.json`; item Markdown lives in `work/items/`. Repeated `--scope` options are preserved for a task, task scope can be extended through `task update`, and configured QA commands are shell command strings.
+See `knowledge/contracts/work-registry.md` and `knowledge/contracts/supervisor-protocol.md`. State lives in `work/registry.json`; item Markdown lives in `work/items/`. Repeated `--scope` options are preserved for a task, task scope can be extended through `task update`, configured QA commands are shell command strings, and production readiness files are repository-safe.
 
 ## Dependency edges
 

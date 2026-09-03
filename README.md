@@ -268,6 +268,10 @@ python tools/useagent.py checkpoint create `
       "python -m unittest discover -s tests -v",
       "python tools/useagent.py validate"
     ],
+    "operational_readiness_files": [
+      "docs/operations.md",
+      "docs/autopilot.md"
+    ],
     "production_gates": [
       "Acceptance criteria have repeatable evidence",
       "Focused and integration tests pass",
