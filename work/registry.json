@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-03T18:43:22Z",
+  "updated_at": "2026-09-03T18:44:33Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -218,7 +218,7 @@
       "title": "Refresh GitHub Actions runtime versions",
       "objective": "Remove the Node 20 deprecation warning by using current Node 24-compatible checkout and setup-python action releases.",
       "level": "L1",
-      "status": "in_progress",
+      "status": "done",
       "owner": "supervisor",
       "assigned_to": "supervisor",
       "scope": [
@@ -234,12 +234,33 @@
       "verification": [
         "gh run watch <run-id> --repo thuanlyt/UseAgent --exit-status"
       ],
-      "files": [],
-      "evidence": [],
-      "reports": [],
+      "files": [
+        ".github/workflows/ci.yml"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "gh run 33792190075: success on Python 3.11, 3.12 and 3.13",
+          "recorded_at": "2026-09-03T18:44:32Z"
+        },
+        {
+          "kind": "review",
+          "value": "Release review: current action versions remove the prior Node 20 deprecation annotation without changing project permissions.",
+          "recorded_at": "2026-09-03T18:44:32Z"
+        },
+        {
+          "kind": "github-ci",
+          "value": "https://github.com/thuanlyt/UseAgent/actions/runs/33792190075: success",
+          "recorded_at": "2026-09-03T18:44:33Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0004-20260903T184432Z-793eab.md"
+      ],
       "attempts": 1,
       "created_at": "2026-09-03T18:43:22Z",
-      "updated_at": "2026-09-03T18:43:22Z"
+      "updated_at": "2026-09-03T18:44:33Z",
+      "last_result": "completed"
     }
   }
 }

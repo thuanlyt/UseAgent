@@ -18,3 +18,10 @@ Knowledge ledger now records the confirmed UseAgent goal, production Definition 
 
 - Report: `work/reports/inbox/UA-0003-20260903T184025Z-4bed6f.md`
 - Next: Run final validation and keep the complete checkpoint as the resume boundary.
+## 2026-09-03T18:44:32Z - UA-0004 (completed)
+
+GitHub Actions now uses current checkout/setup-python releases compatible with the hosted Node 24 runtime; the refreshed CI matrix is green.
+
+- Report: `work/reports/inbox/UA-0004-20260903T184432Z-793eab.md`
+- Next: Keep the repository on reviewed work-item flow and request explicit authorization before deployment.
+

@@ -1,13 +1,13 @@
 # UseAgent supervisor report
 
-- **Cycle:** `manual-20260903T184159Z`
-- **Generated:** 2026-09-03T18:41:59Z
+- **Cycle:** `manual-20260903T184433Z`
+- **Generated:** 2026-09-03T18:44:33Z
 - **Next action:** Run the production release gate and obtain explicit deploy approval.
 - **Production snapshot:** `ready`
 
 ## Status counts
 
-- `done`: 3
+- `done`: 4
 
 ## Reports ingested this cycle
 
@@ -26,6 +26,7 @@
 - `UA-0001` — Audit and release UseAgent as bilingual MIT open source repository — evidence: 7
 - `UA-0002` — Make operational readiness gate evidence-aware — evidence: 5
 - `UA-0003` — Refresh project brief and stack decision — evidence: 2
+- `UA-0004` — Refresh GitHub Actions runtime versions — evidence: 3
 - none
 
 ## Blocked work
