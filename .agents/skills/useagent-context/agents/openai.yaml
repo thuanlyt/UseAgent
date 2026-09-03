@@ -1,0 +1,4 @@
+interface:
+  display_name: "UseAgent Context"
+  short_description: "Maintain compact project knowledge"
+  default_prompt: "Use $useagent-context to update the compact project knowledge base."

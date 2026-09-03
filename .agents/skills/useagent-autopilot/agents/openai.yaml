@@ -1,0 +1,4 @@
+interface:
+  display_name: "UseAgent Autopilot"
+  short_description: "Continue long-running work safely"
+  default_prompt: "Use $useagent-autopilot to continue this project through its next safe checkpoint."

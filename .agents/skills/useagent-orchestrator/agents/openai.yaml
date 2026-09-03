@@ -1,0 +1,4 @@
+interface:
+  display_name: "UseAgent Orchestrator"
+  short_description: "Decompose and coordinate multi-agent work"
+  default_prompt: "Use $useagent-orchestrator to decompose and coordinate this work."

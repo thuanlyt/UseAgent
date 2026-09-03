@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "paths": {
+    "agent_root": "work/agents",
+    "reports_inbox": "work/reports/inbox",
+    "reports_archive": "work/reports/archive",
+    "reports_index": "work/reports/REPORTS.md",
+    "outbox": "work/outbox",
+    "completed_tasks": "work/completed/COMPLETED.md",
+    "supervisor_report": "work/SUPERVISOR_REPORT.md",
+    "supervisor_cycle": "work/supervisor/LATEST_CYCLE.md",
+    "supervisor_state": "work/supervisor/state.json",
+    "checkpoints": "work/checkpoints",
+    "evidence": "work/evidence"
+  },
+  "supervisor": {
+    "max_assignments_per_cycle": 4,
+    "run_qa_each_cycle": false,
+    "auto_dispatch": true,
+    "qa_timeout_seconds": 900,
+    "qa_commands": [
+      "python -m unittest discover -s tests -v",
+      "python tools/useagent.py validate"
+    ],
+    "production_gates": [
+      "All acceptance criteria are evidenced",
+      "Focused and integration tests pass",
+      "No open P0/P1 review finding",
+      "Operational and rollback notes exist"
+    ]
+  },
+  "agents": [
+    {
+      "id": "supervisor",
+      "role": "supervisor",
+      "status": "available",
+      "directory": "work/agents/supervisor",
+      "scope": [
+        "."
+      ],
+      "capabilities": [
+        "orchestration"
+      ],
+      "max_active": 1
+    }
+  ]
+}

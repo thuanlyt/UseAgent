@@ -1,0 +1,4 @@
+interface:
+  display_name: "UseAgent Worker"
+  short_description: "Implement one scoped work item"
+  default_prompt: "Use $useagent-worker to implement the assigned work item."

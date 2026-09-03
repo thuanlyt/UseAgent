@@ -1,0 +1,4 @@
+interface:
+  display_name: "UseAgent Supervisor"
+  short_description: "Supervise the whole multi-agent project"
+  default_prompt: "Use $useagent as the project supervisor for this goal and coordinate the available agents."

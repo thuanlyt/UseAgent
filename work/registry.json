@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "updated_at": "2026-09-03T18:11:53Z",
+  "items": {
+    "UA-0001": {
+      "id": "UA-0001",
+      "title": "Audit and release UseAgent as bilingual MIT open source repository",
+      "objective": "Audit the supervisor control plane, complete public documentation and open-source release hygiene, verify production gates, and publish the repository.",
+      "level": "L4",
+      "status": "needs_review",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "useagent.config.json"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "README documents setup, architecture, worker/supervisor lifecycle, CLI protocol, autopilot, safety and bilingual usage",
+        "Open-source repository contains MIT license, contribution/security guidance and CI",
+        "CLI compiles, unit tests pass and project validator returns VALID",
+        "No secrets or unresolved release blockers are present"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate"
+      ],
+      "files": [
+        ".github",
+        ".github/workflows/ci.yml",
+        "CONTRIBUTING.md",
+        "LICENSE",
+        "README.md",
+        "SECURITY.md",
+        "docs",
+        "docs/architecture.md",
+        "knowledge",
+        "tests",
+        "tests/test_useagent.py",
+        "tools/useagent.py",
+        "useagent.config.json"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py: pass",
+          "recorded_at": "2026-09-03T18:10:05Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 9 tests pass",
+          "recorded_at": "2026-09-03T18:10:05Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-03T18:10:05Z"
+        },
+        {
+          "kind": "regression",
+          "value": "python -m unittest discover -s tests -v: 10 tests pass, including repeated scope preservation",
+          "recorded_at": "2026-09-03T18:11:52Z"
+        },
+        {
+          "kind": "qa",
+          "value": "work/evidence/manual-20260903T181145Z-qa.md: pass",
+          "recorded_at": "2026-09-03T18:11:53Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0001-20260903T181005Z-50bc07.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-03T18:07:43Z",
+      "updated_at": "2026-09-03T18:11:53Z",
+      "last_result": "completed"
+    }
+  }
+}

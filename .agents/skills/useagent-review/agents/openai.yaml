@@ -1,0 +1,4 @@
+interface:
+  display_name: "UseAgent Review"
+  short_description: "Verify changes with evidence"
+  default_prompt: "Use $useagent-review to review and verify this work item."
