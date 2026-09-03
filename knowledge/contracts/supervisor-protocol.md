@@ -12,6 +12,10 @@ Assignment phải có task id, objective, scope, acceptance, dependency, files/c
 
 Report phải có task id, agent, result (`completed|blocked|failed`), summary, files, checks/evidence, blockers và next action. `completed` chỉ là worker report; supervisor/reviewer mới quyết định `done`. `task report` tự append vào `work/agents/<agent>/REPORT.md`, `work/reports/REPORTS.md` và `work/completed/COMPLETED.md` khi phù hợp.
 
+## QA contract
+
+`supervisor.qa_commands` is an array of shell command strings. Each command runs from the repository root with the configured timeout; stdout/stderr are saved under `work/evidence/` and the cycle records `pass`, `fail` or `not_configured`.
+
 ## Supervisor cycle contract
 
 Một cycle: ingest reports -> review trạng thái -> chạy QA được cấu hình -> dispatch task ready -> viết supervisor report -> checkpoint. Cycle không tự deploy và không tự chạy vô hạn.

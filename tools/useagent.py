@@ -510,6 +510,13 @@ def cmd_task_update(args: argparse.Namespace) -> int:
             raise UseAgentError("a task needs at least one evidence entry before done")
         if args.status in ACTIVE_WRITER_STATUSES and not assigned:
             raise UseAgentError("active task needs an existing assignment; use task claim")
+        if args.scopes:
+            proposed = dict(item)
+            proposed["scope"] = sorted(set(item.get("scope", []) + [normalize_scope(path) for path in args.scopes]))
+            conflict = active_scope_conflict(data, proposed, ignore_id=args.task_id)
+            if conflict:
+                raise UseAgentError(f"scope conflicts with active task {conflict['id']}: {conflict.get('scope', [])}")
+            item["scope"] = proposed["scope"]
         if args.status == "planned":
             item["assigned_to"] = None
         item["status"] = args.status
@@ -1318,6 +1325,7 @@ def build_parser() -> argparse.ArgumentParser:
     update.add_argument("task_id")
     update.add_argument("--status", required=True, choices=sorted(VALID_STATUSES))
     update.add_argument("--agent")
+    update.add_argument("--scope", dest="scopes", action="append")
     update.add_argument("--file", dest="files", action="append")
     update.add_argument("--note")
     update.set_defaults(func=cmd_task_update)

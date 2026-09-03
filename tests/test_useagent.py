@@ -125,6 +125,34 @@ class UseAgentCliTests(unittest.TestCase):
             ["src/api.py", "tests/test_api.py"],
         )
 
+    def test_task_scope_can_be_extended_through_update(self) -> None:
+        task_id = self.new_task("Extend owned paths", "src/api.py")
+        code, _, error = self.invoke(
+            "task",
+            "claim",
+            task_id,
+            "--agent",
+            "worker-1",
+        )
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke(
+            "task",
+            "update",
+            task_id,
+            "--status",
+            "in_progress",
+            "--agent",
+            "worker-1",
+            "--scope",
+            "tests/test_api.py",
+        )
+        self.assertEqual((code, error), (0, ""))
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(
+            registry["items"][task_id]["scope"],
+            ["src/api.py", "tests/test_api.py"],
+        )
+
     def test_update_cannot_bypass_claim(self) -> None:
         task_id = self.new_task("Claimed only through the CLI", "src/claim.py")
         code, _, error = self.invoke("task", "update", task_id, "--status", "in_progress", "--agent", "worker-1")

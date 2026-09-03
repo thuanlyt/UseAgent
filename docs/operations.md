@@ -60,7 +60,20 @@ python tools/useagent.py supervisor qa
 python tools/useagent.py supervisor cycle --retry-blocked --run-qa
 ```
 
-Khai báo `supervisor.qa_commands` trong `useagent.config.json` để CLI chạy test/lint/build đã được project cho phép. Output dài được lưu thành evidence; cycle sẽ chỉ ra task report, task blocked, worker đang active và next action.
+Khai báo `supervisor.qa_commands` dạng mảng command string trong `useagent.config.json` để CLI chạy test/lint/build đã được project cho phép:
+
+```json
+{
+  "supervisor": {
+    "qa_commands": [
+      "python -m unittest discover -s tests -v",
+      "python tools/useagent.py validate"
+    ]
+  }
+}
+```
+
+Output dài được lưu thành evidence; cycle sẽ chỉ ra task report, task blocked, worker đang active và next action.
 
 ## Handover
 
