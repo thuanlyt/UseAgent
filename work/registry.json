@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-03T18:21:03Z",
+  "updated_at": "2026-09-03T18:40:26Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -100,7 +100,7 @@
       "title": "Make operational readiness gate evidence-aware",
       "objective": "Replace the hard-coded manual production gate with configured, repository-safe operational and rollback documentation checks.",
       "level": "L4",
-      "status": "needs_review",
+      "status": "done",
       "owner": "supervisor",
       "assigned_to": "supervisor",
       "scope": [
@@ -152,6 +152,11 @@
           "kind": "review",
           "value": "Release review: readiness check uses repository-safe paths, rejects missing/empty files as manual, and does not grant deploy authority.",
           "recorded_at": "2026-09-03T18:21:03Z"
+        },
+        {
+          "kind": "github-ci",
+          "value": "https://github.com/thuanlyt/UseAgent/actions/runs/33790029855: success on Python 3.11, 3.12 and 3.13",
+          "recorded_at": "2026-09-03T18:38:46Z"
         }
       ],
       "reports": [
@@ -159,7 +164,53 @@
       ],
       "attempts": 1,
       "created_at": "2026-09-03T18:19:25Z",
-      "updated_at": "2026-09-03T18:21:03Z",
+      "updated_at": "2026-09-03T18:38:46Z",
+      "last_result": "completed"
+    },
+    "UA-0003": {
+      "id": "UA-0003",
+      "title": "Refresh project brief and stack decision",
+      "objective": "Replace bootstrap placeholders with the confirmed UseAgent goal, constraints, stack and source-anchored architecture decision.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "knowledge"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Project brief contains the user-facing goal, Definition of Done, constraints and selected stack",
+        "Accepted stack decision is recorded with source anchors"
+      ],
+      "verification": [
+        "python tools/useagent.py validate"
+      ],
+      "files": [
+        "knowledge/decisions/0005-dependency-free-file-first-stack.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "knowledge/project-brief.md"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-03T18:40:25Z"
+        },
+        {
+          "kind": "review",
+          "value": "Knowledge review: no bootstrap placeholders remain in project brief; ADR-0005 has source anchors.",
+          "recorded_at": "2026-09-03T18:40:26Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0003-20260903T184025Z-4bed6f.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-03T18:40:25Z",
+      "updated_at": "2026-09-03T18:40:26Z",
       "last_result": "completed"
     }
   }

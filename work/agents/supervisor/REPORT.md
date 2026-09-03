@@ -12,3 +12,9 @@ Operational readiness gate now derives from configured, repository-safe, non-emp
 
 - Report: `work/reports/inbox/UA-0002-20260903T182042Z-c82ffd.md`
 - Next: Run the final GitHub CI release gate, then close this task if all checks remain green.
+## 2026-09-03T18:40:26Z - UA-0003 (completed)
+
+Knowledge ledger now records the confirmed UseAgent goal, production Definition of Done, safety constraints and dependency-free file-first stack decision.
+
+- Report: `work/reports/inbox/UA-0003-20260903T184025Z-4bed6f.md`
+- Next: Run final validation and keep the complete checkpoint as the resume boundary.

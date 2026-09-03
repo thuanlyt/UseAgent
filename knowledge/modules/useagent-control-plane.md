@@ -2,7 +2,7 @@
 
 - `freshness`: verified (2026-09-04)
 - `owner`: orchestrator
-- `source_anchor`: `tools/useagent.py:main`
+- `source_anchor`: `tools/useagent.py:main`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`
 
 ## Responsibility
 
