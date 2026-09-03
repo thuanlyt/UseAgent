@@ -24,4 +24,3 @@ GitHub Actions now uses current checkout/setup-python releases compatible with t
 
 - Report: `work/reports/inbox/UA-0004-20260903T184432Z-793eab.md`
 - Next: Keep the repository on reviewed work-item flow and request explicit authorization before deployment.
-
