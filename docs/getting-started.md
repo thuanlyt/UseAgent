@@ -366,6 +366,28 @@ PASS: UA-0001 assignment -> pull -> report -> ingest -> QA -> checkpoint
 This is a protocol smoke test, not a substitute for application tests or a
 review of a real production change.
 
+### Step H — verify three runtime identities together
+
+When you want proof that a mixed Codex + Claude Code + Antigravity roster can
+share one control-plane root, run the multi-runtime harness:
+
+```powershell
+python examples/multi-runtime-conformance/run_conformance.py
+```
+
+It registers three isolated worker identities (`codex-backend`,
+`claude-frontend` and `antigravity-qa`), creates one task per scope, confirms
+that automatic routing selects the matching worker, runs every worker through
+`worker pull` and `task report`, then runs supervisor ingest, QA and checkpoint
+creation. It uses a temporary project and no vendor credentials. A successful
+run prints a `PASS` line naming all three runtimes.
+
+This is a protocol and routing conformance test, not a test of the Codex,
+Claude Code or Antigravity product APIs. To replace a simulated runtime with a
+real one, keep the generated worker id, open that runtime in the same project,
+send the corresponding `work/outbox/*-to-<agent-id>.md` prompt and let the real
+session execute the same pull/report commands from the earlier steps.
+
 ## 4. What happens to each Markdown file?
 
 | File | Written by | Meaning |
@@ -509,6 +531,25 @@ Demo dùng worker giả lập nhưng vẫn gọi CLI thật để kiểm tra `di
 project tạm, không gọi API bên ngoài và tự assert mailbox, report, completed log
 và supervisor state. Dòng `PASS` nghĩa là protocol nền đã chạy thông suốt;
 không có nghĩa application production đã được QA.
+
+### Kiểm tra đồng thời ba runtime
+
+Muốn kiểm chứng roster Codex + Claude Code + Antigravity dùng chung một
+control-plane root, chạy thêm:
+
+```powershell
+python examples/multi-runtime-conformance/run_conformance.py
+```
+
+Harness đăng ký ba identity độc lập (`codex-backend`, `claude-frontend`,
+`antigravity-qa`), tạo task ở ba scope không chồng lấn, kiểm tra supervisor tự
+route đúng worker, rồi chạy đủ `worker pull`, `task report`, ingest, QA và
+checkpoint. Harness dùng project tạm và không gọi credential/API của vendor.
+
+Đây là bằng chứng conformance của protocol và routing, không phải bằng chứng
+API Codex/Claude/Antigravity hoạt động. Khi thay worker giả lập bằng runtime
+thật, giữ nguyên worker id, mở runtime trong cùng project, gửi prompt tương ứng
+trong `work/outbox/` và để session thật chạy cùng chu trình pull/report.
 
 ### Nếu dùng cả Codex, Claude và Antigravity
 

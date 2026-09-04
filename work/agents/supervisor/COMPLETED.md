@@ -32,3 +32,5 @@
 - 2026-09-04T06:47:57Z - `UA-0019` - Harden scope and worker identity invariants - pending review - `work/reports/inbox/UA-0019-20260904T064757Z-bd742e.md`
 
 - 2026-09-04T06:52:13Z - `UA-0020` - Enforce review-gated report ingestion - pending review - `work/reports/inbox/UA-0020-20260904T065213Z-f9abe3.md`
+
+- 2026-09-04T07:04:47Z - `UA-0021` - Add multi-runtime protocol conformance harness - pending review - `work/reports/inbox/UA-0021-20260904T070447Z-a74df2.md`

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T06:57:10Z",
+  "updated_at": "2026-09-04T07:05:49Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -1363,6 +1363,92 @@
       "attempts": 1,
       "created_at": "2026-09-04T06:49:09Z",
       "updated_at": "2026-09-04T06:57:10Z",
+      "last_result": "completed"
+    },
+    "UA-0021": {
+      "id": "UA-0021",
+      "title": "Add multi-runtime protocol conformance harness",
+      "objective": "Prove that independent Codex, Claude Code and Antigravity-style runtime identities can share one UseAgent root, receive isolated assignments and complete the same pull/report/ingest/QA protocol without vendor credentials.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "README.md",
+        "docs/getting-started.md",
+        "examples/multi-runtime-conformance",
+        "knowledge/modules/useagent-control-plane.md",
+        "knowledge/project-map.md",
+        "tests/demo/test_multi_runtime_conformance.py"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Three distinct runtime identities can be registered with disjoint scopes and receive assignments through the same mailbox protocol",
+        "Each simulated runtime pulls and reports through the public CLI; supervisor ingests all reports and records evidence/checkpoint without direct registry edits",
+        "The harness is credential-free, deterministic and fails with actionable diagnostics",
+        "Hands-on onboarding explains the proof boundary and how to substitute real Codex, Claude Code and Antigravity sessions"
+      ],
+      "verification": [
+        "python examples/multi-runtime-conformance/run_conformance.py; python -m unittest discover -s tests -v; python tools/useagent.py validate"
+      ],
+      "files": [
+        "README.md",
+        "docs/getting-started.md",
+        "examples/multi-runtime-conformance/run_conformance.py",
+        "knowledge/modules/useagent-control-plane.md",
+        "knowledge/project-map.md",
+        "tests/demo/test_multi_runtime_conformance.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python examples/multi-runtime-conformance/run_conformance.py: PASS for Codex + Claude Code + Antigravity identities",
+          "recorded_at": "2026-09-04T07:04:47Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 29 tests passed",
+          "recorded_at": "2026-09-04T07:04:47Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T07:04:47Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T07:04:47Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T07:04:47Z"
+        },
+        {
+          "kind": "review",
+          "value": "Independent review found no actionable P0/P1/P2 finding: harness uses only public CLI for state transitions, separates three scopes, asserts deterministic routing and report ingestion, has actionable subprocess diagnostics, and documents that this is protocol conformance rather than vendor API verification.",
+          "recorded_at": "2026-09-04T07:05:12Z"
+        },
+        {
+          "kind": "check",
+          "value": "Focused review: python examples/multi-runtime-conformance/run_conformance.py passed on Windows with three runtime identities and persisted checkpoint.",
+          "recorded_at": "2026-09-04T07:05:12Z"
+        },
+        {
+          "kind": "check",
+          "value": "Supervisor cycle cycle-20260904T070524Z-d7103b: 29 tests passed, validate VALID, docs build VALIDATED 10 static files.",
+          "recorded_at": "2026-09-04T07:05:49Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0021-20260904T070447Z-a74df2.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T07:00:16Z",
+      "updated_at": "2026-09-04T07:05:49Z",
       "last_result": "completed"
     }
   }

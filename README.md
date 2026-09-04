@@ -70,6 +70,7 @@ Multi-agent projects commonly lose time because context is reread from scratch, 
 - Custom Markdown paths for teams that already have an established folder layout.
 - No third-party Python dependencies.
 - Credential-free end-to-end conformance demo for the assignment/report protocol.
+- Multi-runtime conformance harness for isolated Codex, Claude Code and Antigravity-style worker identities.
 
 ### Which agents are supported?
 
@@ -107,6 +108,7 @@ python tools/useagent.py init
 python tools/useagent.py validate
 python -m unittest discover -s tests -v
 python examples/multi-agent-demo/run_demo.py
+python examples/multi-runtime-conformance/run_conformance.py
 ```
 
 `tools/useagent.py` operates on the repository root that contains it. For a

@@ -19,6 +19,7 @@ Create and transition work items, serialize state changes, print bounded context
 - `python tools/useagent.py supervisor dispatch|ingest|report|qa|cycle`
 - `python tools/useagent.py checkpoint create`
 - `python tools/useagent.py validate`
+- `python examples/multi-runtime-conformance/run_conformance.py`
 
 ## Public interfaces / contracts
 
@@ -43,7 +44,7 @@ Lock only the short state transition. Do not hold the lock while doing explorati
 
 ## Verification
 
-`python -m unittest discover -s tests -v`, `python tools/useagent.py validate`, explicit-root CLI tests, package metadata/wheel smoke test, configured supervisor QA and a temp-roster supervisor cycle.
+`python -m unittest discover -s tests -v`, `python tools/useagent.py validate`, `python examples/multi-runtime-conformance/run_conformance.py`, explicit-root CLI tests, package metadata/wheel smoke test, configured supervisor QA and a temp-roster supervisor cycle.
 
 ## Operator onboarding
 

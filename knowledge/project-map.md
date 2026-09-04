@@ -31,6 +31,7 @@
 - `python tools/useagent.py checkpoint create ...`: tạo durable handover.
 - `python tools/useagent.py supervisor cycle`: ingest report, dispatch worker, QA tùy chọn và tạo supervisor report/checkpoint.
 - `python tools/useagent.py worker pull --agent <id>` / `task report ...`: nhận assignment và gửi report vào các file Markdown cấu hình.
+- `python examples/multi-runtime-conformance/run_conformance.py`: credential-free routing and pull/report/ingest/QA conformance for Codex, Claude Code and Antigravity-style identities.
 - `python tools/useagent.py validate`: kiểm tra layout, registry, skills và agent TOML.
 - `python -m unittest discover -s tests -v`: kiểm tra CLI và state transitions.
 - `python -m pip install --no-deps .` / `useagent validate`: smoke test package entry point.

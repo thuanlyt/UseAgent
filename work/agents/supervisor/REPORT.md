@@ -132,3 +132,10 @@ Closed state-machine and report-authenticity bypasses. done now requires an expl
 
 - Report: `work/reports/inbox/UA-0020-20260904T065213Z-f9abe3.md`
 - Next: Supervisor review the hardening evidence, run the complete QA cycle and push the production invariant fixes.
+
+## 2026-09-04T07:04:47Z - UA-0021 (completed)
+
+Added a credential-free three-runtime conformance harness modeling Codex, Claude Code and Google Antigravity identities. It exercises automatic scope/capability routing, worker pull, report fan-out, supervisor ingest, configured QA and checkpoint persistence through the public CLI. Updated practical onboarding, README discoverability and knowledge anchors.
+
+- Report: `work/reports/inbox/UA-0021-20260904T070447Z-a74df2.md`
+- Next: Supervisor review harness assertions and evidence, then accept UA-0021 if all gates remain green.
