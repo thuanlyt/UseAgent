@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T07:25:14Z",
+  "updated_at": "2026-09-04T07:31:35Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -1628,6 +1628,79 @@
       "attempts": 1,
       "created_at": "2026-09-04T07:14:46Z",
       "updated_at": "2026-09-04T07:25:14Z",
+      "last_result": "completed"
+    },
+    "UA-0024": {
+      "id": "UA-0024",
+      "title": "Enforce reviewer authority for release transitions",
+      "objective": "Prevent implementation workers from self-approving review evidence or closing tasks as done; require a registered supervisor, reviewer or release_gate identity for review evidence and review-gated transitions while preserving worker report flow.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "docs/operations.md",
+        "docs/getting-started.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Only registered supervisor/reviewer/release_gate identities can append review evidence or transition a reported task through needs_review to done",
+        "A worker can still report completed work and add non-review evidence, but cannot self-approve or self-close",
+        "Reviewer identity may differ from assigned worker without violating assignment ownership",
+        "Existing lifecycle, demo, full QA and documentation remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v; python tools/useagent.py validate; python docs-site/build.py --check-only; git diff --check"
+      ],
+      "files": [
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: pass (36 tests)",
+          "recorded_at": "2026-09-04T07:31:24Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T07:31:24Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T07:31:24Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T07:31:24Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review pass: role authorization is centralized, worker self-review/self-close attempts are covered by lifecycle tests, reviewer identity may differ from assigned worker, and validation/build/diff gates pass.",
+          "recorded_at": "2026-09-04T07:31:34Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0024-20260904T073124Z-490138.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T07:27:28Z",
+      "updated_at": "2026-09-04T07:31:35Z",
       "last_result": "completed"
     }
   }

@@ -447,6 +447,19 @@ worktree.
 That is expected. `reported` is the worker's claim. The supervisor/reviewer must
 check the diff and evidence before closing it.
 
+Only a registered `supervisor`, `reviewer` or `release_gate` identity may record
+review evidence or move a reported task through the release gate:
+
+```powershell
+python tools/useagent.py task evidence UA-0001 --kind review --agent reviewer --value "Diff and QA pass"
+python tools/useagent.py task update UA-0001 --status needs_review --agent reviewer
+python tools/useagent.py task update UA-0001 --status done --agent reviewer
+```
+
+The assigned worker can report completion and test evidence, but cannot
+self-approve or self-close the task. The reviewer may be a different registered
+agent from the worker.
+
 ### The runtime cannot find `$useagent-worker`
 
 Use the direct path instead:

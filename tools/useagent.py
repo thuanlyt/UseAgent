@@ -57,6 +57,7 @@ VALID_STATUSES = {
 }
 VALID_LEVELS = {"L0", "L1", "L2", "L3", "L4"}
 VALID_AGENT_STATUSES = {"available", "busy", "paused", "offline"}
+REVIEW_ROLES = {"supervisor", "reviewer", "release_gate"}
 
 
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -357,6 +358,17 @@ def agent_config(config: dict[str, Any], agent_id: str) -> dict[str, Any]:
     raise UseAgentError(f"unknown registered agent: {agent_id}")
 
 
+def review_agent(config: dict[str, Any], agent_id: str | None) -> dict[str, Any]:
+    if not agent_id:
+        raise UseAgentError("review action requires --agent <supervisor|reviewer|release_gate>")
+    agent = agent_config(config, agent_id)
+    if agent.get("role") not in REVIEW_ROLES:
+        raise UseAgentError(
+            f"agent {agent_id} is not authorized for review actions; role must be supervisor, reviewer or release_gate"
+        )
+    return agent
+
+
 def agent_paths(config: dict[str, Any], agent: dict[str, Any]) -> dict[str, Path]:
     directory = agent.get("directory")
     if directory is None:
@@ -589,11 +601,15 @@ def cmd_task_claim(args: argparse.Namespace) -> int:
 
 
 def cmd_task_update(args: argparse.Namespace) -> int:
+    config = load_config()
     with state_lock():
         data = load_registry()
         item = get_item(data, args.task_id)
         assigned = item.get("assigned_to")
-        if args.agent and assigned and args.agent != assigned:
+        review_action = args.status in {"needs_review", "done"}
+        if review_action:
+            review_agent(config, args.agent)
+        if args.agent and assigned and args.agent != assigned and not review_action:
             raise UseAgentError(f"{args.task_id} is assigned to {assigned}, not {args.agent}")
         current = item["status"]
         if args.status == "assigned":
@@ -652,9 +668,14 @@ def parse_evidence(value: str, kind: str | None = None) -> dict[str, str]:
 
 
 def cmd_task_evidence(args: argparse.Namespace) -> int:
+    config = load_config() if args.kind == "review" else None
     with state_lock():
         data = load_registry()
         item = get_item(data, args.task_id)
+        if args.kind == "review":
+            review_agent(config or {}, args.agent)
+            if item.get("status") not in {"reported", "needs_review"}:
+                raise UseAgentError("review evidence requires a reported or needs_review task")
         evidence = parse_evidence(args.value, args.kind)
         evidence["recorded_at"] = now_iso()
         item.setdefault("evidence", []).append(evidence)
@@ -1678,6 +1699,7 @@ def build_parser() -> argparse.ArgumentParser:
     evidence.add_argument("task_id")
     evidence.add_argument("--kind", required=True)
     evidence.add_argument("--value", required=True)
+    evidence.add_argument("--agent", help="reviewer identity required for review evidence")
     evidence.set_defaults(func=cmd_task_evidence)
 
     report = task_sub.add_parser("report", help="write worker report and completed logs")

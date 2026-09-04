@@ -63,7 +63,17 @@ python tools/useagent.py task report UA-0001 --agent backend --result completed 
 python tools/useagent.py supervisor cycle --run-qa
 ```
 
-Worker report tự ghi vào `work/agents/backend/REPORT.md`, `work/reports/inbox/`, `work/reports/REPORTS.md` và `work/completed/COMPLETED.md`. Reviewer kiểm tra diff và evidence, sau đó cập nhật `needs_review`/`done`. `completed` trong log chỉ là worker đã báo xong, không phải production-ready.
+Worker report tự ghi vào `work/agents/backend/REPORT.md`, `work/reports/inbox/`, `work/reports/REPORTS.md` và `work/completed/COMPLETED.md`. Reviewer kiểm tra diff và evidence, sau đó cập nhật `needs_review`/`done`. Chỉ identity có role `supervisor`, `reviewer` hoặc `release_gate` được làm review; worker không thể tự approve hoặc tự close task.
+
+Quy trình review tối thiểu:
+
+```powershell
+python tools/useagent.py task evidence UA-0001 --kind review --agent reviewer --value "Diff, tests and security checks pass"
+python tools/useagent.py task update UA-0001 --status needs_review --agent reviewer
+python tools/useagent.py task update UA-0001 --status done --agent reviewer
+```
+
+`reviewer` phải là agent đã đăng ký trong roster. `completed` trong log chỉ là worker đã báo xong, không phải production-ready.
 
 ## Parallelism
 

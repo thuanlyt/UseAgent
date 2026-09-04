@@ -69,9 +69,14 @@ class UseAgentCliTests(unittest.TestCase):
         code, _, error = self.invoke("agent", "register", "--id", agent_id, "--role", "worker", "--scope", scope)
         self.assertEqual((code, error), (0, ""))
 
+    def register_reviewer(self, agent_id: str = "reviewer", scope: str = ".") -> None:
+        code, _, error = self.invoke("agent", "register", "--id", agent_id, "--role", "reviewer", "--scope", scope)
+        self.assertEqual((code, error), (0, ""))
+
     def test_dependency_and_done_requirements(self) -> None:
         self.register_worker("worker-1", ".")
         self.register_worker("worker-2", ".")
+        self.register_reviewer()
         first = self.new_task("First", "src/first.py")
         second = self.new_task("Second", "src/second.py", first)
 
@@ -86,13 +91,43 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertIn("assigned_to: worker-1", item_text)
         code, _, error = self.invoke("task", "update", first, "--status", "done", "--agent", "worker-1")
         self.assertEqual(code, 2)
-        self.assertIn("review gate", error)
+        self.assertIn("not authorized for review actions", error)
 
         code, _, error = self.invoke("task", "evidence", first, "--kind", "test", "--value", "unit test: pass")
         self.assertEqual((code, error), (0, ""))
-        code, _, error = self.invoke("task", "update", first, "--status", "needs_review", "--agent", "worker-1")
+        code, _, error = self.invoke(
+            "task",
+            "report",
+            first,
+            "--agent",
+            "worker-1",
+            "--result",
+            "completed",
+            "--summary",
+            "Implemented first task",
+            "--next-action",
+            "Review and QA",
+            "--file",
+            "src/first.py",
+            "--check",
+            "unit test: pass",
+        )
         self.assertEqual((code, error), (0, ""))
-        code, _, error = self.invoke("task", "update", first, "--status", "done", "--agent", "worker-1")
+        code, _, error = self.invoke("task", "update", first, "--status", "needs_review", "--agent", "worker-1")
+        self.assertEqual(code, 2)
+        self.assertIn("not authorized for review actions", error)
+        code, _, error = self.invoke(
+            "task", "evidence", first, "--kind", "review", "--agent", "worker-1", "--value", "worker self-review"
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("not authorized for review actions", error)
+        code, _, error = self.invoke(
+            "task", "evidence", first, "--kind", "review", "--agent", "reviewer", "--value", "review pass"
+        )
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "update", first, "--status", "needs_review", "--agent", "reviewer")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "update", first, "--status", "done", "--agent", "reviewer")
         self.assertEqual((code, error), (0, ""))
         item_text = (useagent.ROOT / "work" / "items" / f"{first}.md").read_text(encoding="utf-8")
         self.assertIn("status: done", item_text)
@@ -239,6 +274,7 @@ class UseAgentCliTests(unittest.TestCase):
 
     def test_done_requires_explicit_review_gate(self) -> None:
         self.register_worker("worker-1", ".")
+        self.register_reviewer()
         task_id = self.new_task("Review before done", "src/review.py")
         code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
         self.assertEqual((code, error), (0, ""))
@@ -246,10 +282,40 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual((code, error), (0, ""))
         code, _, error = self.invoke("task", "update", task_id, "--status", "done", "--agent", "worker-1")
         self.assertEqual(code, 2)
-        self.assertIn("review gate", error)
+        self.assertIn("not authorized for review actions", error)
         code, _, error = self.invoke("task", "update", task_id, "--status", "needs_review", "--agent", "worker-1")
+        self.assertEqual(code, 2)
+        self.assertIn("not authorized for review actions", error)
+        code, _, error = self.invoke(
+            "task", "evidence", task_id, "--kind", "review", "--agent", "worker-1", "--value", "worker self-review"
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("not authorized for review actions", error)
+        code, _, error = self.invoke(
+            "task",
+            "report",
+            task_id,
+            "--agent",
+            "worker-1",
+            "--result",
+            "completed",
+            "--summary",
+            "Implementation complete",
+            "--next-action",
+            "Review",
+            "--file",
+            "src/review.py",
+            "--check",
+            "unit test: pass",
+        )
         self.assertEqual((code, error), (0, ""))
-        code, _, error = self.invoke("task", "update", task_id, "--status", "done", "--agent", "worker-1")
+        code, _, error = self.invoke(
+            "task", "evidence", task_id, "--kind", "review", "--agent", "reviewer", "--value", "review pass"
+        )
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "update", task_id, "--status", "needs_review", "--agent", "reviewer")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "update", task_id, "--status", "done", "--agent", "reviewer")
         self.assertEqual((code, error), (0, ""))
 
     def test_supervisor_ingest_authenticates_reports_and_filters_files(self) -> None:
@@ -446,6 +512,7 @@ class UseAgentCliTests(unittest.TestCase):
 
     def test_dispatch_pull_report_and_supervisor_cycle(self) -> None:
         self.register_worker()
+        self.register_reviewer()
         task_id = self.new_task("Build frontend", "src/frontend/app.py")
         code, output, error = self.invoke("supervisor", "cycle")
         self.assertEqual((code, error), (0, ""))
@@ -493,9 +560,13 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertIn("awaiting review", supervisor_report)
         self.assertIn("worker report", supervisor_report)
 
-        code, _, error = self.invoke("task", "update", task_id, "--status", "needs_review", "--agent", "frontend")
+        code, _, error = self.invoke(
+            "task", "evidence", task_id, "--kind", "review", "--agent", "reviewer", "--value", "review pass"
+        )
         self.assertEqual((code, error), (0, ""))
-        code, _, error = self.invoke("task", "update", task_id, "--status", "done", "--agent", "frontend")
+        code, _, error = self.invoke("task", "update", task_id, "--status", "needs_review", "--agent", "reviewer")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "update", task_id, "--status", "done", "--agent", "reviewer")
         self.assertEqual((code, error), (0, ""))
         code, _, error = self.invoke("supervisor", "report")
         self.assertEqual((code, error), (0, ""))

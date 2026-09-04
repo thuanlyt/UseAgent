@@ -19,4 +19,7 @@
 - `done` requires at least one evidence record with a repeatable command/result.
 - `assigned` requires an agent mailbox and an assignment Markdown file.
 - `reported` requires a worker report path; it is not equivalent to reviewed `done`.
+- Review evidence and `needs_review`/`done` transitions require a registered
+  `supervisor`, `reviewer` or `release_gate` identity; the assigned worker may
+  not self-approve or self-close the task.
 - Updates are serialized by `tools/useagent.py`; consumers must tolerate `updated_at` changing after every transition.

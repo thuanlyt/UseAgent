@@ -39,3 +39,5 @@ Các task worker báo hoàn tất được append tại đây. `completed` nghĩ
 - 2026-09-04T07:12:26Z - `UA-0022` - Harden malformed-state and recorded-file validation - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0022-20260904T071226Z-f58d3d.md`
 
 - 2026-09-04T07:21:30Z - `UA-0023` - Make report ingest and roster boundaries fail-safe - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0023-20260904T072130Z-adab37.md`
+
+- 2026-09-04T07:31:24Z - `UA-0024` - Enforce reviewer authority for release transitions - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0024-20260904T073124Z-490138.md`

@@ -153,3 +153,10 @@ Hardened supervisor/worker boundaries against malformed roster entries, malforme
 
 - Report: `work/reports/inbox/UA-0023-20260904T072130Z-adab37.md`
 - Next: Run independent review of boundary guards and regression evidence, then accept UA-0023 if no actionable finding remains.
+
+## 2026-09-04T07:31:24Z - UA-0024 (completed)
+
+Reviewer authority is enforced for review evidence and release transitions; worker lifecycle tests and bilingual operating docs updated.
+
+- Report: `work/reports/inbox/UA-0024-20260904T073124Z-490138.md`
+- Next: Run review gate, supervisor QA cycle, then commit and push if the repository remains green.
