@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T15:09:55Z",
+  "updated_at": "2026-09-04T15:15:58Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -3019,6 +3019,80 @@
       "attempts": 1,
       "created_at": "2026-09-04T14:56:41Z",
       "updated_at": "2026-09-04T15:09:55Z",
+      "last_result": "completed"
+    },
+    "UA-0040": {
+      "id": "UA-0040",
+      "title": "Optimize visual asset delivery",
+      "objective": "Serve the docs hero through a standards-compliant WebP picture source with PNG fallback, validate srcset paths and recover homepage performance after adding visuals.",
+      "level": "L2",
+      "status": "needs_review",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "docs-site/README.md",
+        "docs-site/build.py",
+        "docs-site/index.html",
+        "knowledge/decisions/0007-visual-documentation-system.md",
+        "knowledge/project-map.md",
+        "tests/docs_site/test_docs_site.py"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "Homepage uses a valid picture/srcset WebP source with explicit PNG fallback, dimensions and accessible alt text.",
+        "The static builder validates and copies srcset assets, and regression tests cover WebP integrity and browser-facing markup.",
+        "Live homepage performance returns to production quality after the visual asset is added, with SEO and accessibility unchanged."
+      ],
+      "verification": [
+        "python -m unittest tests.docs_site.test_docs_site -v",
+        "python docs-site/build.py --check-only",
+        "python tools/useagent.py validate"
+      ],
+      "files": [
+        "docs-site/README.md",
+        "docs-site/build.py",
+        "docs-site/index.html",
+        "knowledge/decisions/0007-visual-documentation-system.md",
+        "knowledge/project-map.md",
+        "tests/docs_site/test_docs_site.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.docs_site.test_docs_site -v: 7 tests passed",
+          "recorded_at": "2026-09-04T15:15:57Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 16 static files",
+          "recorded_at": "2026-09-04T15:15:57Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T15:15:57Z"
+        },
+        {
+          "kind": "check",
+          "value": "Local browser probe: currentSrc is useagent-control-plane-hero.webp at 1280x853",
+          "recorded_at": "2026-09-04T15:15:57Z"
+        },
+        {
+          "kind": "check",
+          "value": "WebP asset size: 47,996 bytes; PNG fallback retained for social/client compatibility",
+          "recorded_at": "2026-09-04T15:15:57Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0040-20260904T151557Z-a1ebdd.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T15:15:29Z",
+      "updated_at": "2026-09-04T15:15:58Z",
       "last_result": "completed"
     }
   }

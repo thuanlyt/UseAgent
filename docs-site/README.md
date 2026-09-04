@@ -34,7 +34,8 @@ deployment fallback rather than a second SEO source of truth.
 
 The local `assets/` directory contains the visual layer used by the site:
 
-- `useagent-control-plane-hero.png` — generated text-free hero and social image;
+- `useagent-control-plane-hero.webp` — optimized above-the-fold hero delivery;
+- `useagent-control-plane-hero.png` — generated text-free fallback and social image;
 - `useagent-supervisor-loop.svg` — goal → supervisor → worker → QA loop;
 - `useagent-shared-ledger.svg` — knowledge, work, evidence and checkpoint memory;
 - `useagent-runtime-handoff.svg` — Codex, Claude Code and Antigravity on one protocol.

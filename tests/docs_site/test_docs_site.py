@@ -267,6 +267,7 @@ class DocsSiteTests(unittest.TestCase):
         assets = SITE / "assets"
         expected_assets = {
             "useagent-control-plane-hero.png",
+            "useagent-control-plane-hero.webp",
             "useagent-supervisor-loop.svg",
             "useagent-shared-ledger.svg",
             "useagent-runtime-handoff.svg",
@@ -274,7 +275,10 @@ class DocsSiteTests(unittest.TestCase):
         self.assertEqual({path.name for path in assets.iterdir() if path.is_file()}, expected_assets)
         hero = assets / "useagent-control-plane-hero.png"
         self.assertLess(hero.stat().st_size, 3_000_000)
-        for filename in expected_assets - {hero.name}:
+        webp_hero = assets / "useagent-control-plane-hero.webp"
+        self.assertLess(webp_hero.stat().st_size, 100_000)
+        svg_assets = expected_assets - {hero.name, webp_hero.name}
+        for filename in svg_assets:
             root = ElementTree.parse(assets / filename).getroot()
             self.assertEqual(root.tag, "{http://www.w3.org/2000/svg}svg", filename)
             self.assertEqual(root.attrib.get("role"), "img", filename)
@@ -295,6 +299,10 @@ class DocsSiteTests(unittest.TestCase):
                 self.assertTrue(image.get("height", "").strip(), page.name)
                 target = SITE / image["src"].lstrip("/")
                 self.assertTrue(target.is_file(), f"{page.name} -> {image['src']}")
+            if page.name == "index.html":
+                sources = parser.images
+                homepage = page.read_text(encoding="utf-8")
+                self.assertIn('<source srcset="assets/useagent-control-plane-hero.webp" type="image/webp"', homepage)
             if page.name != "index.html":
                 self.assertTrue(any(image.get("loading") == "lazy" for image in parser.images), page.name)
 

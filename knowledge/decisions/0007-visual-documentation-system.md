@@ -17,7 +17,7 @@ framework, third-party fonts, analytics or render-blocking dependencies.
 Add a small visual layer next to the source-anchored Markdown:
 
 - one generated, text-free hero illustration for the docs homepage and social
-  preview;
+  preview, with a WebP derivative for fast delivery and a PNG fallback;
 - three repository-owned SVG diagrams for the supervisor loop, shared ledger
   and multi-runtime handoff;
 - semantic `<figure>`/`<img>` markup with descriptive alt text, explicit
@@ -34,8 +34,8 @@ logos or third-party marks and is stored in the repository as a project asset.
 - New users can understand the control-plane relationships before reading all
   of the operational detail.
 - SVG diagrams stay crisp, searchable through nearby text and small enough for
-  fast static delivery; the hero is intentionally constrained to a bounded
-  file size and loaded eagerly only on the homepage.
+  fast static delivery; the hero uses a 48 KB WebP derivative above the fold,
+  with the larger PNG retained for fallback/social compatibility.
 - Any future visual must carry alt text, dimensions, responsive behavior and a
   documented source/license decision before publication.
 
@@ -45,6 +45,7 @@ logos or third-party marks and is stored in the repository as a project asset.
 - `docs-site/assets/useagent-shared-ledger.svg`
 - `docs-site/assets/useagent-runtime-handoff.svg`
 - `docs-site/assets/useagent-control-plane-hero.png`
+- `docs-site/assets/useagent-control-plane-hero.webp`
 - `docs-site/index.html`
 - `docs-site/build.py`
 - `tests/docs_site/test_docs_site.py:test_visual_asset_contract`

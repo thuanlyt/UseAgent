@@ -258,3 +258,10 @@ Added a local visual documentation system: generated and reviewed a text-free he
 
 - Report: `work/reports/inbox/UA-0039-20260904T150928Z-244197.md`
 - Next: Review the visual diff and publish the asset-enabled docs site after release QA.
+
+## 2026-09-04T15:15:57Z - UA-0040 (completed)
+
+Optimized homepage visual delivery with a valid WebP picture/srcset path, retained PNG fallback and social preview, extended the static builder/test contract, and verified the browser selects the 48 KB WebP asset.
+
+- Report: `work/reports/inbox/UA-0040-20260904T151557Z-a1ebdd.md`
+- Next: Review performance evidence and publish the optimized docs build.

@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 SITE_ROOT = Path(__file__).resolve().parent
-STATIC_SUFFIXES = {".html", ".css", ".js", ".svg", ".png", ".txt", ".xml", ".webmanifest"}
+STATIC_SUFFIXES = {".html", ".css", ".js", ".svg", ".png", ".webp", ".txt", ".xml", ".webmanifest"}
 SKIP_PARTS = {"dist", ".git"}
 
 
@@ -23,6 +23,12 @@ class LocalLinkParser(HTMLParser):
         for key, value in attrs:
             if key in {"href", "src"} and value:
                 self.targets.append(value)
+            elif key == "srcset" and value:
+                self.targets.extend(
+                    candidate.strip().split()[0]
+                    for candidate in value.split(",")
+                    if candidate.strip()
+                )
 
 
 def source_files() -> list[Path]:

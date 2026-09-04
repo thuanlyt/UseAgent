@@ -40,7 +40,7 @@ conformance demo and visual documentation assets.
 - `python -m pip install --no-deps .` / `useagent validate`: smoke test package entry point.
 - `.github/workflows/ci.yml`: lặp lại compile, unit test và protocol validation trên Python 3.11–3.13.
 - `docs/getting-started.md`: hands-on onboarding, provider/runtime matrix and Codex + Claude Code + Antigravity walkthrough.
-- `docs-site/assets/*.svg` / `useagent-control-plane-hero.png`: source-owned diagrams and hero visual; keep alt text/dimensions in consuming HTML.
+- `docs-site/assets/*.svg` / `useagent-control-plane-hero.{webp,png}`: source-owned diagrams and optimized/fallback hero visuals; keep alt text/dimensions in consuming HTML.
 
 ## Code ownership hiện tại
 
