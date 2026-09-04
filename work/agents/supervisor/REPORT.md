@@ -181,3 +181,10 @@ Enforced report-before-review ordering: needs_review now accepts only reported t
 
 - Report: `work/reports/inbox/UA-0027-20260904T074846Z-c39223.md`
 - Next: Run review gate and supervisor QA cycle; then record GitHub CI evidence and push the hardening change.
+
+## 2026-09-04T07:53:49Z - UA-0028 (completed)
+
+Made done and cancelled terminal: task update now rejects all lifecycle changes from terminal states, with regression coverage for done/cancelled state preservation and bilingual lifecycle documentation.
+
+- Report: `work/reports/inbox/UA-0028-20260904T075349Z-5f0c1a.md`
+- Next: Run review gate and supervisor QA cycle; then record remote CI evidence and push the terminal-state hardening.

@@ -320,6 +320,22 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual((code, error), (0, ""))
         code, _, error = self.invoke("task", "update", task_id, "--status", "done", "--agent", "reviewer")
         self.assertEqual((code, error), (0, ""))
+        registry_before = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        for status in ("planned", "blocked", "cancelled"):
+            code, _, error = self.invoke("task", "update", task_id, "--status", status, "--agent", "worker-1")
+            self.assertEqual(code, 2)
+            self.assertIn("tasks are terminal", error)
+            registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+            self.assertEqual(registry["items"][task_id], registry_before["items"][task_id])
+
+        cancelled_id = self.new_task("Terminal cancellation", "src/cancelled.py")
+        code, _, error = self.invoke("task", "update", cancelled_id, "--status", "cancelled", "--agent", "supervisor")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "update", cancelled_id, "--status", "planned", "--agent", "supervisor")
+        self.assertEqual(code, 2)
+        self.assertIn("tasks are terminal", error)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][cancelled_id]["status"], "cancelled")
 
     def test_empty_review_evidence_is_rejected(self) -> None:
         self.register_worker("worker-1", ".")

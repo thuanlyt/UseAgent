@@ -470,6 +470,9 @@ report-less completion.
 The reviewer must wait for the task to be `reported`; reviewing an active,
 unreported task is rejected.
 
+`done` and `cancelled` are terminal states. Reopening them through
+`task update` is rejected; create a follow-up task for additional work.
+
 ### The runtime cannot find `$useagent-worker`
 
 Use the direct path instead:

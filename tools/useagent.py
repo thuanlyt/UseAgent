@@ -55,6 +55,7 @@ VALID_STATUSES = {
     "blocked",
     "cancelled",
 }
+TERMINAL_STATUSES = {"done", "cancelled"}
 VALID_LEVELS = {"L0", "L1", "L2", "L3", "L4"}
 VALID_AGENT_STATUSES = {"available", "busy", "paused", "offline"}
 REVIEW_ROLES = {"supervisor", "reviewer", "release_gate"}
@@ -612,6 +613,8 @@ def cmd_task_update(args: argparse.Namespace) -> int:
         if args.agent and assigned and args.agent != assigned and not review_action:
             raise UseAgentError(f"{args.task_id} is assigned to {assigned}, not {args.agent}")
         current = item["status"]
+        if current in TERMINAL_STATUSES:
+            raise UseAgentError(f"{current} tasks are terminal; lifecycle updates are not allowed")
         if args.status == "assigned":
             raise UseAgentError("use supervisor cycle/dispatch to assign a task")
         if args.status == "in_progress" and current not in {"assigned", "in_progress"}:

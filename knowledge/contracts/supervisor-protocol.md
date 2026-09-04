@@ -24,6 +24,8 @@ tự biến report `completed` thành release decision; review evidence là đi�
 bắt buộc của trạng thái `done`; review evidence phải có giá trị không rỗng.
 Task phải ở trạng thái `reported` trước khi reviewer chuyển sang `needs_review`;
 không được bỏ qua worker report bằng transition trực tiếp từ `in_progress`.
+`done` và `cancelled` là trạng thái kết thúc; không được reopen bằng
+`task update`.
 Chỉ agent đã đăng ký có role `supervisor`,
 `reviewer` hoặc `release_gate` mới được ghi evidence `kind=review` và chuyển
 task `reported` qua `needs_review` đến `done`. Reviewer có thể khác với worker

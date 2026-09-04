@@ -72,6 +72,9 @@ report Markdown và evidence đi kèm.
 Reviewer chỉ được chuyển `reported` sang `needs_review`; task còn
 `in_progress` phải chờ worker report trước khi review.
 
+Sau khi `done` hoặc `cancelled`, task là terminal và không được reopen bằng
+`task update`; hãy tạo task mới nếu phát hiện scope hoặc mục tiêu cần làm lại.
+
 Quy trình review tối thiểu:
 
 ```powershell

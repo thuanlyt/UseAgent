@@ -47,3 +47,5 @@ Các task worker báo hoàn tất được append tại đây. `completed` nghĩ
 - 2026-09-04T07:44:02Z - `UA-0026` - Require review evidence before done - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0026-20260904T074402Z-5866e8.md`
 
 - 2026-09-04T07:48:46Z - `UA-0027` - Require worker report before review - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0027-20260904T074846Z-c39223.md`
+
+- 2026-09-04T07:53:49Z - `UA-0028` - Make terminal task states immutable - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0028-20260904T075349Z-5f0c1a.md`

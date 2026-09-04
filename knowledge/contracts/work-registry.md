@@ -23,6 +23,8 @@
   rejected so a report-less completion cannot enter the registry.
 - `needs_review` requires the task to already be `reported`; active workers
   cannot be reviewed or closed before their report is recorded.
+- `done` and `cancelled` are terminal states; lifecycle updates cannot reopen or
+  move them to another status.
 - Review evidence and `needs_review`/`done` transitions require a registered
   `supervisor`, `reviewer` or `release_gate` identity; the assigned worker may
   not self-approve or self-close the task.

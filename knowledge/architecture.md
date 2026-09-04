@@ -44,7 +44,7 @@ Không tăng level chỉ vì có nhiều file. Tăng level khi dependency, owner
 
 `planned -> assigned -> in_progress -> reported -> needs_review -> done`.
 
-Nhánh ngoại lệ: `planned/assigned/in_progress/reported -> blocked`, hoặc `planned -> cancelled`. Task chỉ dispatch/claim được khi dependency đã `done` và scope không xung đột với writer active. `reported` là worker đã gửi report; `done` cần review và ít nhất một evidence có thể lặp lại.
+Nhánh ngoại lệ: `planned/assigned/in_progress/reported -> blocked`, hoặc `planned -> cancelled`. Task chỉ dispatch/claim được khi dependency đã `done` và scope không xung đột với writer active. `reported` là worker đã gửi report; `done` cần review và ít nhất một evidence có thể lặp lại. `done` và `cancelled` là terminal states, không được reopen bằng `task update`.
 
 ## Quy tắc chia việc
 
