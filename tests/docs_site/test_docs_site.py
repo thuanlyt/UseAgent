@@ -6,10 +6,19 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+from xml.etree import ElementTree
 
 
 ROOT = Path(__file__).resolve().parents[2]
 SITE = ROOT / "docs-site"
+PRIMARY_ORIGIN = "https://useagent.thuanlyt.id.vn"
+INDEXABLE_URLS = {
+    "index.html": f"{PRIMARY_ORIGIN}/",
+    "getting-started.html": f"{PRIMARY_ORIGIN}/getting-started.html",
+    "architecture.html": f"{PRIMARY_ORIGIN}/architecture.html",
+    "operations.html": f"{PRIMARY_ORIGIN}/operations.html",
+    "vi.html": f"{PRIMARY_ORIGIN}/vi.html",
+}
 
 
 class SiteContractParser(HTMLParser):
@@ -30,6 +39,7 @@ class SiteContractParser(HTMLParser):
         self.inputs: list[dict[str, str]] = []
         self.navs: list[dict[str, str]] = []
         self.external_links: list[dict[str, str]] = []
+        self.links: list[dict[str, str]] = []
         self.jsonld: list[str] = []
         self._active_jsonld = False
         self._jsonld_text = ""
@@ -42,6 +52,8 @@ class SiteContractParser(HTMLParser):
             self._in_title = True
         elif tag == "meta":
             self.meta.append(attributes)
+        elif tag == "link":
+            self.links.append(attributes)
         elif tag == "main":
             self.main_ids.append(attributes.get("id", ""))
         elif tag == "h1":
@@ -153,10 +165,17 @@ class DocsSiteTests(unittest.TestCase):
                 self.assertTrue(meta_by_property.get("og:description", "").strip(), page.name)
                 self.assertEqual(meta_by_property.get("og:type"), "website", page.name)
                 self.assertEqual(meta_by_name.get("twitter:card"), "summary", page.name)
-                self.assertNotIn("og:url", meta_by_property, page.name)
+                self.assertEqual(meta_by_property.get("og:url"), INDEXABLE_URLS[page.name], page.name)
+                self.assertTrue(meta_by_property.get("og:site_name", "").strip(), page.name)
+                self.assertTrue(meta_by_property.get("og:locale", "").strip(), page.name)
+                self.assertTrue(meta_by_name.get("twitter:title", "").strip(), page.name)
+                self.assertTrue(meta_by_name.get("twitter:description", "").strip(), page.name)
             if page.name == "404.html":
                 self.assertEqual(meta_by_name.get("robots"), "noindex", page.name)
             if page.name == "index.html":
+                search_inputs = [item for item in parser.inputs if item.get("id") == "doc-search"]
+                self.assertEqual(len(search_inputs), 1, page.name)
+                self.assertEqual(search_inputs[0].get("role"), "combobox", page.name)
                 self.assertEqual(len(parser.jsonld), 1, page.name)
                 structured_data = json.loads(parser.jsonld[0])
                 self.assertEqual(structured_data["@type"], "SoftwareSourceCode")
@@ -164,12 +183,63 @@ class DocsSiteTests(unittest.TestCase):
                     structured_data["codeRepository"],
                     "https://github.com/thuanlyt/UseAgent",
                 )
-                self.assertNotIn("url", structured_data)
+                self.assertEqual(structured_data["url"], INDEXABLE_URLS[page.name])
 
         styles = (SITE / "styles.css").read_text(encoding="utf-8")
         self.assertIn(":focus-visible", styles)
         self.assertIn("@media (max-width: 800px)", styles)
         self.assertIn("@media (prefers-reduced-motion: reduce)", styles)
+        self.assertIn("--color-secondary: #52627a", styles)
+
+    def test_production_seo_contract(self) -> None:
+        expected_alternates = {
+            "index.html": {
+                "en": INDEXABLE_URLS["index.html"],
+                "vi": INDEXABLE_URLS["vi.html"],
+                "x-default": INDEXABLE_URLS["index.html"],
+            },
+            "getting-started.html": {
+                "en": INDEXABLE_URLS["getting-started.html"],
+                "x-default": INDEXABLE_URLS["getting-started.html"],
+            },
+            "architecture.html": {
+                "en": INDEXABLE_URLS["architecture.html"],
+                "x-default": INDEXABLE_URLS["architecture.html"],
+            },
+            "operations.html": {
+                "en": INDEXABLE_URLS["operations.html"],
+                "x-default": INDEXABLE_URLS["operations.html"],
+            },
+            "vi.html": {
+                "en": INDEXABLE_URLS["index.html"],
+                "vi": INDEXABLE_URLS["vi.html"],
+                "x-default": INDEXABLE_URLS["index.html"],
+            },
+        }
+        for filename, canonical in INDEXABLE_URLS.items():
+            parser = SiteContractParser()
+            parser.feed((SITE / filename).read_text(encoding="utf-8"))
+            alternates = {
+                link.get("hreflang"): link.get("href")
+                for link in parser.links
+                if link.get("rel") == "alternate" and link.get("hreflang")
+            }
+            self.assertEqual(alternates, expected_alternates[filename], filename)
+            canonical_links = [
+                link.get("href")
+                for link in parser.links
+                if link.get("rel") == "canonical"
+            ]
+            self.assertEqual(canonical_links, [canonical], filename)
+
+        sitemap_root = ElementTree.fromstring((SITE / "sitemap.xml").read_text(encoding="utf-8"))
+        namespace = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+        self.assertEqual(sitemap_root.tag, f"{namespace}urlset")
+        sitemap_urls = [node.text for node in sitemap_root.findall(f"{namespace}url/{namespace}loc")]
+        self.assertEqual(sitemap_urls, list(INDEXABLE_URLS.values()))
+        robots = (SITE / "robots.txt").read_text(encoding="utf-8")
+        self.assertIn("User-agent: *", robots)
+        self.assertIn(f"Sitemap: {PRIMARY_ORIGIN}/sitemap.xml", robots)
 
     def test_mobile_layout_prevents_content_overflow(self) -> None:
         styles = (SITE / "styles.css").read_text(encoding="utf-8")
@@ -196,6 +266,7 @@ class DocsSiteTests(unittest.TestCase):
         }
         self.assertEqual(headers["X-Content-Type-Options"], "nosniff")
         self.assertEqual(headers["X-Frame-Options"], "DENY")
+        self.assertEqual(headers["Permissions-Policy"], "camera=(), geolocation=(), microphone=()")
         self.assertIn("frame-ancestors 'none'", headers["Content-Security-Policy"])
 
         runbook = (SITE / "DEPLOYMENT.md").read_text(encoding="utf-8").lower()

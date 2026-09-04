@@ -5,10 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="UseAgent is a file-first control plane for supervising multiple AI agents toward a production-ready result." />
     <meta name="theme-color" content="#f8fafc" />
+    <link rel="canonical" href="https://useagent.thuanlyt.id.vn/" />
+    <link rel="alternate" hreflang="en" href="https://useagent.thuanlyt.id.vn/" />
+    <link rel="alternate" hreflang="vi" href="https://useagent.thuanlyt.id.vn/vi.html" />
+    <link rel="alternate" hreflang="x-default" href="https://useagent.thuanlyt.id.vn/" />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="UseAgent" />
     <meta property="og:title" content="UseAgent — Multi-agent work, under control" />
     <meta property="og:description" content="A file-first control plane for supervising multiple AI agents toward a production-ready result." />
+    <meta property="og:url" content="https://useagent.thuanlyt.id.vn/" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="vi_VN" />
     <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="UseAgent — Multi-agent work, under control" />
+    <meta name="twitter:description" content="A file-first control plane for supervising multiple AI agents toward a production-ready result." />
     <title>UseAgent — Multi-agent work, under control</title>
     <script type="application/ld+json">
       {
@@ -17,10 +27,14 @@
         "name": "UseAgent",
         "description": "A file-first control plane for supervising multiple AI agents toward a production-ready result.",
         "codeRepository": "https://github.com/thuanlyt/UseAgent",
-        "license": "https://opensource.org/license/mit"
+        "license": "https://opensource.org/license/mit",
+        "url": "https://useagent.thuanlyt.id.vn/"
       }
     </script>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" />
     <link rel="stylesheet" href="styles.css" />
     <script src="script.js" defer></script>
   </head>
@@ -40,7 +54,7 @@
         <div class="hero-visual" aria-label="UseAgent supervisor flow illustration"><div class="flow-card"><div class="flow-card-header"><span class="status-pill"><span class="status-dot" aria-hidden="true"></span> supervisor cycle</span><span class="mono muted">01 / 04</span></div><div class="flow-goal"><span class="mono muted">GOAL</span><strong>Ship a production-ready project</strong></div><div class="flow-line"><span class="flow-line-number">01</span><span class="flow-line-bar"><i style="width: 100%"></i></span><span class="flow-line-label">plan</span></div><div class="flow-line"><span class="flow-line-number">02</span><span class="flow-line-bar"><i style="width: 74%"></i></span><span class="flow-line-label">dispatch</span></div><div class="flow-line"><span class="flow-line-number">03</span><span class="flow-line-bar"><i style="width: 42%"></i></span><span class="flow-line-label">verify</span></div><div class="flow-line"><span class="flow-line-number">04</span><span class="flow-line-bar"><i style="width: 12%"></i></span><span class="flow-line-label">release</span></div><div class="flow-footer"><span>next action</span><strong>Workers pull their assignments</strong><span class="flow-arrow" aria-hidden="true">↘</span></div></div><div class="hero-note"><span class="hero-note-line" aria-hidden="true"></span><span>Every handover is durable.<br />Every decision is inspectable.</span></div></div>
       </section>
 
-      <section class="search-section container" aria-labelledby="search-heading"><div class="section-label"><span>01</span><span>Find your path</span></div><div class="search-heading-row"><div><h2 id="search-heading">Start where you are.</h2><p>Search the docs for a workflow, a runtime or a command.</p></div><span class="mono search-shortcut" aria-hidden="true">⌘ K</span></div><form class="search-form" role="search"><label class="sr-only" for="doc-search">Search UseAgent documentation</label><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg><input id="doc-search" name="q" type="search" autocomplete="off" placeholder="Try “How do I connect Claude Code?”" aria-controls="search-results" aria-expanded="false" /><button class="search-submit" type="submit">Search</button></form><div id="search-results" class="search-results" role="region" aria-live="polite" hidden></div><div class="search-suggestions" aria-label="Popular searches"><span>Popular:</span><a href="getting-started.html">first run</a><a href="getting-started.html#runtimes">Codex + Claude + Antigravity</a><a href="operations.html#worker-loop">worker loop</a><a href="architecture.html#production-gate">production gate</a></div></section>
+      <section class="search-section container" aria-labelledby="search-heading"><div class="section-label"><span>01</span><span>Find your path</span></div><div class="search-heading-row"><div><h2 id="search-heading">Start where you are.</h2><p>Search the docs for a workflow, a runtime or a command.</p></div><span class="mono search-shortcut" aria-hidden="true">⌘ K</span></div><form class="search-form" role="search"><label class="sr-only" for="doc-search">Search UseAgent documentation</label><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg><input id="doc-search" name="q" type="search" role="combobox" autocomplete="off" placeholder="Try “How do I connect Claude Code?”" aria-autocomplete="list" aria-controls="search-results" aria-expanded="false" /><button class="search-submit" type="submit">Search</button></form><div id="search-results" class="search-results" role="region" aria-live="polite" hidden></div><div class="search-suggestions" aria-label="Popular searches"><span>Popular:</span><a href="getting-started.html">first run</a><a href="getting-started.html#runtimes">Codex + Claude + Antigravity</a><a href="operations.html#worker-loop">worker loop</a><a href="architecture.html#production-gate">production gate</a></div></section>
 
       <section class="paths-section container" aria-labelledby="paths-heading"><div class="section-label"><span>02</span><span>Choose a route</span></div><div class="section-heading-row"><div><h2 id="paths-heading">The shortest path<br />to useful work.</h2></div><p>UseAgent turns coordination into a visible repository protocol. Pick the role that matches your next question.</p></div><div class="path-grid"><a class="path-card path-card-featured" href="getting-started.html"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6.5h16v11H4z" /><path d="M7.5 10h9M7.5 13.5h5" /></svg></span><span class="card-kicker">New here?</span><strong>Follow the hands-on start</strong><span class="card-description">Copy the prompt, register real runtimes and watch the first task move through the system.</span><span class="card-link">Open the guide <span aria-hidden="true">→</span></span></a><a class="path-card" href="architecture.html"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="5" r="2.5" /><circle cx="6" cy="18" r="2.5" /><circle cx="18" cy="18" r="2.5" /><path d="M12 7.5V12M12 12 6 15.5M12 12l6 3.5" /></svg></span><span class="card-kicker">Understand it</span><strong>Read the control plane</strong><span class="card-description">See how context, DAG, scopes, mailboxes, evidence and checkpoints fit together.</span><span class="card-link">View architecture <span aria-hidden="true">→</span></span></a><a class="path-card" href="operations.html"><span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4.5h12v15H6z" /><path d="M9 8h6M9 12h6M9 16h3" /></svg></span><span class="card-kicker">Run it</span><strong>Operate with confidence</strong><span class="card-description">Use the CLI, report evidence, debug failures and keep the autopilot cycle bounded.</span><span class="card-link">Open operations <span aria-hidden="true">→</span></span></a></div></section>
 

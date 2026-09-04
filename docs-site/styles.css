@@ -1,6 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
-
-:root { --color-primary: #475569; --color-secondary: #64748b; --color-accent: #2563eb; --color-background: #f8fafc; --color-foreground: #1e293b; --color-muted: #eaeff3; --color-border: #e2e8f0; --color-soft-blue: #eff6ff; --shadow-sm: 0 1px 2px rgba(15,23,42,.05); --shadow-md: 0 8px 24px rgba(15,23,42,.08); --radius-sm: .5rem; --radius-md: .75rem; --content-width: 72rem; }
+:root { --color-primary: #475569; --color-secondary: #52627a; --color-accent: #2563eb; --color-background: #f8fafc; --color-foreground: #1e293b; --color-muted: #eaeff3; --color-border: #e2e8f0; --color-soft-blue: #eff6ff; --shadow-sm: 0 1px 2px rgba(15,23,42,.05); --shadow-md: 0 8px 24px rgba(15,23,42,.08); --radius-sm: .5rem; --radius-md: .75rem; --content-width: 72rem; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; color: var(--color-foreground); background: var(--color-background); font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 1rem; line-height: 1.6; }

@@ -33,6 +33,14 @@ hostname and confirm that it is the intended production domain.
 References: [Vercel custom domains](https://vercel.com/docs/domains/set-up-custom-domain)
 and [Cloudflare DNS records](https://developers.cloudflare.com/dns/manage-dns-records/how-to/create-dns-records/).
 
+## Search and sharing gate
+
+The confirmed primary origin is `https://useagent.thuanlyt.id.vn/`. Indexable
+pages publish absolute canonical and language-alternate links for that origin;
+`robots.txt` points crawlers to `sitemap.xml`, which lists the five indexable
+routes. Treat the primary origin as the only SEO source of truth and keep the
+`vercel.app` hostname as a deployment fallback.
+
 ## Rollback
 
 - If a preview is wrong, delete or abandon the preview; do not touch DNS.
@@ -65,3 +73,8 @@ có hostname production chính xác do người dùng cung cấp mới thêm dom
 Không đoán domain, không lưu token trong repository. Khi có lỗi, promote
 deployment Vercel cuối cùng còn tốt hoặc revert commit, rồi ghi URL/SHA/evidence
 vào `work/SUPERVISOR_REPORT.md`.
+
+Hostname SEO chính đã xác nhận là `https://useagent.thuanlyt.id.vn/`. Các trang
+được index dùng canonical tuyệt đối và alternate EN/VI về hostname này;
+`robots.txt` trỏ tới `sitemap.xml` gồm năm route indexable. Hostname
+`vercel.app` chỉ là fallback của deployment.

@@ -1,14 +1,14 @@
 # UseAgent supervisor report
 
-- **Cycle:** `manual-20260904T085558Z`
-- **Generated:** 2026-09-04T08:55:58Z
-- **Next action:** Resolve blocker for UA-0035 and attach the missing decision/evidence.
+- **Cycle:** `cycle-20260904T132059Z-b8c22a`
+- **Generated:** 2026-09-04T13:21:12Z
+- **Next action:** Workers pull assigned tasks from their INBOX.md; wait for reports from UA-0036.
 - **Production snapshot:** `not_ready`
 
 ## Status counts
 
-- `blocked`: 1
-- `done`: 34
+- `assigned`: 1
+- `done`: 35
 
 ## Reports ingested this cycle
 
@@ -16,6 +16,7 @@
 
 ## Assignments issued this cycle
 
+- `UA-0036` -> `supervisor` — `work/agents/supervisor/inbox/UA-0036.md`
 - none
 
 ## Worker reports awaiting review
@@ -32,7 +33,7 @@
 - `UA-0006` — Add provider-neutral hands-on onboarding guide — evidence: 4
 - `UA-0007` — Add explicit target-root bootstrap support — evidence: 4
 - `UA-0008` — Add runnable multi-agent conformance demo — evidence: 4
-- `UA-0009` — Package and release the UseAgent CLI — evidence: 6
+- `UA-0009` — Package and release the UseAgent CLI — evidence: 7
 - `UA-0010` — Design and scaffold bilingual docs website — evidence: 5
 - `UA-0011` — Build practical bilingual docs experience — evidence: 5
 - `UA-0012` — Docs website release and hosting readiness — evidence: 11
@@ -58,25 +59,25 @@
 - `UA-0032` — Add malformed capability regression coverage — evidence: 5
 - `UA-0033` — Require activation before worker report — evidence: 7
 - `UA-0034` — Fix docs-site mobile overflow — evidence: 9
+- `UA-0035` — Deploy docs website and connect production domain — evidence: 12
 - none
 
 ## Blocked work
 
-- `UA-0035` — Deploy docs website and connect production domain
 - none
 
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T084919Z-87c0be-qa.md`
+- evidence: `work/evidence/cycle-20260904T132059Z-b8c22a-qa.md`
 
 ## Production gates
 
 - [ ] `all_tasks_done`: `fail`
 - [x] `qa`: `pass`
-- [ ] `no_blocked_tasks`: `fail`
+- [x] `no_blocked_tasks`: `pass`
 - [x] `operational_rollback_notes`: `pass`
 
 ## Resume instruction
 
-Resolve blocker for UA-0035 and attach the missing decision/evidence.
+Workers pull assigned tasks from their INBOX.md; wait for reports from UA-0036.

@@ -61,3 +61,5 @@ Các task worker báo hoàn tất được append tại đây. `completed` nghĩ
 - 2026-09-04T08:28:00Z - `UA-0033` - Require activation before worker report - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0033-20260904T082800Z-f27ba8.md`
 
 - 2026-09-04T08:44:45Z - `UA-0034` - Fix docs-site mobile overflow - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0034-20260904T084445Z-d99d7f.md`
+
+- 2026-09-04T13:19:48Z - `UA-0035` - Deploy docs website and connect production domain - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0035-20260904T131948Z-cbbcf5.md`

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T08:58:46Z",
+  "updated_at": "2026-09-04T13:30:49Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -2559,9 +2559,9 @@
       "title": "Deploy docs website and connect production domain",
       "objective": "Deploy the release-approved static docs site to Vercel, verify the preview and production hostname, then connect the exact user-approved domain through Cloudflare with reversible evidence.",
       "level": "L3",
-      "status": "blocked",
+      "status": "done",
       "owner": "supervisor",
-      "assigned_to": null,
+      "assigned_to": "supervisor",
       "scope": [
         "docs-site"
       ],
@@ -2584,11 +2584,124 @@
         "documented Vercel/Cloudflare deployment checklist with final-host smoke evidence"
       ],
       "files": [],
-      "evidence": [],
+      "evidence": [
+        {
+          "kind": "dns",
+          "value": "Live DNS via Resolve-DnsName 1.1.1.1: useagent.thuanlyt.id.vn CNAME -> ee010248678c5029.vercel-dns-017.com, TTL 300; target resolves to 216.198.79.1 and 64.29.17.1. No repository secret or token used.",
+          "recorded_at": "2026-09-04T13:18:32Z"
+        },
+        {
+          "kind": "live-http",
+          "value": "Live HTTPS smoke on https://useagent.thuanlyt.id.vn and https://useagent.vercel.app: /, /getting-started.html, /architecture.html, /operations.html, /vi.html and /404.html all returned 200; missing /not-a-real-route-ua-audit returned 404; HTTP requests return 308 to HTTPS. Primary hostname is serving the Vercel deployment.",
+          "recorded_at": "2026-09-04T13:18:38Z"
+        },
+        {
+          "kind": "security",
+          "value": "Live response headers on primary: HSTS max-age=63072000, X-Content-Type-Options nosniff, X-Frame-Options DENY, Referrer-Policy strict-origin-when-cross-origin and CSP with frame-ancestors 'none', base-uri 'self', form-action 'self'. No Permissions-Policy header observed; follow-up is non-blocking.",
+          "recorded_at": "2026-09-04T13:18:44Z"
+        },
+        {
+          "kind": "seo",
+          "value": "Live primary-host metadata audit: all 5 indexable pages have title, description, one H1, og:type/title/description and twitter:card; however canonical, og:url, og:image, twitter:title, twitter:description and hreflang are absent on all indexable pages. /robots.txt allows crawling but has no Sitemap directive; /sitemap.xml returns 404. This duplicates content across the custom and vercel.app hostnames and weakens discovery/social previews. Follow-up UA-0036 created.",
+          "recorded_at": "2026-09-04T13:18:51Z"
+        },
+        {
+          "kind": "lighthouse",
+          "value": "Live Lighthouse 13.4.1 on https://useagent.thuanlyt.id.vn/ (mobile and desktop): Performance 99, Accessibility 90, Best Practices 100, SEO 100. Actionable failures: aria-allowed-attr on #doc-search aria-expanded, color contrast 4.37 for .path-card .card-description (#64748b on #eff6ff), plus font CSS render-blocking insight. SEO score does not cover the missing canonical/sitemap found by direct audit.",
+          "recorded_at": "2026-09-04T13:18:57Z"
+        },
+        {
+          "kind": "link-crawl",
+          "value": "Live same-origin crawl across 6 HTML pages and 9 resolved targets on https://useagent.thuanlyt.id.vn found zero broken links or missing fragments; linked CSS, JS and SVG assets all returned 200 with correct content types.",
+          "recorded_at": "2026-09-04T13:19:02Z"
+        },
+        {
+          "kind": "local-qa",
+          "value": "Fresh local verification after live audit: python -m unittest discover -s tests -v -> 49 tests OK; python docs-site/build.py --check-only -> VALIDATED 10 static files; python tools/useagent.py validate -> VALID; git diff --check -> pass (only CRLF normalization warnings from registry/report state files).",
+          "recorded_at": "2026-09-04T13:19:29Z"
+        },
+        {
+          "kind": "check",
+          "value": "Live DNS: CNAME resolves to ee010248678c5029.vercel-dns-017.com",
+          "recorded_at": "2026-09-04T13:19:48Z"
+        },
+        {
+          "kind": "check",
+          "value": "Live HTTP: 6 public routes 200, HTTP->HTTPS 308, missing route 404",
+          "recorded_at": "2026-09-04T13:19:48Z"
+        },
+        {
+          "kind": "check",
+          "value": "Lighthouse 13.4.1: mobile/desktop Performance 99, Accessibility 90, Best Practices 100, SEO 100",
+          "recorded_at": "2026-09-04T13:19:48Z"
+        },
+        {
+          "kind": "check",
+          "value": "Fresh local QA: 49 tests, docs build validated 10 files, validator VALID",
+          "recorded_at": "2026-09-04T13:19:48Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review result: no P0/P1 production outage, DNS, TLS, route or security-header finding. P2 findings remain: missing canonical/og:url/sitemap/hreflang/social image metadata and Lighthouse accessibility failures on #doc-search aria-expanded plus .path-card .card-description contrast. These are explicitly scoped to UA-0036; keep hosting task separate from final SEO sign-off.",
+          "recorded_at": "2026-09-04T13:20:01Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0035-20260904T131948Z-cbbcf5.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T08:54:06Z",
+      "updated_at": "2026-09-04T13:20:08Z",
+      "last_result": "completed"
+    },
+    "UA-0036": {
+      "id": "UA-0036",
+      "title": "Close production SEO metadata and discoverability gaps",
+      "objective": "Add a primary-domain canonical strategy, sitemap and robots sitemap reference, bilingual hreflang/locale metadata, and complete social preview metadata without introducing guessed domains or secrets.",
+      "level": "L2",
+      "status": "in_progress",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "docs-site",
+        "tests/docs_site"
+      ],
+      "depends_on": [
+        "UA-0035"
+      ],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "All five indexable pages publish an absolute canonical URL on useagent.thuanlyt.id.vn; sitemap.xml lists every indexable route and robots.txt references it; EN/VI alternate links and locale metadata are consistent; Open Graph URL/title/description and Twitter title/description are present; metadata regression tests cover the contract; local build, validator, unit tests and live final-host smoke remain green."
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python docs-site/build.py --check-only",
+        "python tools/useagent.py validate",
+        "live HTTP metadata and sitemap smoke on https://useagent.thuanlyt.id.vn"
+      ],
+      "files": [],
+      "evidence": [
+        {
+          "kind": "implementation",
+          "value": "Static-first docs stack retained intentionally: HTML/CSS/vanilla JS with Vercel static output; added absolute primary-domain canonical/alternate metadata, robots sitemap directive, sitemap.xml, explicit font preconnect links, valid search combobox semantics, stronger secondary text token and Permissions-Policy header. No framework migration or hydration added.",
+          "recorded_at": "2026-09-04T13:30:43Z"
+        },
+        {
+          "kind": "check",
+          "value": "Focused checks pass: python -m unittest discover -s tests -v -> 50 tests OK; python docs-site/build.py --check-only -> VALIDATED 11 static files; python tools/useagent.py validate -> VALID; git diff --check -> pass.",
+          "recorded_at": "2026-09-04T13:30:49Z"
+        }
+      ],
       "reports": [],
       "attempts": 0,
-      "created_at": "2026-09-04T08:54:06Z",
-      "updated_at": "2026-09-04T08:55:58Z"
+      "created_at": "2026-09-04T13:18:15Z",
+      "updated_at": "2026-09-04T13:30:49Z",
+      "assignment_path": "work/agents/supervisor/inbox/UA-0036.md",
+      "dispatched_at": "2026-09-04T13:20:59Z",
+      "started_at": "2026-09-04T13:24:24Z"
     }
   }
 }

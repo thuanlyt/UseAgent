@@ -230,3 +230,10 @@ Fixed the responsive overflow regression found by browser QA. Grid children can 
 
 - Report: `work/reports/inbox/UA-0034-20260904T084445Z-d99d7f.md`
 - Next: Review UA-0034 evidence, then run the supervisor QA gate.
+
+## 2026-09-04T13:19:48Z - UA-0035 (completed)
+
+Live hosting audit completed: custom domain DNS, HTTPS, Vercel app routes, missing-route 404, security headers, same-origin links/assets and Lighthouse were checked. Deployment is serving the release site; SEO and accessibility follow-up gaps are recorded with UA-0036.
+
+- Report: `work/reports/inbox/UA-0035-20260904T131948Z-cbbcf5.md`
+- Next: Review the recorded evidence, then run UA-0036 to add canonical/sitemap/alternate metadata and fix the two Lighthouse accessibility findings before final SEO sign-off.
