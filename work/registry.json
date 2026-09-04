@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T07:46:13Z",
+  "updated_at": "2026-09-04T07:48:52Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -1866,6 +1866,81 @@
       "attempts": 1,
       "created_at": "2026-09-04T07:41:09Z",
       "updated_at": "2026-09-04T07:46:13Z",
+      "last_result": "completed"
+    },
+    "UA-0027": {
+      "id": "UA-0027",
+      "title": "Require worker report before review",
+      "objective": "Ensure a task cannot enter needs_review or done until the assigned worker has produced an authenticated report.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "docs/operations.md",
+        "docs/getting-started.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "needs_review is accepted only from reported, never directly from in_progress",
+        "failed needs_review transition preserves task status and evidence",
+        "reported worker flow, review gate, full QA and documentation remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate",
+        "python docs-site/build.py --check-only",
+        "git diff --check"
+      ],
+      "files": [
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: pass (39 tests)",
+          "recorded_at": "2026-09-04T07:48:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T07:48:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T07:48:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T07:48:46Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review pass: direct in_progress -> needs_review bypass is rejected before mutation, report-only flow remains valid, and contracts/docs/tests align with the ordered lifecycle.",
+          "recorded_at": "2026-09-04T07:48:52Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0027-20260904T074846Z-c39223.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T07:47:08Z",
+      "updated_at": "2026-09-04T07:48:52Z",
       "last_result": "completed"
     }
   }

@@ -174,3 +174,10 @@ Done now requires non-empty review evidence; evidence parsing rejects empty kind
 
 - Report: `work/reports/inbox/UA-0026-20260904T074402Z-5866e8.md`
 - Next: Run review gate and supervisor QA cycle, then record remote CI evidence and push the hardened control plane.
+
+## 2026-09-04T07:48:46Z - UA-0027 (completed)
+
+Enforced report-before-review ordering: needs_review now accepts only reported tasks, active unreported work cannot be reviewed/closed, and regression/contracts/docs cover state preservation and the valid worker report path.
+
+- Report: `work/reports/inbox/UA-0027-20260904T074846Z-c39223.md`
+- Next: Run review gate and supervisor QA cycle; then record GitHub CI evidence and push the hardening change.

@@ -618,8 +618,8 @@ def cmd_task_update(args: argparse.Namespace) -> int:
             raise UseAgentError("use task claim before moving a task into in_progress")
         if args.status == "reported":
             raise UseAgentError("use task report for a worker completion")
-        if args.status == "needs_review" and current not in {"reported", "in_progress"}:
-            raise UseAgentError("a task must be reported or active before review")
+        if args.status == "needs_review" and current != "reported":
+            raise UseAgentError("a task must be reported before review")
         if args.status == "done" and current != "needs_review":
             raise UseAgentError("a task must pass the explicit review gate before done")
         if args.status == "done" and not has_review_evidence(item):

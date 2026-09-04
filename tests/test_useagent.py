@@ -356,6 +356,45 @@ class UseAgentCliTests(unittest.TestCase):
             [entry for entry in registry["items"][task_id]["evidence"] if entry.get("kind") == "review"], []
         )
 
+    def test_review_requires_worker_report(self) -> None:
+        self.register_worker("worker-1", ".")
+        self.register_reviewer()
+        task_id = self.new_task("Report before review", "src/report-before-review.py")
+        code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "evidence", task_id, "--kind", "test", "--value", "unit test: pass")
+        self.assertEqual((code, error), (0, ""))
+
+        code, _, error = self.invoke("task", "update", task_id, "--status", "needs_review", "--agent", "reviewer")
+        self.assertEqual(code, 2)
+        self.assertIn("a task must be reported before review", error)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "in_progress")
+        self.assertEqual(
+            [entry for entry in registry["items"][task_id]["evidence"] if entry.get("kind") == "review"], []
+        )
+
+        code, _, error = self.invoke(
+            "task",
+            "report",
+            task_id,
+            "--agent",
+            "worker-1",
+            "--result",
+            "completed",
+            "--summary",
+            "Implementation complete",
+            "--next-action",
+            "Review",
+            "--file",
+            "src/report-before-review.py",
+            "--check",
+            "unit test: pass",
+        )
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "update", task_id, "--status", "needs_review", "--agent", "reviewer")
+        self.assertEqual((code, error), (0, ""))
+
     def test_supervisor_ingest_authenticates_reports_and_filters_files(self) -> None:
         self.register_worker("worker-1", "src")
         task_id = self.new_task("Authenticate worker report", "src")

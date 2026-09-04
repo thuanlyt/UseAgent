@@ -69,6 +69,9 @@ Worker phải dùng `task report` để chuyển task sang `reported`; không d�
 `task update --status reported`, vì CLI cố ý từ chối trạng thái reported không có
 report Markdown và evidence đi kèm.
 
+Reviewer chỉ được chuyển `reported` sang `needs_review`; task còn
+`in_progress` phải chờ worker report trước khi review.
+
 Quy trình review tối thiểu:
 
 ```powershell

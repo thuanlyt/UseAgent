@@ -40,7 +40,7 @@ Consumes `AGENTS.md`, `knowledge/`, `work/` and `useagent.config.json`; is used 
 
 ## Invariants
 
-Lock only the short state transition. Do not hold the lock while doing exploration, implementation or tests. Reject report-less `reported` transitions, overlapping active writer scopes, unsafe/out-of-scope recorded files, review actions from non-review roles and `done` without non-empty review evidence. Keep the selected project root explicit, validate malformed config/registry shapes without traceback, ignore unreadable/escaping reports safely and reject configured paths outside it.
+Lock only the short state transition. Do not hold the lock while doing exploration, implementation or tests. Reject report-less `reported` transitions, review of active unreported work, overlapping active writer scopes, unsafe/out-of-scope recorded files, review actions from non-review roles and `done` without non-empty review evidence. Keep the selected project root explicit, validate malformed config/registry shapes without traceback, ignore unreadable/escaping reports safely and reject configured paths outside it.
 
 ## Verification
 

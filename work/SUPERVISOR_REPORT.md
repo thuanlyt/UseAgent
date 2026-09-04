@@ -1,13 +1,13 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T074413Z-328820`
-- **Generated:** 2026-09-04T07:44:23Z
+- **Cycle:** `cycle-20260904T074856Z-006dc0`
+- **Generated:** 2026-09-04T07:49:07Z
 - **Next action:** Complete the review gate for UA-0012; accept evidence or create a scoped debug task.
 - **Production snapshot:** `not_ready`
 
 ## Status counts
 
-- `done`: 25
+- `done`: 26
 - `needs_review`: 1
 
 ## Reports ingested this cycle
@@ -49,7 +49,8 @@
 - `UA-0023` — Make report ingest and roster boundaries fail-safe — evidence: 10
 - `UA-0024` — Enforce reviewer authority for release transitions — evidence: 5
 - `UA-0025` — Make reported state report-only — evidence: 7
-- `UA-0026` — Require review evidence before done — evidence: 5
+- `UA-0026` — Require review evidence before done — evidence: 6
+- `UA-0027` — Require worker report before review — evidence: 5
 - none
 
 ## Blocked work
@@ -59,7 +60,7 @@
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T074413Z-328820-qa.md`
+- evidence: `work/evidence/cycle-20260904T074856Z-006dc0-qa.md`
 
 ## Production gates
 

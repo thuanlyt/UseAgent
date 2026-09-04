@@ -21,6 +21,8 @@
 - `reported` requires a worker report path; it is not equivalent to reviewed `done`.
 - `reported` is written by `task report`; `task update --status reported` is
   rejected so a report-less completion cannot enter the registry.
+- `needs_review` requires the task to already be `reported`; active workers
+  cannot be reviewed or closed before their report is recorded.
 - Review evidence and `needs_review`/`done` transitions require a registered
   `supervisor`, `reviewer` or `release_gate` identity; the assigned worker may
   not self-approve or self-close the task.
