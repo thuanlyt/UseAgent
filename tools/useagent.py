@@ -58,6 +58,8 @@ VALID_STATUSES = {
 TERMINAL_STATUSES = {"done", "cancelled"}
 VALID_LEVELS = {"L0", "L1", "L2", "L3", "L4"}
 VALID_AGENT_STATUSES = {"available", "busy", "paused", "offline"}
+VALID_AGENT_ROLES = {"supervisor", "explorer", "planner", "worker", "reviewer", "release_gate"}
+CLAIM_ROLES = {"supervisor", "explorer", "planner", "worker"}
 REVIEW_ROLES = {"supervisor", "reviewer", "release_gate"}
 
 
@@ -359,6 +361,15 @@ def agent_config(config: dict[str, Any], agent_id: str) -> dict[str, Any]:
     raise UseAgentError(f"unknown registered agent: {agent_id}")
 
 
+def claim_agent(config: dict[str, Any], agent_id: str) -> dict[str, Any]:
+    agent = agent_config(config, agent_id)
+    if agent.get("role") not in CLAIM_ROLES:
+        raise UseAgentError(
+            f"agent {agent_id} is not authorized to claim work; role must be supervisor, explorer, planner or worker"
+        )
+    return agent
+
+
 def review_agent(config: dict[str, Any], agent_id: str | None) -> dict[str, Any]:
     if not agent_id:
         raise UseAgentError("review action requires --agent <supervisor|reviewer|release_gate>")
@@ -579,7 +590,7 @@ def cmd_task_claim(args: argparse.Namespace) -> int:
     config = load_config()
     with state_lock():
         data = load_registry()
-        agent_config(config, args.agent)
+        claim_agent(config, args.agent)
         item = get_item(data, args.task_id)
         if item["status"] not in {"planned", "assigned", "blocked"}:
             raise UseAgentError(f"{args.task_id} is {item['status']}, not claimable")
@@ -733,7 +744,7 @@ def cmd_task_report(args: argparse.Namespace) -> int:
             raise UseAgentError(f"{args.task_id} is assigned to {item.get('assigned_to')}, not {args.agent}")
         if item.get("status") not in {"assigned", "in_progress"}:
             raise UseAgentError(f"{args.task_id} is {item.get('status')}, not reportable")
-        agent = agent_config(config, args.agent)
+        agent = claim_agent(config, args.agent)
         paths = agent_paths(config, agent)
         report_id = f"{args.task_id}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}"
         report_path = path_for(config, "reports_inbox") / f"{report_id}.md"
@@ -812,6 +823,10 @@ def cmd_agent_register(args: argparse.Namespace) -> int:
     ensure_layout()
     if not re.fullmatch(r"[a-z0-9][a-z0-9_-]{1,63}", args.agent_id):
         raise UseAgentError("agent id must be lowercase and use letters, digits, _ or -")
+    if args.role not in VALID_AGENT_ROLES:
+        raise UseAgentError(
+            f"invalid agent role {args.role}; choose one of: {', '.join(sorted(VALID_AGENT_ROLES))}"
+        )
     with state_lock():
         config = load_config()
         if any(agent.get("id") == args.agent_id for agent in config["agents"]):
@@ -893,7 +908,7 @@ def agent_can_take(config: dict[str, Any], data: dict[str, Any], item: dict[str,
         return False
     if max_active < 1 or agent_active_count(data, agent_id) >= max_active:
         return False
-    if agent.get("role") in {"supervisor", "reviewer", "release_gate"}:
+    if agent.get("role") not in CLAIM_ROLES:
         return False
     allowed_scopes = agent.get("scope", [])
     task_scopes = item.get("scope", [])
@@ -993,7 +1008,7 @@ def cmd_worker_pull(args: argparse.Namespace) -> int:
     config = load_config()
     with state_lock():
         data = load_registry()
-        agent = agent_config(config, args.agent)
+        agent = claim_agent(config, args.agent)
         assigned = [
             item
             for item in data["items"].values()
@@ -1542,6 +1557,8 @@ def validate_config(config: dict[str, Any], errors: list[str]) -> None:
             errors.append(f"invalid or duplicate agent id: {agent_id}")
         if isinstance(agent_id, str):
             seen.add(agent_id)
+        if agent.get("role") not in VALID_AGENT_ROLES:
+            errors.append(f"invalid role for agent {agent_id}: {agent.get('role')}")
         if agent.get("status", "available") not in VALID_AGENT_STATUSES:
             errors.append(f"invalid status for agent {agent_id}")
         max_active = agent.get("max_active", 1)

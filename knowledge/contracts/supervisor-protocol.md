@@ -26,6 +26,9 @@ Task phải ở trạng thái `reported` trước khi reviewer chuyển sang `ne
 không được bỏ qua worker report bằng transition trực tiếp từ `in_progress`.
 `done` và `cancelled` là trạng thái kết thúc; không được reopen bằng
 `task update`.
+Roster chỉ chấp nhận các role `supervisor`, `explorer`, `planner`, `worker`,
+`reviewer` và `release_gate`; reviewer/release gate không được claim hoặc
+report task implementation.
 Chỉ agent đã đăng ký có role `supervisor`,
 `reviewer` hoặc `release_gate` mới được ghi evidence `kind=review` và chuyển
 task `reported` qua `needs_review` đến `done`. Reviewer có thể khác với worker

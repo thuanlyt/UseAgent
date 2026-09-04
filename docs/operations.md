@@ -75,6 +75,11 @@ Reviewer chỉ được chuyển `reported` sang `needs_review`; task còn
 Sau khi `done` hoặc `cancelled`, task là terminal và không được reopen bằng
 `task update`; hãy tạo task mới nếu phát hiện scope hoặc mục tiêu cần làm lại.
 
+Role `reviewer` và `release_gate` chỉ claim review/release evidence; họ không
+được claim hoặc report implementation task. Các role hợp lệ được validator
+kiểm tra là `supervisor`, `explorer`, `planner`, `worker`, `reviewer` và
+`release_gate`.
+
 Quy trình review tối thiểu:
 
 ```powershell

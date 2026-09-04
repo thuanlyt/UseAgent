@@ -214,6 +214,26 @@ class UseAgentCliTests(unittest.TestCase):
         code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
         self.assertEqual((code, error), (0, ""))
 
+    def test_agent_role_boundaries_are_enforced(self) -> None:
+        self.register_reviewer()
+        task_id = self.new_task("Review role cannot claim", "src/role-boundary.py")
+        code, _, error = self.invoke("task", "claim", task_id, "--agent", "reviewer")
+        self.assertEqual(code, 2)
+        self.assertIn("not authorized to claim work", error)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "planned")
+
+        code, _, error = self.invoke("agent", "register", "--id", "unknown-role", "--role", "rogue", "--scope", ".")
+        self.assertEqual(code, 2)
+        self.assertIn("invalid agent role", error)
+
+        config = useagent.load_config()
+        config["agents"][0]["role"] = "rogue"
+        useagent.save_config(config)
+        code, output, error = self.invoke("validate")
+        self.assertEqual(code, 1)
+        self.assertIn("invalid role for agent reviewer", output)
+
     def test_scope_traversal_and_out_of_scope_reports_are_rejected(self) -> None:
         code, _, error = self.invoke(
             "task",

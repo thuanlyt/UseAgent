@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T07:55:19Z",
+  "updated_at": "2026-09-04T07:59:16Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -2028,6 +2028,81 @@
       "attempts": 1,
       "created_at": "2026-09-04T07:52:31Z",
       "updated_at": "2026-09-04T07:55:19Z",
+      "last_result": "completed"
+    },
+    "UA-0029": {
+      "id": "UA-0029",
+      "title": "Enforce agent role boundaries",
+      "objective": "Validate registered roles and prevent review-only agents from claiming implementation work through direct CLI calls.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "docs/operations.md",
+        "docs/getting-started.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "agent registration accepts only documented roles and validator rejects unknown roles",
+        "reviewer and release_gate identities cannot claim tasks, while worker and supervisor claim flows remain valid",
+        "dispatch, report/review lifecycle, full QA and documentation remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate",
+        "python docs-site/build.py --check-only",
+        "git diff --check"
+      ],
+      "files": [
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: pass (40 tests)",
+          "recorded_at": "2026-09-04T07:59:10Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T07:59:10Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T07:59:10Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T07:59:10Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review pass: roster role vocabulary is centralized and validator-backed, claim/pull/report writer entry points use claim_agent, review-only roles are denied, and regression tests preserve valid lifecycle behavior.",
+          "recorded_at": "2026-09-04T07:59:15Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0029-20260904T075910Z-c1bb29.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T07:56:52Z",
+      "updated_at": "2026-09-04T07:59:16Z",
       "last_result": "completed"
     }
   }

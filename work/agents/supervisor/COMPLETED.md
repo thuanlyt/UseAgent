@@ -48,3 +48,5 @@
 - 2026-09-04T07:48:46Z - `UA-0027` - Require worker report before review - pending review - `work/reports/inbox/UA-0027-20260904T074846Z-c39223.md`
 
 - 2026-09-04T07:53:49Z - `UA-0028` - Make terminal task states immutable - pending review - `work/reports/inbox/UA-0028-20260904T075349Z-5f0c1a.md`
+
+- 2026-09-04T07:59:10Z - `UA-0029` - Enforce agent role boundaries - pending review - `work/reports/inbox/UA-0029-20260904T075910Z-c1bb29.md`

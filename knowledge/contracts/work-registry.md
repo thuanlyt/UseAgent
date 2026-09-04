@@ -28,4 +28,7 @@
 - Review evidence and `needs_review`/`done` transitions require a registered
   `supervisor`, `reviewer` or `release_gate` identity; the assigned worker may
   not self-approve or self-close the task.
+- Registered roles are limited to `supervisor`, `explorer`, `planner`, `worker`,
+  `reviewer` and `release_gate`. Claim/report writers must use a non-review
+  role; reviewers and release gates cannot claim implementation work.
 - Updates are serialized by `tools/useagent.py`; consumers must tolerate `updated_at` changing after every transition.

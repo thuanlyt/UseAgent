@@ -188,3 +188,10 @@ Made done and cancelled terminal: task update now rejects all lifecycle changes 
 
 - Report: `work/reports/inbox/UA-0028-20260904T075349Z-5f0c1a.md`
 - Next: Run review gate and supervisor QA cycle; then record remote CI evidence and push the terminal-state hardening.
+
+## 2026-09-04T07:59:10Z - UA-0029 (completed)
+
+Enforced documented agent roles and claim/report boundaries: reviewer and release_gate cannot claim or report implementation work, registration/validator reject unknown roles, and valid worker/supervisor paths remain intact.
+
+- Report: `work/reports/inbox/UA-0029-20260904T075910Z-c1bb29.md`
+- Next: Run review gate and supervisor QA cycle; then record remote CI evidence and push the role-boundary hardening.

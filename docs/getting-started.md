@@ -473,6 +473,10 @@ unreported task is rejected.
 `done` and `cancelled` are terminal states. Reopening them through
 `task update` is rejected; create a follow-up task for additional work.
 
+Use `worker`, `explorer`, `planner` or `supervisor` for implementation claims;
+`reviewer` and `release_gate` are review-only roles and cannot claim/report
+implementation work.
+
 ### The runtime cannot find `$useagent-worker`
 
 Use the direct path instead:
