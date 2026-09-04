@@ -1,7 +1,7 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T135206Z-ef7960`
-- **Generated:** 2026-09-04T13:52:18Z
+- **Cycle:** `manual-20260904T135327Z`
+- **Generated:** 2026-09-04T13:53:27Z
 - **Next action:** Run the production release gate and obtain explicit deploy approval.
 - **Production snapshot:** `ready`
 
