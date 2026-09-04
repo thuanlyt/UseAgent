@@ -1,7 +1,7 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T084609Z-e14ed9`
-- **Generated:** 2026-09-04T08:46:21Z
+- **Cycle:** `cycle-20260904T084919Z-87c0be`
+- **Generated:** 2026-09-04T08:49:31Z
 - **Next action:** Run the production release gate and obtain explicit deploy approval.
 - **Production snapshot:** `ready`
 
@@ -34,7 +34,7 @@
 - `UA-0009` — Package and release the UseAgent CLI — evidence: 6
 - `UA-0010` — Design and scaffold bilingual docs website — evidence: 5
 - `UA-0011` — Build practical bilingual docs experience — evidence: 5
-- `UA-0012` — Docs website release and hosting readiness — evidence: 10
+- `UA-0012` — Docs website release and hosting readiness — evidence: 11
 - `UA-0013` — Prioritize review gates in supervisor next action — evidence: 4
 - `UA-0014` — Harden public repository discoverability metadata — evidence: 4
 - `UA-0015` — Strengthen static docs accessibility gate — evidence: 5
@@ -56,7 +56,7 @@
 - `UA-0031` — Enforce claim availability and capacity — evidence: 8
 - `UA-0032` — Add malformed capability regression coverage — evidence: 5
 - `UA-0033` — Require activation before worker report — evidence: 7
-- `UA-0034` — Fix docs-site mobile overflow — evidence: 8
+- `UA-0034` — Fix docs-site mobile overflow — evidence: 9
 - none
 
 ## Blocked work
@@ -66,7 +66,7 @@
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T084609Z-e14ed9-qa.md`
+- evidence: `work/evidence/cycle-20260904T084919Z-87c0be-qa.md`
 
 ## Production gates
 

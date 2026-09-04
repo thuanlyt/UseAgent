@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T08:46:04Z",
+  "updated_at": "2026-09-04T08:49:12Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -832,6 +832,11 @@
           "kind": "review",
           "value": "Release review accepted: local production artifact, internal-link validation, static accessibility/SEO/hosting contracts, multi-runtime conformance and responsive browser QA pass. The Vercel/Cloudflare runbook is reversible and explicitly gates remote mutation on an exact user-provided hostname plus explicit deployment approval; no remote deploy, DNS or secret change was performed.",
           "recorded_at": "2026-09-04T08:46:04Z"
+        },
+        {
+          "kind": "github-ci",
+          "value": "GitHub Actions CI run #43 for release commit e82bdbc: success; docs build, full tests, protocol conformance and deployable artifact checks passed on Python 3.11, 3.12 and 3.13. https://github.com/thuanlyt/UseAgent/actions/runs/33855136384",
+          "recorded_at": "2026-09-04T08:49:12Z"
         }
       ],
       "reports": [
@@ -839,7 +844,7 @@
       ],
       "attempts": 1,
       "created_at": "2026-09-04T05:51:45Z",
-      "updated_at": "2026-09-04T08:46:04Z",
+      "updated_at": "2026-09-04T08:49:12Z",
       "last_result": "completed"
     },
     "UA-0013": {
@@ -2529,6 +2534,11 @@
           "kind": "review",
           "value": "Focused review: docs-site/styles.css fixes the observed root causes without hiding overflow globally. The hero/article grid children now have min-width:0; flow, loop, layer and command tracks use minmax(0,1fr); mobile hero actions are stacked full-width; inline paths can wrap; preformatted command blocks remain intentional local scroll containers. Static contract, 49-test suite, validator, docs link check, multi-runtime conformance and CDP route/breakpoint measurement all pass. Residual risk: remote Vercel/Cloudflare production behavior still requires the separate hosting gate.",
           "recorded_at": "2026-09-04T08:45:13Z"
+        },
+        {
+          "kind": "github-ci",
+          "value": "GitHub Actions CI run #43 for commit e82bdbc: success; matrix completed on Python 3.11, 3.12 and 3.13. https://github.com/thuanlyt/UseAgent/actions/runs/33855136384",
+          "recorded_at": "2026-09-04T08:49:11Z"
         }
       ],
       "reports": [
@@ -2536,7 +2546,7 @@
       ],
       "attempts": 1,
       "created_at": "2026-09-04T08:34:45Z",
-      "updated_at": "2026-09-04T08:45:14Z",
+      "updated_at": "2026-09-04T08:49:11Z",
       "last_result": "completed"
     }
   }
