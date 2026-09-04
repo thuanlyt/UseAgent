@@ -349,9 +349,9 @@ class UseAgentCliTests(unittest.TestCase):
             self.assertEqual(registry["items"][task_id], registry_before["items"][task_id])
 
         cancelled_id = self.new_task("Terminal cancellation", "src/cancelled.py")
-        code, _, error = self.invoke("task", "update", cancelled_id, "--status", "cancelled", "--agent", "supervisor")
+        code, _, error = self.invoke("task", "update", cancelled_id, "--status", "cancelled", "--agent", "reviewer")
         self.assertEqual((code, error), (0, ""))
-        code, _, error = self.invoke("task", "update", cancelled_id, "--status", "planned", "--agent", "supervisor")
+        code, _, error = self.invoke("task", "update", cancelled_id, "--status", "planned", "--agent", "reviewer")
         self.assertEqual(code, 2)
         self.assertIn("tasks are terminal", error)
         registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
@@ -622,6 +622,82 @@ class UseAgentCliTests(unittest.TestCase):
         code, _, error = self.invoke("task", "update", task_id, "--status", "in_progress", "--agent", "worker-1")
         self.assertEqual(code, 2)
         self.assertIn("task claim", error)
+
+    def test_assigned_task_requires_claim_before_activation(self) -> None:
+        self.register_worker("worker-1", ".")
+        task_id = self.new_task("Claim before activation", "src/activation.py")
+
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+        registry_before = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry_before["items"][task_id]["status"], "assigned")
+        self.assertEqual(registry_before["items"][task_id]["assigned_to"], "worker-1")
+
+        code, _, error = self.invoke(
+            "task", "update", task_id, "--status", "in_progress", "--agent", "worker-1"
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("task claim", error)
+        registry_after = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry_after["items"][task_id], registry_before["items"][task_id])
+
+        code, _, error = self.invoke("worker", "pull", "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "in_progress")
+
+    def test_administrative_transitions_require_review_role(self) -> None:
+        self.register_worker("worker-1", ".")
+        self.register_reviewer()
+        task_id = self.new_task("Administrative lifecycle", "src/administrative.py")
+        registry_before = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+
+        for status in ("blocked", "cancelled"):
+            code, _, error = self.invoke(
+                "task", "update", task_id, "--status", status, "--agent", "worker-1"
+            )
+            self.assertEqual(code, 2)
+            self.assertIn("not authorized for review actions", error)
+            registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+            self.assertEqual(registry["items"][task_id], registry_before["items"][task_id])
+
+        code, _, error = self.invoke(
+            "task", "update", task_id, "--status", "blocked", "--agent", "reviewer"
+        )
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke(
+            "task", "update", task_id, "--status", "planned", "--agent", "reviewer"
+        )
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke(
+            "task", "update", task_id, "--status", "cancelled", "--agent", "reviewer"
+        )
+        self.assertEqual((code, error), (0, ""))
+
+        blocked_id = self.new_task("Worker blocked handover", "src/blocked.py")
+        code, _, error = self.invoke("task", "claim", blocked_id, "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke(
+            "task",
+            "report",
+            blocked_id,
+            "--agent",
+            "worker-1",
+            "--result",
+            "blocked",
+            "--summary",
+            "Waiting for an external dependency",
+            "--next-action",
+            "Review blocker and decide whether to retry",
+            "--file",
+            "src/blocked.py",
+            "--check",
+            "reproduction recorded",
+        )
+        self.assertEqual((code, error), (0, ""))
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][blocked_id]["status"], "blocked")
+        self.assertEqual(len(registry["items"][blocked_id]["reports"]), 1)
 
     def test_reported_status_requires_worker_report(self) -> None:
         self.register_worker("worker-1", ".")

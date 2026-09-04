@@ -477,6 +477,10 @@ Use `worker`, `explorer`, `planner` or `supervisor` for implementation claims;
 `reviewer` and `release_gate` are review-only roles and cannot claim/report
 implementation work.
 
+An assigned task must be activated with `worker pull` or `task claim`, not a
+direct `task update`. Administrative `planned`, `blocked` and `cancelled`
+updates require a review-capable identity.
+
 ### The runtime cannot find `$useagent-worker`
 
 Use the direct path instead:

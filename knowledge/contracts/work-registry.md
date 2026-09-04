@@ -31,4 +31,7 @@
 - Registered roles are limited to `supervisor`, `explorer`, `planner`, `worker`,
   `reviewer` and `release_gate`. Claim/report writers must use a non-review
   role; reviewers and release gates cannot claim implementation work.
+- `assigned -> in_progress` is claim-only. `planned`, `blocked` and `cancelled`
+  administrative updates require a registered review-capable identity; workers
+  use `task report --result blocked` for a blocked handover.
 - Updates are serialized by `tools/useagent.py`; consumers must tolerate `updated_at` changing after every transition.

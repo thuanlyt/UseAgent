@@ -80,6 +80,11 @@ Role `reviewer` và `release_gate` chỉ claim review/release evidence; họ kh�
 kiểm tra là `supervisor`, `explorer`, `planner`, `worker`, `reviewer` và
 `release_gate`.
 
+`assigned` phải đi qua `worker pull` hoặc `task claim` để thành
+`in_progress`; không dùng `task update` để bypass claim. Các thao tác
+`planned`/`blocked`/`cancelled` bằng `task update` cần review-capable identity;
+worker báo blocked bằng `task report --result blocked`.
+
 Quy trình review tối thiểu:
 
 ```powershell

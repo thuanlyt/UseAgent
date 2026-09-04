@@ -195,3 +195,10 @@ Enforced documented agent roles and claim/report boundaries: reviewer and releas
 
 - Report: `work/reports/inbox/UA-0029-20260904T075910Z-c1bb29.md`
 - Next: Run review gate and supervisor QA cycle; then record remote CI evidence and push the role-boundary hardening.
+
+## 2026-09-04T08:07:48Z - UA-0030 (completed)
+
+Lifecycle activation and administrative transition authority are now enforced. Direct assigned-to-in_progress updates are rejected without mutation; only claim or worker pull activates work; planned, blocked and cancelled updates require a registered review-capable identity; worker blocked reports remain valid.
+
+- Report: `work/reports/inbox/UA-0030-20260904T080748Z-fd05fc.md`
+- Next: Review the focused diff and record review evidence, then close UA-0030 after supervisor QA.

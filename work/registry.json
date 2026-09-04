@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T08:00:42Z",
+  "updated_at": "2026-09-04T08:08:04Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -2108,6 +2108,88 @@
       "attempts": 1,
       "created_at": "2026-09-04T07:56:52Z",
       "updated_at": "2026-09-04T08:00:42Z",
+      "last_result": "completed"
+    },
+    "UA-0030": {
+      "id": "UA-0030",
+      "title": "Authorize lifecycle transition commands",
+      "objective": "Close direct CLI bypasses around claim-only worker activation and supervisor-owned administrative transitions.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "knowledge/architecture.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "docs/operations.md",
+        "docs/getting-started.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "task update cannot move assigned to in_progress; task claim or worker pull remains the only activation path",
+        "planned, blocked and cancelled administrative transitions require a registered supervisor, reviewer or release_gate identity",
+        "rejected transitions preserve registry state and worker report/block flow remains valid",
+        "full lifecycle, multi-runtime, validator, docs and QA checks remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate",
+        "python docs-site/build.py --check-only",
+        "git diff --check"
+      ],
+      "files": [
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 42 tests pass",
+          "recorded_at": "2026-09-04T08:07:48Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T08:07:48Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T08:07:48Z"
+        },
+        {
+          "kind": "check",
+          "value": "python examples/multi-runtime-conformance/run_conformance.py: PASS",
+          "recorded_at": "2026-09-04T08:07:48Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T08:07:48Z"
+        },
+        {
+          "kind": "review",
+          "value": "Focused review pass: task update cannot activate assigned work, terminal guards run before role checks, administrative planned/blocked/cancelled updates require review-capable identities, rejected transitions preserve state, and worker blocked report remains authenticated.",
+          "recorded_at": "2026-09-04T08:08:03Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0030-20260904T080748Z-fd05fc.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T08:02:09Z",
+      "updated_at": "2026-09-04T08:08:04Z",
       "last_result": "completed"
     }
   }

@@ -361,7 +361,9 @@ def agent_config(config: dict[str, Any], agent_id: str) -> dict[str, Any]:
     raise UseAgentError(f"unknown registered agent: {agent_id}")
 
 
-def claim_agent(config: dict[str, Any], agent_id: str) -> dict[str, Any]:
+def claim_agent(config: dict[str, Any], agent_id: str | None) -> dict[str, Any]:
+    if not agent_id:
+        raise UseAgentError("claim action requires --agent <supervisor|explorer|planner|worker>")
     agent = agent_config(config, agent_id)
     if agent.get("role") not in CLAIM_ROLES:
         raise UseAgentError(
@@ -618,18 +620,23 @@ def cmd_task_update(args: argparse.Namespace) -> int:
         data = load_registry()
         item = get_item(data, args.task_id)
         assigned = item.get("assigned_to")
-        review_action = args.status in {"needs_review", "done"}
-        if review_action:
-            review_agent(config, args.agent)
-        if args.agent and assigned and args.agent != assigned and not review_action:
-            raise UseAgentError(f"{args.task_id} is assigned to {assigned}, not {args.agent}")
         current = item["status"]
         if current in TERMINAL_STATUSES:
             raise UseAgentError(f"{current} tasks are terminal; lifecycle updates are not allowed")
+        review_action = args.status in {"needs_review", "done"}
+        administrative_action = args.status in {"planned", "blocked", "cancelled"}
+        if review_action or administrative_action:
+            review_agent(config, args.agent)
+        if args.agent and assigned and args.agent != assigned and not review_action:
+            raise UseAgentError(f"{args.task_id} is assigned to {assigned}, not {args.agent}")
         if args.status == "assigned":
             raise UseAgentError("use supervisor cycle/dispatch to assign a task")
-        if args.status == "in_progress" and current not in {"assigned", "in_progress"}:
-            raise UseAgentError("use task claim before moving a task into in_progress")
+        if args.status == "in_progress":
+            if current == "assigned":
+                raise UseAgentError("use task claim before moving a task into in_progress")
+            if current != "in_progress":
+                raise UseAgentError("use task claim before moving a task into in_progress")
+            claim_agent(config, args.agent)
         if args.status == "reported":
             raise UseAgentError("use task report for a worker completion")
         if args.status == "needs_review" and current != "reported":

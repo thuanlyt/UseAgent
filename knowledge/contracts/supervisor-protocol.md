@@ -29,6 +29,9 @@ không được bỏ qua worker report bằng transition trực tiếp từ `in_
 Roster chỉ chấp nhận các role `supervisor`, `explorer`, `planner`, `worker`,
 `reviewer` và `release_gate`; reviewer/release gate không được claim hoặc
 report task implementation.
+`assigned -> in_progress` chỉ qua `task claim`/`worker pull`; transition
+`planned`, `blocked` hoặc `cancelled` bằng `task update` là thao tác hành chính
+và cần identity review-capable. Worker dùng `task report --result blocked`.
 Chỉ agent đã đăng ký có role `supervisor`,
 `reviewer` hoặc `release_gate` mới được ghi evidence `kind=review` và chuyển
 task `reported` qua `needs_review` đến `done`. Reviewer có thể khác với worker
