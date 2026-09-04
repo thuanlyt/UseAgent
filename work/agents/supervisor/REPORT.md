@@ -118,3 +118,17 @@ Added a CI step that runs the same deployable docs build from repository root wi
 
 - Report: `work/reports/inbox/UA-0018-20260904T064128Z-61c61e.md`
 - Next: Supervisor review the CI build evidence, run the full cycle and push the corrected workflow.
+
+## 2026-09-04T06:47:57Z - UA-0019 (completed)
+
+Hardened scope and worker identity invariants. Scopes now reject absolute/parent-traversal values, compare normalized path components with platform case rules, and only conflict for equal or ancestor-descendant paths. Claims require registered agents; reports reject files outside task scope; worker pull validates assignment paths before mutating task state. Updated the control-plane module card.
+
+- Report: `work/reports/inbox/UA-0019-20260904T064757Z-bd742e.md`
+- Next: Supervisor review the invariant changes, run the complete QA cycle and push the hardened control plane.
+
+## 2026-09-04T06:52:13Z - UA-0020 (completed)
+
+Closed state-machine and report-authenticity bypasses. done now requires an explicit needs_review state; ingest validates result, registered agent, assignment ownership and active status, filters unsafe/out-of-scope file claims with warning evidence, and worker pull reads a safe file before mutation. Validator now checks key path, supervisor and agent config types/ranges, plus review evidence for done items. Updated tests and protocol/module cards.
+
+- Report: `work/reports/inbox/UA-0020-20260904T065213Z-f9abe3.md`
+- Next: Supervisor review the hardening evidence, run the complete QA cycle and push the production invariant fixes.

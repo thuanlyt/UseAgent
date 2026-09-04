@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -69,6 +70,8 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual((code, error), (0, ""))
 
     def test_dependency_and_done_requirements(self) -> None:
+        self.register_worker("worker-1", ".")
+        self.register_worker("worker-2", ".")
         first = self.new_task("First", "src/first.py")
         second = self.new_task("Second", "src/second.py", first)
 
@@ -83,9 +86,11 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertIn("assigned_to: worker-1", item_text)
         code, _, error = self.invoke("task", "update", first, "--status", "done", "--agent", "worker-1")
         self.assertEqual(code, 2)
-        self.assertIn("evidence", error)
+        self.assertIn("review gate", error)
 
         code, _, error = self.invoke("task", "evidence", first, "--kind", "test", "--value", "unit test: pass")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "update", first, "--status", "needs_review", "--agent", "worker-1")
         self.assertEqual((code, error), (0, ""))
         code, _, error = self.invoke("task", "update", first, "--status", "done", "--agent", "worker-1")
         self.assertEqual((code, error), (0, ""))
@@ -95,6 +100,8 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual((code, error), (0, ""))
 
     def test_overlapping_active_writer_is_rejected(self) -> None:
+        self.register_worker("worker-1", ".")
+        self.register_worker("worker-2", ".")
         first = self.new_task("Parent scope", "src")
         second = self.new_task("Nested scope", "src/feature.py")
         code, _, error = self.invoke("task", "claim", first, "--agent", "worker-1")
@@ -128,6 +135,7 @@ class UseAgentCliTests(unittest.TestCase):
         )
 
     def test_task_scope_can_be_extended_through_update(self) -> None:
+        self.register_worker("worker-1", ".")
         task_id = self.new_task("Extend owned paths", "src/api.py")
         code, _, error = self.invoke(
             "task",
@@ -154,6 +162,167 @@ class UseAgentCliTests(unittest.TestCase):
             registry["items"][task_id]["scope"],
             ["src/api.py", "tests/test_api.py"],
         )
+
+    def test_scope_overlap_uses_boundaries_and_windows_case_rules(self) -> None:
+        self.assertFalse(useagent.scope_overlaps("src/api.py", "src/web.py"))
+        self.assertTrue(useagent.scope_overlaps("src", "src/web.py"))
+        expected_case_match = os.path.normcase("src") == os.path.normcase("SRC")
+        self.assertEqual(useagent.scope_overlaps("src", "SRC"), expected_case_match)
+
+    def test_task_claim_requires_registered_agent(self) -> None:
+        task_id = self.new_task("Registered worker only", "src/claim.py")
+        code, _, error = self.invoke("task", "claim", task_id, "--agent", "unregistered")
+        self.assertEqual(code, 2)
+        self.assertIn("unknown registered agent", error)
+
+        self.register_worker("worker-1", ".")
+        code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+
+    def test_scope_traversal_and_out_of_scope_reports_are_rejected(self) -> None:
+        code, _, error = self.invoke(
+            "task",
+            "new",
+            "--title",
+            "Reject traversal",
+            "--level",
+            "L1",
+            "--owner",
+            "worker",
+            "--scope",
+            "../outside",
+            "--acceptance",
+            "safe scope",
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("parent traversal", error)
+
+        self.register_worker("worker-1", "src")
+        task_id = self.new_task("Report only owned files", "src")
+        code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke(
+            "task",
+            "report",
+            task_id,
+            "--agent",
+            "worker-1",
+            "--result",
+            "completed",
+            "--summary",
+            "attempted report",
+            "--next-action",
+            "review",
+            "--file",
+            "tests/secret.py",
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("outside task scope", error)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "in_progress")
+        self.assertEqual(registry["items"][task_id]["reports"], [])
+
+    def test_worker_pull_rejects_unsafe_assignment_without_state_change(self) -> None:
+        self.register_worker("frontend", "src/frontend")
+        task_id = self.new_task("Safe assignment path", "src/frontend/app.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        registry["items"][task_id]["assignment_path"] = "../outside.md"
+        useagent.REGISTRY.write_text(json.dumps(registry), encoding="utf-8")
+
+        code, _, error = self.invoke("worker", "pull", "--agent", "frontend")
+        self.assertEqual(code, 2)
+        self.assertIn("leaves project root", error)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "assigned")
+
+    def test_done_requires_explicit_review_gate(self) -> None:
+        self.register_worker("worker-1", ".")
+        task_id = self.new_task("Review before done", "src/review.py")
+        code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "evidence", task_id, "--kind", "test", "--value", "pass")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "update", task_id, "--status", "done", "--agent", "worker-1")
+        self.assertEqual(code, 2)
+        self.assertIn("review gate", error)
+        code, _, error = self.invoke("task", "update", task_id, "--status", "needs_review", "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "update", task_id, "--status", "done", "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+
+    def test_supervisor_ingest_authenticates_reports_and_filters_files(self) -> None:
+        self.register_worker("worker-1", "src")
+        task_id = self.new_task("Authenticate worker report", "src")
+        code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+
+        reports_dir = useagent.ROOT / "work" / "reports" / "inbox"
+        spoofed = reports_dir / "spoofed.md"
+        spoofed.write_text(
+            "---\n"
+            "type: useagent-worker-report\n"
+            f"task_id: {task_id}\n"
+            "agent: attacker\n"
+            "result: completed\n"
+            "files: [\"src/owned.py\"]\n"
+            "---\n\nspoofed\n",
+            encoding="utf-8",
+        )
+        code, output, error = self.invoke("supervisor", "ingest")
+        self.assertEqual((code, error), (0, ""))
+        self.assertEqual(output.strip(), "no new reports")
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "in_progress")
+        self.assertEqual(registry["items"][task_id]["reports"], [])
+        spoofed.unlink()
+
+        valid = reports_dir / "valid.md"
+        valid.write_text(
+            "---\n"
+            "type: useagent-worker-report\n"
+            f"task_id: {task_id}\n"
+            "agent: worker-1\n"
+            "result: completed\n"
+            "files: [\"src/owned.py\", \"tests/secret.py\", \"../outside.py\"]\n"
+            "---\n\nvalid\n",
+            encoding="utf-8",
+        )
+        code, _, error = self.invoke("supervisor", "ingest")
+        self.assertEqual((code, error), (0, ""))
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        item = registry["items"][task_id]
+        self.assertEqual(item["status"], "reported")
+        self.assertEqual(item["files"], ["src/owned.py"])
+        self.assertTrue(any(entry["kind"] == "warning" for entry in item["evidence"]))
+
+    def test_validator_reports_malformed_config_without_traceback(self) -> None:
+        config = useagent.load_config()
+        config["supervisor"]["qa_timeout_seconds"] = 0
+        config["agents"] = [
+            {
+                "role": "worker",
+                "status": "available",
+                "scope": [],
+                "max_active": 0,
+                "inbox": 123,
+            }
+        ]
+        errors: list[str] = []
+        useagent.validate_config(config, errors)
+        self.assertTrue(any("qa_timeout_seconds" in error for error in errors))
+        self.assertTrue(any("invalid or duplicate agent id" in error for error in errors))
+        self.assertTrue(any("agent needs an id" in error for error in errors))
+
+    def test_done_registry_requires_review_evidence(self) -> None:
+        task_id = self.new_task("Review evidence is required", "src/review-gate.py")
+        data = useagent.load_registry()
+        data["items"][task_id]["status"] = "done"
+        data["items"][task_id]["evidence"] = [{"kind": "test", "value": "pass"}]
+        errors: list[str] = []
+        useagent.validate_registry(data, errors)
+        self.assertIn(f"{task_id} is done without review evidence", errors)
 
     def test_update_cannot_bypass_claim(self) -> None:
         task_id = self.new_task("Claimed only through the CLI", "src/claim.py")

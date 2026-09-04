@@ -12,6 +12,15 @@ Assignment phải có task id, objective, scope, acceptance, dependency, files/c
 
 Report phải có task id, agent, result (`completed|blocked|failed`), summary, files, checks/evidence, blockers và next action. `completed` chỉ là worker report; supervisor/reviewer mới quyết định `done`. `task report` tự append vào `work/agents/<agent>/REPORT.md`, `work/reports/REPORTS.md` và `work/completed/COMPLETED.md` khi phù hợp.
 
+Supervisor chỉ ingest report có result hợp lệ, agent đã đăng ký, agent trùng
+`assigned_to` của task đang active và các file khai báo nằm trong task scope.
+File không an toàn hoặc ngoài scope bị bỏ qua và được ghi warning evidence để
+reviewer nhìn thấy; report không hợp lệ không được dùng để chuyển trạng thái.
+
+Task phải đi qua `needs_review` trước khi trở thành `done`. Worker không được
+tự biến report `completed` thành release decision; review evidence là điều kiện
+bắt buộc của trạng thái `done`.
+
 ## QA contract
 
 `supervisor.qa_commands` is an array of shell command strings. Each command runs from the repository root with the configured timeout; stdout/stderr are saved under `work/evidence/` and the cycle records `pass`, `fail` or `not_configured`.

@@ -2,7 +2,7 @@
 
 - `freshness`: verified (2026-09-04)
 - `owner`: orchestrator
-- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:append_markdown`, `tools/useagent.py:choose_next_action`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`
+- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:validate_relative_scope`, `tools/useagent.py:scope_overlaps`, `tools/useagent.py:scope_within`, `tools/useagent.py:append_markdown`, `tools/useagent.py:choose_next_action`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`
 
 ## Responsibility
 
@@ -56,4 +56,6 @@ pull/report cycle.
 
 ## Known gaps
 
-The scope checker understands path/subtree overlap, not arbitrary glob semantics. Git worktree orchestration remains a Codex/product operation rather than a hidden action of this CLI.
+Scopes use explicit repository-relative path/subtree semantics; arbitrary glob
+patterns are intentionally not interpreted. Git worktree orchestration remains
+a Codex/product operation rather than a hidden action of this CLI.

@@ -255,23 +255,38 @@ def item_path(task_id: str) -> Path:
 
 def normalize_scope(value: str) -> str:
     value = value.replace("\\", "/").strip()
+    value = re.sub(r"/+", "/", value)
     value = re.sub(r"/+$", "", value)
     return value or "."
 
 
+def validate_relative_scope(value: str | Path, label: str = "scope") -> str:
+    """Normalize a repository-relative scope and reject traversal/absolute paths."""
+
+    normalized = normalize_scope(str(value))
+    if normalized.startswith("/") or re.fullmatch(r"[A-Za-z]:/.*", normalized):
+        raise UseAgentError(f"{label} must be repository-relative: {value}")
+    if ".." in normalized.split("/"):
+        raise UseAgentError(f"{label} must not contain parent traversal: {value}")
+    return normalized
+
+
+def scope_parts(value: str) -> list[str]:
+    return [os.path.normcase(part) for part in normalize_scope(value).split("/") if part not in ("", ".")]
+
+
 def scope_overlaps(left: str, right: str) -> bool:
-    left_parts = [part for part in normalize_scope(left).split("/") if part not in ("", ".")]
-    right_parts = [part for part in normalize_scope(right).split("/") if part not in ("", ".")]
+    left_parts = scope_parts(left)
+    right_parts = scope_parts(right)
     if not left_parts or not right_parts:
         return True
-    shortest = min(len(left_parts), len(right_parts))
-    return left_parts[:shortest] == right_parts[:shortest]
+    return left_parts[: len(right_parts)] == right_parts or right_parts[: len(left_parts)] == left_parts
 
 
 def scope_within(scope: str, allowed: str) -> bool:
-    allowed_parts = [part for part in normalize_scope(allowed).split("/") if part not in ("", ".")]
-    scope_parts = [part for part in normalize_scope(scope).split("/") if part not in ("", ".")]
-    return not allowed_parts or scope_parts[: len(allowed_parts)] == allowed_parts
+    allowed_parts = scope_parts(allowed)
+    candidate_parts = scope_parts(scope)
+    return not allowed_parts or candidate_parts[: len(allowed_parts)] == allowed_parts
 
 
 def active_scope_conflict(data: dict[str, Any], candidate: dict[str, Any], ignore_id: str | None = None) -> dict[str, Any] | None:
@@ -311,7 +326,19 @@ def agent_config(config: dict[str, Any], agent_id: str) -> dict[str, Any]:
 
 
 def agent_paths(config: dict[str, Any], agent: dict[str, Any]) -> dict[str, Path]:
-    base = safe_repo_path(agent.get("directory", str(Path(config["paths"]["agent_root"]) / agent["id"])))
+    directory = agent.get("directory")
+    if directory is None:
+        agent_id = agent.get("id")
+        if not isinstance(agent_id, str) or not agent_id:
+            raise UseAgentError("agent needs an id before mailbox paths can be resolved")
+        paths_config = config.get("paths")
+        if not isinstance(paths_config, dict):
+            raise UseAgentError("config.paths must be an object before mailbox paths can be resolved")
+        agent_root = paths_config.get("agent_root")
+        if not isinstance(agent_root, (str, Path)) or not str(agent_root).strip():
+            raise UseAgentError("config.paths.agent_root must be a non-empty path before mailbox paths can be resolved")
+        directory = str(Path(agent_root) / agent_id)
+    base = safe_repo_path(directory)
     return {
         "directory": base,
         "inbox": safe_repo_path(agent.get("inbox", base / "INBOX.md")),
@@ -483,7 +510,7 @@ def cmd_task_new(args: argparse.Namespace) -> int:
             "status": "planned",
             "owner": args.owner,
             "assigned_to": None,
-            "scope": [normalize_scope(scope) for scope in args.scope],
+            "scope": [validate_relative_scope(scope) for scope in args.scope],
             "depends_on": args.depends_on or [],
             "preferred_agents": args.preferred_agent or [],
             "capabilities": args.capability or [],
@@ -504,8 +531,10 @@ def cmd_task_new(args: argparse.Namespace) -> int:
 
 
 def cmd_task_claim(args: argparse.Namespace) -> int:
+    config = load_config()
     with state_lock():
         data = load_registry()
+        agent_config(config, args.agent)
         item = get_item(data, args.task_id)
         if item["status"] not in {"planned", "assigned", "blocked"}:
             raise UseAgentError(f"{args.task_id} is {item['status']}, not claimable")
@@ -543,15 +572,15 @@ def cmd_task_update(args: argparse.Namespace) -> int:
             raise UseAgentError("use task report for a worker completion")
         if args.status == "needs_review" and current not in {"reported", "in_progress"}:
             raise UseAgentError("a task must be reported or active before review")
-        if args.status == "done" and current not in {"reported", "needs_review", "in_progress"}:
-            raise UseAgentError("a task must be active or in review before done")
+        if args.status == "done" and current != "needs_review":
+            raise UseAgentError("a task must pass the explicit review gate before done")
         if args.status == "done" and not item.get("evidence"):
             raise UseAgentError("a task needs at least one evidence entry before done")
         if args.status in ACTIVE_WRITER_STATUSES and not assigned:
             raise UseAgentError("active task needs an existing assignment; use task claim")
         if args.scopes:
             proposed = dict(item)
-            proposed["scope"] = sorted(set(item.get("scope", []) + [normalize_scope(path) for path in args.scopes]))
+            proposed["scope"] = sorted(set(item.get("scope", []) + [validate_relative_scope(path) for path in args.scopes]))
             conflict = active_scope_conflict(data, proposed, ignore_id=args.task_id)
             if conflict:
                 raise UseAgentError(f"scope conflicts with active task {conflict['id']}: {conflict.get('scope', [])}")
@@ -625,7 +654,16 @@ def cmd_task_report(args: argparse.Namespace) -> int:
         paths = agent_paths(config, agent)
         report_id = f"{args.task_id}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}"
         report_path = path_for(config, "reports_inbox") / f"{report_id}.md"
-        files = [normalize_scope(path) for path in args.files or []]
+        files = [validate_relative_scope(path, "reported file") for path in args.files or []]
+        out_of_scope = [
+            path
+            for path in files
+            if not any(scope_within(path, task_scope) for task_scope in item.get("scope", []))
+        ]
+        if out_of_scope:
+            raise UseAgentError(
+                f"reported file outside task scope: {', '.join(out_of_scope)}"
+            )
         checks = args.checks or []
         report_lines = [
             "---",
@@ -701,7 +739,7 @@ def cmd_agent_register(args: argparse.Namespace) -> int:
             "role": args.role,
             "status": "available",
             "directory": directory,
-            "scope": [normalize_scope(scope) for scope in args.scope or []],
+            "scope": [validate_relative_scope(scope) for scope in args.scope or []],
             "capabilities": args.capability or [],
             "max_active": args.max_active,
         }
@@ -843,14 +881,17 @@ def cmd_worker_pull(args: argparse.Namespace) -> int:
             return 0
         assigned.sort(key=lambda item: item.get("dispatched_at", item.get("id", "")))
         item = assigned[0]
+        path = safe_repo_path(item.get("assignment_path", ""))
+        if not path.is_file():
+            raise UseAgentError(f"assignment file does not exist: {rel(path)}")
+        assignment_text = path.read_text(encoding="utf-8")
         item["status"] = "in_progress"
         item["started_at"] = now_iso()
         item["updated_at"] = now_iso()
         save_registry(data)
         sync_item_frontmatter(item)
         append_event(item["id"], f"pulled by {args.agent}")
-        path = Path(item["assignment_path"]) if Path(item["assignment_path"]).is_absolute() else ROOT / item["assignment_path"]
-    print(path.read_text(encoding="utf-8"))
+    print(assignment_text)
     return 0
 
 
@@ -905,14 +946,43 @@ def ingest_reports_locked(config: dict[str, Any], data: dict[str, Any], state: d
         task_id = frontmatter.get("task_id")
         if not task_id or task_id not in data["items"]:
             continue
+        agent_id = frontmatter.get("agent")
+        result = frontmatter.get("result")
+        if not agent_id or result not in {"completed", "blocked", "failed"}:
+            continue
+        try:
+            agent_config(config, agent_id)
+        except UseAgentError:
+            continue
         item = data["items"][task_id]
+        if item.get("assigned_to") != agent_id or item.get("status") not in {"assigned", "in_progress"}:
+            continue
         report_rel = rel(report_path)
         if report_rel not in item.setdefault("reports", []):
             item["reports"].append(report_rel)
         files = parse_frontmatter_json(frontmatter, "files", [])
+        safe_files: list[str] = []
+        unsafe_files: list[str] = []
         if isinstance(files, list):
-            item["files"] = sorted(set(item.get("files", []) + [normalize_scope(str(path)) for path in files]))
-        result = frontmatter.get("result")
+            for raw_path in files:
+                try:
+                    candidate = validate_relative_scope(str(raw_path), "reported file")
+                except UseAgentError:
+                    unsafe_files.append(str(raw_path))
+                    continue
+                if any(scope_within(candidate, task_scope) for task_scope in item.get("scope", [])):
+                    safe_files.append(candidate)
+                else:
+                    unsafe_files.append(candidate)
+            item["files"] = sorted(set(item.get("files", []) + safe_files))
+        if unsafe_files:
+            item.setdefault("evidence", []).append(
+                {
+                    "kind": "warning",
+                    "value": f"ignored unsafe or out-of-scope report files: {', '.join(unsafe_files)}",
+                    "recorded_at": now_iso(),
+                }
+            )
         if result == "blocked":
             item["status"] = "blocked"
         elif result in {"completed", "failed"} and item.get("status") in {"assigned", "in_progress"}:
@@ -1177,7 +1247,8 @@ def validate_registry(data: dict[str, Any], errors: list[str]) -> None:
         errors.append("registry.items must be an object")
         return
     for task_id, item in items.items():
-        if not re.fullmatch(r"UA-\d{4,}", task_id):
+        valid_task_id = bool(re.fullmatch(r"UA-\d{4,}", task_id))
+        if not valid_task_id:
             errors.append(f"invalid task id: {task_id}")
         if not isinstance(item, dict):
             errors.append(f"{task_id} must be an object")
@@ -1191,6 +1262,15 @@ def validate_registry(data: dict[str, Any], errors: list[str]) -> None:
             errors.append(f"{task_id} has invalid status {item.get('status')}")
         if not isinstance(item.get("scope"), list) or not item.get("scope"):
             errors.append(f"{task_id} needs a non-empty scope")
+        else:
+            for scope in item["scope"]:
+                if not isinstance(scope, str):
+                    errors.append(f"{task_id} has a non-string scope")
+                    continue
+                try:
+                    validate_relative_scope(scope)
+                except UseAgentError as exc:
+                    errors.append(f"{task_id}: {exc}")
         if not isinstance(item.get("acceptance"), list) or not item.get("acceptance"):
             errors.append(f"{task_id} needs acceptance criteria")
         for dependency in item.get("depends_on", []):
@@ -1198,11 +1278,16 @@ def validate_registry(data: dict[str, Any], errors: list[str]) -> None:
                 errors.append(f"{task_id} references missing dependency {dependency}")
         if item.get("status") == "done" and not item.get("evidence"):
             errors.append(f"{task_id} is done without evidence")
+        elif item.get("status") == "done" and not any(
+            isinstance(entry, dict) and entry.get("kind") == "review"
+            for entry in item.get("evidence", [])
+        ):
+            errors.append(f"{task_id} is done without review evidence")
         if item.get("status") == "assigned" and not item.get("assigned_to"):
             errors.append(f"{task_id} is assigned without assigned_to")
         if item.get("status") == "reported" and not item.get("reports"):
             errors.append(f"{task_id} is reported without a report path")
-        if not item_path(task_id).exists():
+        if valid_task_id and not item_path(task_id).exists():
             errors.append(f"missing work item file: {rel(item_path(task_id))}")
 
     visiting: set[str] = set()
@@ -1231,17 +1316,76 @@ def validate_registry(data: dict[str, Any], errors: list[str]) -> None:
 
 
 def validate_config(config: dict[str, Any], errors: list[str]) -> None:
+    paths_config = config.get("paths")
+    if not isinstance(paths_config, dict):
+        errors.append("config.paths must be an object")
+    else:
+        for key in DEFAULT_CONFIG["paths"]:
+            value = paths_config.get(key)
+            if not isinstance(value, str) or not value.strip():
+                errors.append(f"config.paths.{key} must be a non-empty string")
+                continue
+            try:
+                safe_repo_path(value)
+            except (TypeError, UseAgentError) as exc:
+                errors.append(f"config.paths.{key}: {exc}")
+
+    supervisor = config.get("supervisor")
+    if not isinstance(supervisor, dict):
+        errors.append("config.supervisor must be an object")
+        supervisor = {}
+    for key in ("max_assignments_per_cycle", "qa_timeout_seconds"):
+        value = supervisor.get(key)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            errors.append(f"config.supervisor.{key} must be a positive integer")
+    for key in ("run_qa_each_cycle", "auto_dispatch"):
+        if not isinstance(supervisor.get(key), bool):
+            errors.append(f"config.supervisor.{key} must be boolean")
+    for key in ("qa_commands", "operational_readiness_files", "production_gates"):
+        value = supervisor.get(key)
+        if not isinstance(value, list) or any(not isinstance(entry, str) or not entry.strip() for entry in value):
+            errors.append(f"config.supervisor.{key} must be an array of non-empty strings")
+    if isinstance(supervisor.get("operational_readiness_files"), list):
+        for value in supervisor["operational_readiness_files"]:
+            try:
+                safe_repo_path(value)
+            except (TypeError, UseAgentError) as exc:
+                errors.append(f"config.supervisor.operational_readiness_files: {exc}")
+
+    agents = config.get("agents")
+    if not isinstance(agents, list):
+        errors.append("config.agents must be an array")
+        agents = []
     seen: set[str] = set()
-    for agent in config.get("agents", []):
+    for agent in agents:
+        if not isinstance(agent, dict):
+            errors.append("config.agents entries must be objects")
+            continue
         agent_id = agent.get("id")
-        if not agent_id or agent_id in seen:
+        if not isinstance(agent_id, str) or not re.fullmatch(r"[a-z0-9][a-z0-9_-]{1,63}", agent_id) or agent_id in seen:
             errors.append(f"invalid or duplicate agent id: {agent_id}")
-        seen.add(agent_id)
+        if isinstance(agent_id, str):
+            seen.add(agent_id)
         if agent.get("status", "available") not in VALID_AGENT_STATUSES:
             errors.append(f"invalid status for agent {agent_id}")
+        max_active = agent.get("max_active", 1)
+        if isinstance(max_active, bool) or not isinstance(max_active, int) or max_active < 1:
+            errors.append(f"invalid max_active for agent {agent_id}")
+        scopes = agent.get("scope", [])
+        if not isinstance(scopes, list):
+            errors.append(f"scope must be an array for agent {agent_id}")
+        else:
+            for scope in scopes:
+                if not isinstance(scope, str):
+                    errors.append(f"non-string scope for agent {agent_id}")
+                    continue
+                try:
+                    validate_relative_scope(scope, f"scope for agent {agent_id}")
+                except UseAgentError as exc:
+                    errors.append(str(exc))
         try:
             paths = agent_paths(config, agent)
-        except UseAgentError as exc:
+        except (TypeError, ValueError, UseAgentError) as exc:
             errors.append(str(exc))
             continue
         for key in ("inbox", "report", "completed", "inbox_dir"):

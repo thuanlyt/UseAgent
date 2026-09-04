@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T06:41:49Z",
+  "updated_at": "2026-09-04T06:57:10Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -1191,6 +1191,178 @@
       "attempts": 1,
       "created_at": "2026-09-04T06:40:09Z",
       "updated_at": "2026-09-04T06:41:49Z",
+      "last_result": "completed"
+    },
+    "UA-0019": {
+      "id": "UA-0019",
+      "title": "Harden scope and worker identity invariants",
+      "objective": "Make shared-folder coordination safe and useful by correctly detecting ancestor scopes without over-blocking siblings, normalizing Windows path case, requiring registered claimants, constraining reported files to the claimed scope and resolving assignment paths safely.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "knowledge/modules/useagent-control-plane.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Scope conflict detects only equal/ancestor-descendant paths, permits disjoint siblings, and follows Windows case-insensitive semantics",
+        "Task claim requires a registered agent and worker report files must be repository-relative and within the task scope",
+        "Worker pull validates the stored assignment path inside the selected root",
+        "Regression tests, validator and configured QA remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v; python tools/useagent.py validate; python docs-site/build.py --check-only"
+      ],
+      "files": [
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 24 tests passed",
+          "recorded_at": "2026-09-04T06:47:57Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T06:47:57Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T06:47:57Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T06:47:57Z"
+        },
+        {
+          "kind": "review",
+          "value": "Reviewed scope normalization, platform-aware comparison, claim identity validation, report file containment and worker pull ordering. Sibling paths are no longer over-serialized; traversal/tampered assignment paths are rejected before state mutation. Cycle QA cycle-20260904T064801Z-43fb4c passed 24 tests, validate and docs build.",
+          "recorded_at": "2026-09-04T06:48:19Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0019-20260904T064757Z-bd742e.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T06:44:37Z",
+      "updated_at": "2026-09-04T06:48:19Z",
+      "last_result": "completed"
+    },
+    "UA-0020": {
+      "id": "UA-0020",
+      "title": "Enforce review-gated report ingestion",
+      "objective": "Close state-machine and report-authenticity bypasses so only reviewed work can become done, worker reports must match registered assignments and remain within scope, pull reads a validated assignment atomically, and malformed config fails validation clearly.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Only a task in needs_review can transition to done; reported and in_progress require an explicit review transition",
+        "Supervisor ingest accepts only valid reports from the assigned registered agent and ignores unsafe/out-of-scope file claims without mutating task state incorrectly",
+        "Worker pull validates and reads the assignment before state mutation, with no partial transition on failure",
+        "Validator checks key config types/ranges and all regression/QA checks remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v; python tools/useagent.py validate; python docs-site/build.py --check-only"
+      ],
+      "files": [
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 26 tests passed",
+          "recorded_at": "2026-09-04T06:52:13Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T06:52:13Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T06:52:13Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T06:52:13Z"
+        },
+        {
+          "kind": "review",
+          "value": "Reviewed the transition guards, report identity/status checks, safe-file filtering and config validation. A worker report can no longer spoof an assignment or bypass the review state; malformed report/config input is ignored or reported without unsafe path access. Cycle QA cycle-20260904T065219Z-e97967 passed 26 tests, validate and docs build.",
+          "recorded_at": "2026-09-04T06:52:37Z"
+        },
+        {
+          "kind": "check",
+          "value": "Updated knowledge/contracts/supervisor-protocol.md with report authenticity and explicit needs_review -> done gate; post-update QA: 26 tests passed, validate VALID, docs build VALIDATED 10 static files.",
+          "recorded_at": "2026-09-04T06:53:08Z"
+        },
+        {
+          "kind": "review",
+          "value": "Audit correction: contract text now matches the implemented ingest/authentication and review-gated transition invariants; source and evidence remain aligned.",
+          "recorded_at": "2026-09-04T06:53:08Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 28 tests passed",
+          "recorded_at": "2026-09-04T06:56:35Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T06:56:36Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T06:56:36Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass; malformed config and review-evidence regression tests included",
+          "recorded_at": "2026-09-04T06:56:37Z"
+        },
+        {
+          "kind": "check",
+          "value": "Supervisor cycle cycle-20260904T065642Z-2e346b: 28 tests passed, validate VALID, docs build VALIDATED 10 static files.",
+          "recorded_at": "2026-09-04T06:57:10Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review: UA-0020 scope safety, authenticated report ingest, atomic worker pull, review-gated completion and malformed-config validation are covered by source, contract and regression evidence.",
+          "recorded_at": "2026-09-04T06:57:10Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0020-20260904T065213Z-f9abe3.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T06:49:09Z",
+      "updated_at": "2026-09-04T06:57:10Z",
       "last_result": "completed"
     }
   }
