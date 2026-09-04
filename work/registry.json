@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T06:18:55Z",
+  "updated_at": "2026-09-04T06:24:32Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -884,6 +884,60 @@
       "attempts": 1,
       "created_at": "2026-09-04T06:17:43Z",
       "updated_at": "2026-09-04T06:18:55Z",
+      "last_result": "completed"
+    },
+    "UA-0014": {
+      "id": "UA-0014",
+      "title": "Harden public repository discoverability metadata",
+      "objective": "Improve GitHub search metadata and public positioning for multi-agent supervision without claiming guaranteed search rank or inventing a homepage domain.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "README.md",
+        ".github"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Repository description and topics clearly identify multi-agent orchestration, file-first supervision and supported runtimes",
+        "No homepage or canonical URL is invented before the production hostname is known",
+        "CI and repository validation remain green after metadata updates"
+      ],
+      "verification": [
+        "gh repository metadata readback, python tools/useagent.py validate, GitHub CI"
+      ],
+      "files": [],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "gh repo view thuanlyt/UseAgent metadata readback: public, description updated, homepage empty by design",
+          "recorded_at": "2026-09-04T06:22:31Z"
+        },
+        {
+          "kind": "check",
+          "value": "gh api repos/thuanlyt/UseAgent/topics: 10 intended topics present",
+          "recorded_at": "2026-09-04T06:22:31Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T06:22:31Z"
+        },
+        {
+          "kind": "review",
+          "value": "Reviewed UA-0014 report and GitHub readback: description and topics satisfy public discoverability acceptance; homepage remains unset by design; QA cycle cycle-20260904T062413Z-13c057 passed 18 tests, validate, and docs build.",
+          "recorded_at": "2026-09-04T06:24:31Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0014-20260904T062231Z-364a7c.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T06:21:55Z",
+      "updated_at": "2026-09-04T06:24:32Z",
       "last_result": "completed"
     }
   }

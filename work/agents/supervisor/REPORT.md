@@ -83,3 +83,10 @@ Updated choose_next_action so needs_review work remains ahead of unrelated new w
 
 - Report: `work/reports/inbox/UA-0013-20260904T061830Z-ed8906.md`
 - Next: Run supervisor QA cycle and review the corrected next action.
+
+## 2026-09-04T06:22:31Z - UA-0014 (completed)
+
+Updated the public GitHub description and added focused discoverability topics for multi-agent orchestration, AI agents, supervisor workflows, Codex, Claude Code and Antigravity. Homepage remains unset until the exact production hostname exists.
+
+- Report: `work/reports/inbox/UA-0014-20260904T062231Z-364a7c.md`
+- Next: Review metadata readback and retain the hosting/domain gate until a real hostname is supplied.

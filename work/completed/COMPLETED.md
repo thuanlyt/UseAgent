@@ -19,3 +19,5 @@ Các task worker báo hoàn tất được append tại đây. `completed` nghĩ
 - 2026-09-04T06:13:19Z - `UA-0012` - Docs website release and hosting readiness - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0012-20260904T061319Z-b6c002.md`
 
 - 2026-09-04T06:18:30Z - `UA-0013` - Prioritize review gates in supervisor next action - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0013-20260904T061830Z-ed8906.md`
+
+- 2026-09-04T06:22:31Z - `UA-0014` - Harden public repository discoverability metadata - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0014-20260904T062231Z-364a7c.md`
