@@ -59,3 +59,5 @@ Các task worker báo hoàn tất được append tại đây. `completed` nghĩ
 - 2026-09-04T08:19:16Z - `UA-0032` - Add malformed capability regression coverage - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0032-20260904T081916Z-2ac700.md`
 
 - 2026-09-04T08:28:00Z - `UA-0033` - Require activation before worker report - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0033-20260904T082800Z-f27ba8.md`
+
+- 2026-09-04T08:44:45Z - `UA-0034` - Fix docs-site mobile overflow - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0034-20260904T084445Z-d99d7f.md`

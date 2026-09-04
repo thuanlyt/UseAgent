@@ -223,3 +223,10 @@ Worker reporting now requires prior activation: task report accepts only in_prog
 
 - Report: `work/reports/inbox/UA-0033-20260904T082800Z-f27ba8.md`
 - Next: Review the activation/report diff and record review evidence, then close UA-0033 after supervisor QA.
+
+## 2026-09-04T08:44:45Z - UA-0034 (completed)
+
+Fixed the responsive overflow regression found by browser QA. Grid children can now shrink, article and data-list tracks use minmax(0,1fr), inline paths can wrap, and mobile hero actions stack into full-width touch targets. Added deterministic static responsive assertions.
+
+- Report: `work/reports/inbox/UA-0034-20260904T084445Z-d99d7f.md`
+- Next: Review UA-0034 evidence, then run the supervisor QA gate.

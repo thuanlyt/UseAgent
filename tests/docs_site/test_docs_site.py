@@ -171,6 +171,18 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("@media (max-width: 800px)", styles)
         self.assertIn("@media (prefers-reduced-motion: reduce)", styles)
 
+    def test_mobile_layout_prevents_content_overflow(self) -> None:
+        styles = (SITE / "styles.css").read_text(encoding="utf-8")
+        self.assertRegex(styles, r"\.hero-copy, \.hero-visual\s*\{[^}]*min-width:\s*0")
+        self.assertIn("grid-template-columns: 1.5rem minmax(0,1fr) auto", styles)
+        self.assertIn("grid-template-columns: 3rem minmax(0,1fr)", styles)
+        self.assertIn("grid-template-columns: 2.5rem minmax(0,1fr)", styles)
+        self.assertRegex(styles, r"\.article-layout > \*\s*\{[^}]*min-width:\s*0")
+        self.assertIn("@media (max-width: 520px)", styles)
+        self.assertRegex(styles, r"\.hero-actions\s*\{[^}]*flex-direction:\s*column")
+        self.assertRegex(styles, r"\.hero-actions \.button\s*\{[^}]*width:\s*100%")
+        self.assertRegex(styles, r"\.hero h1\s*\{[^}]*font-size:\s*clamp\(2\.6rem,12vw,3\.8rem\)")
+
     def test_hosting_dry_run_contract(self) -> None:
         vercel = json.loads((SITE / "vercel.json").read_text(encoding="utf-8"))
         self.assertEqual(vercel["buildCommand"], "python3 build.py --output dist")

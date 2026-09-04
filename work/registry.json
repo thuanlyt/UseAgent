@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T08:30:03Z",
+  "updated_at": "2026-09-04T08:46:04Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -757,7 +757,7 @@
       "title": "Docs website release and hosting readiness",
       "objective": "Run final visual/content/release QA and prepare a reversible Vercel deployment without changing DNS or secrets.",
       "level": "L3",
-      "status": "needs_review",
+      "status": "done",
       "owner": "supervisor",
       "assigned_to": "supervisor",
       "scope": [
@@ -817,6 +817,21 @@
           "kind": "check",
           "value": "Final local QA after custom 404: python docs-site/build.py --check-only -> VALIDATED 10 static files; python -m unittest discover -s tests -v -> 17 passed; HTTP preview routes including /404.html -> 200.",
           "recorded_at": "2026-09-04T06:15:23Z"
+        },
+        {
+          "kind": "visual",
+          "value": "Headless Brave/CDP local preview QA: screenshots work/evidence/ua0034-cdp-home-320.png, ua0034-cdp-getting-started-390.png and ua0034-cdp-home-1440.png; runtime measurement passed no document overflow across 6 routes (index, getting-started, architecture, operations, vi, 404) at 320, 375, 390, 414, 768, 1024 and 1440px. Menu, keyboard-visible focus contract, readable content and CTA/card layout were visually inspected; code blocks retain local horizontal scrolling.",
+          "recorded_at": "2026-09-04T08:46:03Z"
+        },
+        {
+          "kind": "check",
+          "value": "Final local hosting rehearsal: python docs-site/build.py --check-only -> VALIDATED 10 static files; python -m unittest discover -s tests -v -> 49 passed; python tools/useagent.py validate -> VALID; python examples/multi-runtime-conformance/run_conformance.py -> PASS.",
+          "recorded_at": "2026-09-04T08:46:03Z"
+        },
+        {
+          "kind": "review",
+          "value": "Release review accepted: local production artifact, internal-link validation, static accessibility/SEO/hosting contracts, multi-runtime conformance and responsive browser QA pass. The Vercel/Cloudflare runbook is reversible and explicitly gates remote mutation on an exact user-provided hostname plus explicit deployment approval; no remote deploy, DNS or secret change was performed.",
+          "recorded_at": "2026-09-04T08:46:04Z"
         }
       ],
       "reports": [
@@ -824,7 +839,7 @@
       ],
       "attempts": 1,
       "created_at": "2026-09-04T05:51:45Z",
-      "updated_at": "2026-09-04T06:15:23Z",
+      "updated_at": "2026-09-04T08:46:04Z",
       "last_result": "completed"
     },
     "UA-0013": {
@@ -2441,6 +2456,87 @@
       "attempts": 1,
       "created_at": "2026-09-04T08:25:14Z",
       "updated_at": "2026-09-04T08:30:03Z",
+      "last_result": "completed"
+    },
+    "UA-0034": {
+      "id": "UA-0034",
+      "title": "Fix docs-site mobile overflow",
+      "objective": "Fix responsive overflow found by headless Brave at 390px while preserving desktop visual system and accessibility.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "docs-site",
+        "tests/docs_site"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "home and docs pages have no horizontal overflow at 320,375,390,414,768,1024,1440 viewports",
+        "desktop screenshot remains visually coherent",
+        "mobile screenshot keeps readable heading, paragraph, CTA targets and card within viewport",
+        "static semantic/responsive tests and docs build remain green",
+        "UI/UX Pro Max high-priority responsive/accessibility guidance is applied"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python docs-site/build.py --check-only",
+        "git diff --check"
+      ],
+      "files": [
+        "docs-site/styles.css",
+        "tests/docs_site/test_docs_site.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "49 tests pass: python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-04T08:44:45Z"
+        },
+        {
+          "kind": "check",
+          "value": "VALID: python tools/useagent.py validate",
+          "recorded_at": "2026-09-04T08:44:45Z"
+        },
+        {
+          "kind": "check",
+          "value": "VALIDATED 10 static files: python docs-site/build.py --check-only",
+          "recorded_at": "2026-09-04T08:44:45Z"
+        },
+        {
+          "kind": "check",
+          "value": "PASS: python examples/multi-runtime-conformance/run_conformance.py",
+          "recorded_at": "2026-09-04T08:44:45Z"
+        },
+        {
+          "kind": "check",
+          "value": "PASS: CDP browser measurement across 6 routes x 7 viewport widths; code blocks remain locally scrollable",
+          "recorded_at": "2026-09-04T08:44:45Z"
+        },
+        {
+          "kind": "check",
+          "value": "Visual captures: work/evidence/ua0034-cdp-home-320.png, work/evidence/ua0034-cdp-getting-started-390.png, work/evidence/ua0034-cdp-home-1440.png",
+          "recorded_at": "2026-09-04T08:44:45Z"
+        },
+        {
+          "kind": "visual",
+          "value": "Headless Brave/CDP screenshots confirm the fixed responsive layout: work/evidence/ua0034-cdp-home-320.png, ua0034-cdp-getting-started-390.png, and ua0034-cdp-home-1440.png. CDP runtime measurement reports no document overflow across index, getting-started, architecture, operations, vi and 404 at 320, 375, 390, 414, 768, 1024 and 1440px; long code blocks scroll locally.",
+          "recorded_at": "2026-09-04T08:44:53Z"
+        },
+        {
+          "kind": "review",
+          "value": "Focused review: docs-site/styles.css fixes the observed root causes without hiding overflow globally. The hero/article grid children now have min-width:0; flow, loop, layer and command tracks use minmax(0,1fr); mobile hero actions are stacked full-width; inline paths can wrap; preformatted command blocks remain intentional local scroll containers. Static contract, 49-test suite, validator, docs link check, multi-runtime conformance and CDP route/breakpoint measurement all pass. Residual risk: remote Vercel/Cloudflare production behavior still requires the separate hosting gate.",
+          "recorded_at": "2026-09-04T08:45:13Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0034-20260904T084445Z-d99d7f.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T08:34:45Z",
+      "updated_at": "2026-09-04T08:45:14Z",
       "last_result": "completed"
     }
   }

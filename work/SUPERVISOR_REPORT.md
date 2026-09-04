@@ -1,14 +1,13 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T082820Z-07a4a2`
-- **Generated:** 2026-09-04T08:28:32Z
-- **Next action:** Complete the review gate for UA-0012; accept evidence or create a scoped debug task.
-- **Production snapshot:** `not_ready`
+- **Cycle:** `cycle-20260904T084609Z-e14ed9`
+- **Generated:** 2026-09-04T08:46:21Z
+- **Next action:** Run the production release gate and obtain explicit deploy approval.
+- **Production snapshot:** `ready`
 
 ## Status counts
 
-- `done`: 32
-- `needs_review`: 1
+- `done`: 34
 
 ## Reports ingested this cycle
 
@@ -20,7 +19,6 @@
 
 ## Worker reports awaiting review
 
-- `UA-0012` — Docs website release and hosting readiness — reports: work/reports/inbox/UA-0012-20260904T061319Z-b6c002.md
 - none
 
 ## Completed tasks
@@ -36,6 +34,7 @@
 - `UA-0009` — Package and release the UseAgent CLI — evidence: 6
 - `UA-0010` — Design and scaffold bilingual docs website — evidence: 5
 - `UA-0011` — Build practical bilingual docs experience — evidence: 5
+- `UA-0012` — Docs website release and hosting readiness — evidence: 10
 - `UA-0013` — Prioritize review gates in supervisor next action — evidence: 4
 - `UA-0014` — Harden public repository discoverability metadata — evidence: 4
 - `UA-0015` — Strengthen static docs accessibility gate — evidence: 5
@@ -56,7 +55,8 @@
 - `UA-0030` — Authorize lifecycle transition commands — evidence: 7
 - `UA-0031` — Enforce claim availability and capacity — evidence: 8
 - `UA-0032` — Add malformed capability regression coverage — evidence: 5
-- `UA-0033` — Require activation before worker report — evidence: 6
+- `UA-0033` — Require activation before worker report — evidence: 7
+- `UA-0034` — Fix docs-site mobile overflow — evidence: 8
 - none
 
 ## Blocked work
@@ -66,15 +66,15 @@
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T082820Z-07a4a2-qa.md`
+- evidence: `work/evidence/cycle-20260904T084609Z-e14ed9-qa.md`
 
 ## Production gates
 
-- [ ] `all_tasks_done`: `fail`
+- [x] `all_tasks_done`: `pass`
 - [x] `qa`: `pass`
 - [x] `no_blocked_tasks`: `pass`
 - [x] `operational_rollback_notes`: `pass`
 
 ## Resume instruction
 
-Complete the review gate for UA-0012; accept evidence or create a scoped debug task.
+Run the production release gate and obtain explicit deploy approval.
