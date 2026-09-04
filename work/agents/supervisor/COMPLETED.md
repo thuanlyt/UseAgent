@@ -22,3 +22,5 @@
 - 2026-09-04T06:22:31Z - `UA-0014` - Harden public repository discoverability metadata - pending review - `work/reports/inbox/UA-0014-20260904T062231Z-364a7c.md`
 
 - 2026-09-04T06:30:03Z - `UA-0015` - Strengthen static docs accessibility gate - pending review - `work/reports/inbox/UA-0015-20260904T063003Z-4eafde.md`
+
+- 2026-09-04T06:34:25Z - `UA-0016` - Harden docs SEO metadata without a guessed domain - pending review - `work/reports/inbox/UA-0016-20260904T063425Z-75f525.md`

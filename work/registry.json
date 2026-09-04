@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T06:30:29Z",
+  "updated_at": "2026-09-04T06:34:48Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -999,6 +999,72 @@
       "attempts": 1,
       "created_at": "2026-09-04T06:28:36Z",
       "updated_at": "2026-09-04T06:30:29Z",
+      "last_result": "completed"
+    },
+    "UA-0016": {
+      "id": "UA-0016",
+      "title": "Harden docs SEO metadata without a guessed domain",
+      "objective": "Improve static docs discoverability with Open Graph, Twitter card and repository-linked structured metadata while deliberately avoiding invented canonical or production URLs.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "docs-site",
+        "tests/docs_site"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Every indexable docs page exposes non-empty Open Graph title, description and website type plus a summary Twitter card",
+        "The homepage exposes valid repository-linked SoftwareSourceCode JSON-LD without inventing a production hostname",
+        "404 remains noindex and all metadata/build/QA checks remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v; python tools/useagent.py validate; python docs-site/build.py --check-only"
+      ],
+      "files": [
+        "docs-site/architecture.html",
+        "docs-site/getting-started.html",
+        "docs-site/index.html",
+        "docs-site/operations.html",
+        "docs-site/vi.html",
+        "tests/docs_site/test_docs_site.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 19 tests passed",
+          "recorded_at": "2026-09-04T06:34:25Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T06:34:25Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T06:34:25Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T06:34:25Z"
+        },
+        {
+          "kind": "review",
+          "value": "Reviewed all five indexable pages and homepage JSON-LD: Open Graph/Twitter metadata is non-empty, 404 stays noindex, repository link is authoritative, and no canonical/og:url/production hostname is invented. Cycle QA cycle-20260904T063431Z-4407fc passed 19 tests, validate and docs build.",
+          "recorded_at": "2026-09-04T06:34:48Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0016-20260904T063425Z-75f525.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T06:32:57Z",
+      "updated_at": "2026-09-04T06:34:48Z",
       "last_result": "completed"
     }
   }

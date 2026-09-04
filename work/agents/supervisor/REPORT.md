@@ -97,3 +97,10 @@ Added a dependency-free HTML contract parser and static CSS safeguards to docs-s
 
 - Report: `work/reports/inbox/UA-0015-20260904T063003Z-4eafde.md`
 - Next: Supervisor review the static quality evidence, then ingest and run the full configured QA cycle.
+
+## 2026-09-04T06:34:25Z - UA-0016 (completed)
+
+Added Open Graph metadata and summary Twitter cards to all indexable docs pages, plus repository-linked SoftwareSourceCode JSON-LD on the homepage. No canonical, og:url or guessed production hostname was added; 404 remains noindex. Extended docs tests validate metadata and structured data.
+
+- Report: `work/reports/inbox/UA-0016-20260904T063425Z-75f525.md`
+- Next: Supervisor review metadata evidence, run the full QA cycle and preserve the hosting gate for the real domain.

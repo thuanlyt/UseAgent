@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from html.parser import HTMLParser
+import json
 import subprocess
 import sys
 import unittest
@@ -29,6 +30,9 @@ class SiteContractParser(HTMLParser):
         self.inputs: list[dict[str, str]] = []
         self.navs: list[dict[str, str]] = []
         self.external_links: list[dict[str, str]] = []
+        self.jsonld: list[str] = []
+        self._active_jsonld = False
+        self._jsonld_text = ""
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = {key: value or "" for key, value in attrs}
@@ -53,6 +57,9 @@ class SiteContractParser(HTMLParser):
             self.inputs.append(attributes)
         elif tag == "nav":
             self.navs.append(attributes)
+        elif tag == "script" and attributes.get("type") == "application/ld+json":
+            self._active_jsonld = True
+            self._jsonld_text = ""
         elif tag == "a":
             href = attributes.get("href", "")
             if href.startswith(("https://", "http://", "//")):
@@ -65,12 +72,18 @@ class SiteContractParser(HTMLParser):
             self.buttons.append((self._active_button, self._active_button_text))
             self._active_button = None
             self._active_button_text = ""
+        elif tag == "script" and self._active_jsonld:
+            self.jsonld.append(self._jsonld_text)
+            self._active_jsonld = False
+            self._jsonld_text = ""
 
     def handle_data(self, data: str) -> None:
         if self._in_title:
             self.title_text += data
         if self._active_button is not None:
             self._active_button_text += data
+        if self._active_jsonld:
+            self._jsonld_text += data
 
 
 class DocsSiteTests(unittest.TestCase):
@@ -105,6 +118,11 @@ class DocsSiteTests(unittest.TestCase):
                 for item in parser.meta
                 if item.get("name")
             }
+            meta_by_property = {
+                item.get("property", "").lower(): item.get("content", "")
+                for item in parser.meta
+                if item.get("property")
+            }
             self.assertIn(parser.html_lang, {"en", "vi"}, page.name)
             self.assertTrue(parser.title_text.strip(), page.name)
             self.assertIn("viewport", meta_by_name, page.name)
@@ -130,6 +148,23 @@ class DocsSiteTests(unittest.TestCase):
                 self.assertTrue(nav.get("aria-label") or nav.get("aria-labelledby"), page.name)
             for link in parser.external_links:
                 self.assertIn("noreferrer", link.get("rel", "").split(), page.name)
+            if page.name != "404.html":
+                self.assertTrue(meta_by_property.get("og:title", "").strip(), page.name)
+                self.assertTrue(meta_by_property.get("og:description", "").strip(), page.name)
+                self.assertEqual(meta_by_property.get("og:type"), "website", page.name)
+                self.assertEqual(meta_by_name.get("twitter:card"), "summary", page.name)
+                self.assertNotIn("og:url", meta_by_property, page.name)
+            if page.name == "404.html":
+                self.assertEqual(meta_by_name.get("robots"), "noindex", page.name)
+            if page.name == "index.html":
+                self.assertEqual(len(parser.jsonld), 1, page.name)
+                structured_data = json.loads(parser.jsonld[0])
+                self.assertEqual(structured_data["@type"], "SoftwareSourceCode")
+                self.assertEqual(
+                    structured_data["codeRepository"],
+                    "https://github.com/thuanlyt/UseAgent",
+                )
+                self.assertNotIn("url", structured_data)
 
         styles = (SITE / "styles.css").read_text(encoding="utf-8")
         self.assertIn(":focus-visible", styles)
