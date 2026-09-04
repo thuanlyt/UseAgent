@@ -55,3 +55,24 @@ Packaged the dependency-free CLI as useagent 0.1.0 with MIT metadata and console
 
 - Report: `work/reports/inbox/UA-0009-20260904T054854Z-fafaae.md`
 - Next: Run the final supervisor QA cycle, inspect production gates and close the core release gate if all evidence remains green.
+
+## 2026-09-04T06:06:16Z - UA-0010 (completed)
+
+Persisted the UI/UX Pro Max design system and added a dependency-light static docs-site scaffold with accessible navigation, prominent search, responsive layouts, reduced-motion support, SVG icons and a deterministic safe build/link-check script.
+
+- Report: `work/reports/inbox/UA-0010-20260904T060616Z-5468e7.md`
+- Next: Review scaffold against the persisted design contract, then close this task before building the complete bilingual content experience.
+
+## 2026-09-04T06:09:59Z - UA-0011 (completed)
+
+Expanded the docs-site into a bilingual EN/VI information path with dedicated Vietnamese entry, practical Codex/Claude Code/Antigravity steps, architecture and operations pages, search suggestions, page metadata and static-site contract tests. Added docs-site link validation to configured supervisor QA.
+
+- Report: `work/reports/inbox/UA-0011-20260904T060959Z-50ae3b.md`
+- Next: Run supervisor QA cycle, then review content and release readiness; browser visual QA remains required before hosting.
+
+## 2026-09-04T06:13:19Z - UA-0012 (completed)
+
+Added Vercel static hosting configuration with security headers and a reversible bilingual deployment runbook. Local release rehearsal built the site, served it over HTTP, verified all routes return 200, checked JavaScript syntax and parsed the Vercel config. Exact-domain Cloudflare changes remain gated and no remote deploy was performed.
+
+- Report: `work/reports/inbox/UA-0012-20260904T061319Z-b6c002.md`
+- Next: Complete browser visual QA on a working UI automation surface; then obtain the exact production hostname and explicit final deployment approval before any Vercel/Cloudflare action.

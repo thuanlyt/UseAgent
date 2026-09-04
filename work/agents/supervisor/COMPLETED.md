@@ -10,3 +10,9 @@
 - 2026-09-04T05:43:08Z - `UA-0008` - Add runnable multi-agent conformance demo - pending review - `work/reports/inbox/UA-0008-20260904T054308Z-265874.md`
 
 - 2026-09-04T05:48:54Z - `UA-0009` - Package and release the UseAgent CLI - pending review - `work/reports/inbox/UA-0009-20260904T054854Z-fafaae.md`
+
+- 2026-09-04T06:06:16Z - `UA-0010` - Design and scaffold bilingual docs website - pending review - `work/reports/inbox/UA-0010-20260904T060616Z-5468e7.md`
+
+- 2026-09-04T06:09:59Z - `UA-0011` - Build practical bilingual docs experience - pending review - `work/reports/inbox/UA-0011-20260904T060959Z-50ae3b.md`
+
+- 2026-09-04T06:13:19Z - `UA-0012` - Docs website release and hosting readiness - pending review - `work/reports/inbox/UA-0012-20260904T061319Z-b6c002.md`

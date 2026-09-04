@@ -20,7 +20,8 @@
     "qa_timeout_seconds": 900,
     "qa_commands": [
       "python -m unittest discover -s tests -v",
-      "python tools/useagent.py validate"
+      "python tools/useagent.py validate",
+      "python docs-site/build.py --check-only"
     ],
     "operational_readiness_files": [
       "docs/operations.md",

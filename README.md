@@ -137,6 +137,18 @@ useagent validate
 An installed CLI uses the current directory as its default root. Use
 `useagent --root F:\dev\MyProject ...` when operating from a central checkout.
 
+The public docs-site is also runnable locally:
+
+```powershell
+python docs-site/build.py --check-only
+python docs-site/build.py --output dist
+python -m http.server 4173 --directory docs-site/dist
+```
+
+Open `http://localhost:4173` for the English experience or the Vietnamese
+entry point at `/vi.html`. The hosting and custom-domain path is documented and
+gated separately; no DNS is changed by this repository command.
+
 For a new project, register the workers that actually exist:
 
 ```powershell

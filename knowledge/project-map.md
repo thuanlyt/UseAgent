@@ -18,6 +18,7 @@
 | `pyproject.toml`, `tools/__init__.py` | Installable `useagent` console package | Cài CLI hoặc kiểm tra release |
 | `templates/` | Mẫu hồ sơ | Tạo artifact mới |
 | `docs/` | Tài liệu onboarding và vận hành | Setup, provider walkthrough, autopilot |
+| `docs-site/` | Static bilingual documentation website | Build, content and hosting QA |
 | `.github/` | CI, issue forms và pull-request template | Đóng góp hoặc release |
 | `README.md` | Public overview, bilingual quick start và contracts | Onboarding |
 | `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md` | Open-source governance | Phát hành hoặc đóng góp |

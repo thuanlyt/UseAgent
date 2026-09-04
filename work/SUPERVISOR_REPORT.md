@@ -1,13 +1,14 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T054930Z-9d50d7`
-- **Generated:** 2026-09-04T05:49:34Z
-- **Next action:** Run the production release gate and obtain explicit deploy approval.
-- **Production snapshot:** `ready`
+- **Cycle:** `cycle-20260904T061503Z-bcb78e`
+- **Generated:** 2026-09-04T06:15:08Z
+- **Next action:** Create the next scoped work item from the project goal.
+- **Production snapshot:** `not_ready`
 
 ## Status counts
 
-- `done`: 9
+- `done`: 11
+- `needs_review`: 1
 
 ## Reports ingested this cycle
 
@@ -19,6 +20,7 @@
 
 ## Worker reports awaiting review
 
+- `UA-0012` — Docs website release and hosting readiness — reports: work/reports/inbox/UA-0012-20260904T061319Z-b6c002.md
 - none
 
 ## Completed tasks
@@ -32,6 +34,8 @@
 - `UA-0007` — Add explicit target-root bootstrap support — evidence: 4
 - `UA-0008` — Add runnable multi-agent conformance demo — evidence: 4
 - `UA-0009` — Package and release the UseAgent CLI — evidence: 6
+- `UA-0010` — Design and scaffold bilingual docs website — evidence: 5
+- `UA-0011` — Build practical bilingual docs experience — evidence: 5
 - none
 
 ## Blocked work
@@ -41,15 +45,15 @@
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T054930Z-9d50d7-qa.md`
+- evidence: `work/evidence/cycle-20260904T061503Z-bcb78e-qa.md`
 
 ## Production gates
 
-- [x] `all_tasks_done`: `pass`
+- [ ] `all_tasks_done`: `fail`
 - [x] `qa`: `pass`
 - [x] `no_blocked_tasks`: `pass`
 - [x] `operational_rollback_notes`: `pass`
 
 ## Resume instruction
 
-Run the production release gate and obtain explicit deploy approval.
+Create the next scoped work item from the project goal.
