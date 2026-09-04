@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T15:18:24Z",
+  "updated_at": "2026-09-04T16:12:21Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -3103,6 +3103,72 @@
       "attempts": 1,
       "created_at": "2026-09-04T15:15:29Z",
       "updated_at": "2026-09-04T15:18:24Z",
+      "last_result": "completed"
+    },
+    "UA-0041": {
+      "id": "UA-0041",
+      "title": "Create social media draft pack",
+      "objective": "Create a polished, portable SVG social card and short bilingual launch copy that direct users to the live docs and GitHub repository, while keeping all turn-specific content under draft and excluding draft from version control.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "draft",
+        ".gitignore"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "draft contains one valid 1200x630 SVG suitable for export to PNG/JPG, with readable contrast and no external assets",
+        "draft contains concise Vietnamese and English social copy with live docs and repository links",
+        "draft is ignored by git and no draft content is staged or committed"
+      ],
+      "verification": [
+        "python tools/useagent.py validate",
+        "git check-ignore -q draft"
+      ],
+      "files": [
+        ".gitignore",
+        "draft/useagent-social-card.svg",
+        "draft/useagent-social-copy.md"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "SVG XML and 1200x630 contract pass",
+          "recorded_at": "2026-09-04T16:11:23Z"
+        },
+        {
+          "kind": "check",
+          "value": "git check-ignore confirms draft and both draft files; git ls-files draft is empty",
+          "recorded_at": "2026-09-04T16:11:23Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T16:11:23Z"
+        },
+        {
+          "kind": "check",
+          "value": "Browser render QA passed; icon aligns with favicon motif and Antigravity label fits its card",
+          "recorded_at": "2026-09-04T16:11:23Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review passed: standalone SVG is valid 1200x630, uses existing favicon geometry, has accessible title/desc, readable high-contrast hierarchy, no external image/script/import dependencies, and renders correctly in browser. Copy contains concise Vietnamese/English introductions and both requested live links. /draft/ is ignored and no draft path is tracked or staged. No actionable finding.",
+          "recorded_at": "2026-09-04T16:11:59Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0041-20260904T161123Z-46dcb9.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T16:06:49Z",
+      "updated_at": "2026-09-04T16:12:21Z",
       "last_result": "completed"
     }
   }

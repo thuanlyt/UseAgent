@@ -70,3 +70,5 @@
 - 2026-09-04T15:09:28Z - `UA-0039` - Add visual documentation system and branded illustrations - pending review - `work/reports/inbox/UA-0039-20260904T150928Z-244197.md`
 
 - 2026-09-04T15:15:57Z - `UA-0040` - Optimize visual asset delivery - pending review - `work/reports/inbox/UA-0040-20260904T151557Z-a1ebdd.md`
+
+- 2026-09-04T16:11:23Z - `UA-0041` - Create social media draft pack - pending review - `work/reports/inbox/UA-0041-20260904T161123Z-46dcb9.md`

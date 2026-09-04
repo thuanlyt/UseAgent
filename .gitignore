@@ -20,3 +20,6 @@ dist/
 .env.*
 !.env.example
 .codex/local-*
+
+# Local social-media drafts; never commit or push
+/draft/

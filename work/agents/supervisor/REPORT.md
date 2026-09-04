@@ -265,3 +265,10 @@ Optimized homepage visual delivery with a valid WebP picture/srcset path, retain
 
 - Report: `work/reports/inbox/UA-0040-20260904T151557Z-a1ebdd.md`
 - Next: Review performance evidence and publish the optimized docs build.
+
+## 2026-09-04T16:11:23Z - UA-0041 (completed)
+
+Created a polished 1200x630 standalone SVG social card using the existing UseAgent favicon motif, high-contrast Swiss/minimal layout, accessible title/desc, agent/runtime labels, and direct docs/repository URLs. Added concise Vietnamese and English social copy plus a short caption. All turn-specific content is confined to draft/, which is now root-ignored.
+
+- Report: `work/reports/inbox/UA-0041-20260904T161123Z-46dcb9.md`
+- Next: Review the draft pack, then close the work item without staging draft content.
