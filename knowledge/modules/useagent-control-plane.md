@@ -34,6 +34,15 @@ Lock only the short state transition. Do not hold the lock while doing explorati
 
 `python -m unittest discover -s tests -v`, `python tools/useagent.py validate`, configured supervisor QA and a temp-roster supervisor cycle.
 
+## Operator onboarding
+
+`docs/getting-started.md` is the public hands-on guide. It defines the portable
+runtime boundary: Codex, Claude Code and Google Antigravity are execution
+surfaces, while `supervisor`, `worker`, `reviewer` and the other names are
+workflow roles. It also documents the shared-folder default, the worktree
+ledger caveat, unique runtime ids, generated outbox prompts and the exact
+pull/report cycle.
+
 ## Known gaps
 
 The scope checker understands path/subtree overlap, not arbitrary glob semantics. Git worktree orchestration remains a Codex/product operation rather than a hidden action of this CLI.

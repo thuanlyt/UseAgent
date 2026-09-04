@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T01:59:48Z",
+  "updated_at": "2026-09-04T02:52:41Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -319,6 +319,67 @@
       "attempts": 1,
       "created_at": "2026-09-03T18:48:38Z",
       "updated_at": "2026-09-04T01:59:48Z",
+      "last_result": "completed"
+    },
+    "UA-0006": {
+      "id": "UA-0006",
+      "title": "Add provider-neutral hands-on onboarding guide",
+      "objective": "Document supported agent roles and exact Codex, Claude and Antigravity setup and worker handoff steps for first-time users.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "README.md",
+        "docs/getting-started.md",
+        "knowledge/project-map.md",
+        "knowledge/modules/useagent-control-plane.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "A first-time user can identify supported UseAgent roles and understand that model vendors are adapters, not hard-coded integrations",
+        "README points to a bilingual hands-on guide with an end-to-end example and copyable commands",
+        "The guide explains Codex, Claude and Antigravity setup, shared-folder versus worktree operation, worker pull and report, and the supervisor cycle"
+      ],
+      "verification": [
+        "python tools/useagent.py validate"
+      ],
+      "files": [
+        "README.md",
+        "docs/getting-started.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "knowledge/project-map.md"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T02:52:15Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 12 tests pass",
+          "recorded_at": "2026-09-04T02:52:15Z"
+        },
+        {
+          "kind": "check",
+          "value": "Manual review: exact registration, supervisor, worker pull, task report, shared-folder and troubleshooting flows documented",
+          "recorded_at": "2026-09-04T02:52:15Z"
+        },
+        {
+          "kind": "review",
+          "value": "Documentation review: provider matrix, unique runtime ids, target-root requirement, generated outbox prompts, shared-folder ledger caveat and Codex/Claude Code/Antigravity walkthrough are present; no application code or permissions changed.",
+          "recorded_at": "2026-09-04T02:52:40Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0006-20260904T025215Z-632c51.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T02:46:34Z",
+      "updated_at": "2026-09-04T02:52:41Z",
       "last_result": "completed"
     }
   }

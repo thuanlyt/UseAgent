@@ -70,6 +70,26 @@ Multi-agent projects commonly lose time because context is reread from scratch, 
 - Custom Markdown paths for teams that already have an established folder layout.
 - No third-party Python dependencies.
 
+### Which agents are supported?
+
+UseAgent supports any local coding-agent runtime that can access the same
+repository, read Markdown, run the CLI and respect a declared file scope. The
+repository ships role profiles for `supervisor`, `explorer`, `planner`,
+`worker`, `reviewer` and `release_gate`; the default config registers only the
+supervisor, so real worker sessions must be registered with unique ids.
+
+Codex has the tightest integration through `$useagent`, `$useagent-worker` and
+the optional `.codex/agents/` profiles. Claude Code and Google Antigravity work
+through the same portable file protocol: open the target repository, read the
+relevant `SKILL.md`, run `worker pull`, edit only the claimed scope and submit a
+`task report`. UseAgent does not call a vendor API or require a vendor-specific
+adapter.
+
+If you are new to multi-agent work, read the complete
+[hands-on onboarding guide](docs/getting-started.md) before registering agents.
+It uses one concrete Codex + Claude Code + Antigravity example and shows the
+exact prompts, commands, mailbox files and troubleshooting steps.
+
 ### Quick start
 
 Prerequisites:
@@ -86,6 +106,11 @@ python tools/useagent.py init
 python tools/useagent.py validate
 python -m unittest discover -s tests -v
 ```
+
+`tools/useagent.py` operates on the repository root that contains it. For a
+different application, vendor or merge the UseAgent control-plane files into
+that application's repository first; see
+[Put the control plane in the target repository](docs/getting-started.md#2-put-the-control-plane-in-the-target-repository).
 
 For a new project, register the workers that actually exist:
 
@@ -287,7 +312,14 @@ Use `agent register` to add the roster. It creates the standard Markdown mailbox
 
 ### Parallel work and Git worktrees
 
-Read-only exploration, test analysis and documentation analysis can run in parallel. Writers must have non-overlapping scopes. If two changes need the same files, serialize the tasks or give each agent an isolated Git worktree and merge only after review. The short-lived state lock protects metadata transitions; it is not a substitute for source ownership.
+Read-only exploration, test analysis and documentation analysis can run in parallel. Writers must have non-overlapping scopes. For a first setup, keep all
+agents in one checkout so they see the same `work/registry.json`; if two changes
+need the same files, serialize the tasks. Git worktrees isolate source files
+but also have separate checkout copies of the file-first `work/` ledger, so use
+them only with an explicit process for returning reports/evidence to the
+canonical supervisor checkout. The short-lived state lock protects metadata
+transitions; it is not a substitute for source ownership. See the
+[shared-folder and worktree guide](docs/getting-started.md#5-shared-folder-or-git-worktree).
 
 ### Production gate
 
@@ -323,7 +355,8 @@ UseAgent is designed to work with repository-local skills and specialized subage
 - [Git worktrees](https://learn.chatgpt.com/docs/environments/git-worktrees)
 - [Automations](https://learn.chatgpt.com/docs/automations)
 
-The repository protocol remains useful outside Codex because its state and handovers are plain JSON and Markdown.
+The repository protocol remains useful outside Codex because its state and handovers are plain JSON and Markdown. For provider-specific setup, see the
+[hands-on onboarding guide](docs/getting-started.md#3-complete-example-codex--claude-code--antigravity).
 
 ### License
 
@@ -379,6 +412,12 @@ python tools/useagent.py validate
 python -m unittest discover -s tests -v
 ```
 
+Nếu bạn chưa từng dùng hệ multi-agent, hãy đọc trước
+[Hướng dẫn thao tác thực tế](docs/getting-started.md#hướng-dẫn-thao-tác-thực-tế-bằng-tiếng-việt).
+Tài liệu này dùng ví dụ cụ thể Codex + Claude Code + Antigravity và chỉ rõ
+người dùng phải mở session nào, gửi prompt nào, xem file nào và xử lý lỗi ra
+sao.
+
 Đăng ký roster thật sự có trong dự án:
 
 ```powershell
@@ -415,9 +454,33 @@ planned → assigned → in_progress → reported → needs_review → done
 
 `reported` chỉ có nghĩa worker đã nộp handover. Chỉ sau khi supervisor/reviewer xác nhận acceptance criteria và evidence thì task mới `done`.
 
+### Các agent/runtime được hỗ trợ
+
+Các role chuẩn của UseAgent là `supervisor`, `explorer`, `planner`, `worker`,
+`reviewer` và `release_gate`. `Codex`, `Claude Code` và `Antigravity` là runtime
+để chạy các role đó, không phải ba role cố định. Bạn có thể dùng Codex làm
+supervisor, Claude Code làm worker frontend và Antigravity làm worker QA trong
+cùng repository.
+
+- Codex: hỗ trợ trực tiếp `$useagent`, `$useagent-worker` và profile trong
+  `.codex/agents/`.
+- Claude Code: mở local session trong cùng repository, đọc trực tiếp
+  `.agents/skills/useagent-worker/SKILL.md` nếu alias skill không tự nhận, rồi
+  chạy CLI.
+- Antigravity: mở đúng repository dưới dạng Project/local mode, đọc skill trong
+  `.agents/skills/` và dùng cùng `worker pull`/`task report`.
+
+UseAgent không tự gọi API của nhà cung cấp và không tự khởi chạy model bên
+ngoài. Supervisor tạo prompt bền vững tại `work/outbox/`; runtime tương ứng
+phải thực thi prompt đó. Xem [hướng dẫn thực chiến](docs/getting-started.md)
+để có câu lệnh và prompt copy được.
+
 ### Cấu trúc thư mục
 
 Các thư mục chính gồm `.agents/skills` (skill), `.codex/agents` (profile agent), `knowledge` (ngữ cảnh cô đọng), `work` (registry/mailbox/report/evidence/checkpoint), `tools/useagent.py` (CLI), `useagent.config.json` (cấu hình), `docs` (tài liệu công khai) và `tests` (kiểm thử). Xem cây đầy đủ ở phần [Repository structure](#repository-structure).
+
+Người mới nên bắt đầu tại [docs/getting-started.md](docs/getting-started.md),
+không cần đọc toàn bộ cây thư mục trước.
 
 Luôn đọc `knowledge/INDEX.md` trước khi đọc code. Với task cụ thể, chạy `python tools/useagent.py context --task <id>` để lấy snapshot giới hạn token.
 
@@ -448,6 +511,9 @@ Report được ghi vào report inbox, `REPORT.md` của agent, report index và
 Không deploy, xóa dữ liệu, migration destructive, đổi secret/quyền hoặc gọi dịch vụ ngoài nếu prompt cấp trên chưa cho phép. Worker chỉ sửa trong scope đã claim; task cùng file phải tuần tự hoặc chạy trong Git worktree riêng. Một cycle luôn có điểm dừng `complete`, `blocked` hoặc `needs_input`.
 
 Production gate cần có acceptance/evidence, test và QA, review không còn finding nghiêm trọng, operational/rollback notes và quyền deploy rõ ràng. UseAgent chuẩn bị bằng chứng phát hành chứ không tự deploy.
+
+Mô hình shared-folder, cách đăng ký từng runtime và quy trình Codex + Claude Code
+và Antigravity được minh họa đầy đủ trong [hướng dẫn onboarding](docs/getting-started.md).
 
 ### Đóng góp, kiểm thử và giấy phép
 

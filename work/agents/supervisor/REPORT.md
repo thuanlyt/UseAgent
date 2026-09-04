@@ -30,3 +30,9 @@ Manual checkpoint creation now persists last_checkpoint in supervisor state; reg
 
 - Report: `work/reports/inbox/UA-0005-20260904T015947Z-3ad9a7.md`
 - Next: Run final GitHub CI and verify the final release state.
+## 2026-09-04T02:52:15Z - UA-0006 (completed)
+
+Added a bilingual hands-on onboarding guide and clarified provider-neutral runtime support for Codex, Claude Code and Google Antigravity.
+
+- Report: `work/reports/inbox/UA-0006-20260904T025215Z-632c51.md`
+- Next: Review documentation links and run final CI before release.

@@ -16,7 +16,7 @@
 | `useagent.config.json` | Roster, mailbox path, QA và production gates | Setup supervisor |
 | `tools/useagent.py` | State CLI/validator | Tạo claim/update/checkpoint |
 | `templates/` | Mẫu hồ sơ | Tạo artifact mới |
-| `docs/` | Hướng dẫn vận hành | Setup, autopilot, onboarding |
+| `docs/` | Tài liệu onboarding và vận hành | Setup, provider walkthrough, autopilot |
 | `.github/` | CI, issue forms và pull-request template | Đóng góp hoặc release |
 | `README.md` | Public overview, bilingual quick start và contracts | Onboarding |
 | `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md` | Open-source governance | Phát hành hoặc đóng góp |
@@ -32,6 +32,7 @@
 - `python tools/useagent.py validate`: kiểm tra layout, registry, skills và agent TOML.
 - `python -m unittest discover -s tests -v`: kiểm tra CLI và state transitions.
 - `.github/workflows/ci.yml`: lặp lại compile, unit test và protocol validation trên Python 3.11–3.13.
+- `docs/getting-started.md`: hands-on onboarding, provider/runtime matrix and Codex + Claude Code + Antigravity walkthrough.
 
 ## Code ownership hiện tại
 

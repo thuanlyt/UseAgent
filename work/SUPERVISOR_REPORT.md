@@ -1,13 +1,13 @@
 # UseAgent supervisor report
 
-- **Cycle:** `manual-20260904T015948Z`
-- **Generated:** 2026-09-04T01:59:48Z
+- **Cycle:** `manual-20260904T025253Z`
+- **Generated:** 2026-09-04T02:52:53Z
 - **Next action:** Run the production release gate and obtain explicit deploy approval.
 - **Production snapshot:** `ready`
 
 ## Status counts
 
-- `done`: 5
+- `done`: 6
 
 ## Reports ingested this cycle
 
@@ -28,6 +28,7 @@
 - `UA-0003` — Refresh project brief and stack decision — evidence: 2
 - `UA-0004` — Refresh GitHub Actions runtime versions — evidence: 3
 - `UA-0005` — Persist manually created checkpoint pointer — evidence: 4
+- `UA-0006` — Add provider-neutral hands-on onboarding guide — evidence: 4
 - none
 
 ## Blocked work

@@ -1,0 +1,481 @@
+# UseAgent hands-on onboarding
+
+This is the practical guide for a first-time user. It answers four questions:
+
+1. Which agents can participate?
+2. What must be registered in `useagent.config.json`?
+3. What does the user actually type in Codex, Claude Code or Antigravity?
+4. Which Markdown files prove that work was assigned, reported and verified?
+
+> **Vietnamese / Tiếng Việt:** Nếu đây là lần đầu bạn dùng UseAgent, hãy làm đúng
+> ví dụ từ đầu đến cuối. Bạn không cần tự thiết kế DAG hoặc viết prompt task dài;
+> supervisor sẽ tạo assignment trong `work/outbox/`.
+
+## 1. The mental model
+
+UseAgent has two kinds of identity:
+
+- **Role**: what an agent does in the workflow: supervisor, explorer, planner,
+  worker, reviewer or release gate.
+- **Runtime identity**: the name of one real running session, for example
+  `codex-api`, `claude-web` or `antigravity-qa`.
+
+The vendor is not the identity. A Codex session and a Claude Code session are
+both just workers if they are assigned implementation work. The supervisor uses
+the runtime identity to route a task to the right mailbox.
+
+```text
+User goal
+   |
+   v
+Supervisor model (any capable runtime)
+   | creates task + assignment + outbox prompt
+   v
+codex-api       claude-web       antigravity-qa
+   |                 |                  |
+   +------ report Markdown + evidence -+
+                         |
+                         v
+                 supervisor cycle + QA
+```
+
+### Role catalogue
+
+| Role | Responsibility | Automatically dispatched? |
+| --- | --- | --- |
+| `supervisor` | Understand the goal, plan the DAG, dispatch, ingest reports, run QA and choose the next bounded action. | No. It is the brain session. |
+| `explorer` | Read-only repository mapping and source-anchored context. | No. Spawn or open when needed. |
+| `planner` | Break a goal into dependency-aware work items. | No. Usually used by the supervisor. |
+| `worker` | Implement exactly one claimed work item and report evidence. | Yes, when registered and eligible. |
+| `reviewer` | Review diff, regressions, security and test gaps. | No. Review is a gate, not an implementation worker. |
+| `release_gate` | Check release evidence, operational notes and remaining risk. | No. Run at a milestone boundary. |
+
+The repository includes optional Codex profiles for these roles in
+`.codex/agents/`. The default configuration registers only `supervisor`; you
+register the worker sessions that really exist in your project.
+
+### Runtime compatibility
+
+UseAgent is file-first and provider-neutral. A runtime is compatible when it can
+open the same repository, read Markdown, run the CLI and write code only inside
+its assigned scope.
+
+| Runtime | How it fits | What the user must do |
+| --- | --- | --- |
+| Codex | Tightest integration. It can use `$useagent` / `$useagent-worker` and the optional `.codex/agents` profiles. | Open the repository as the workspace, give the worker its registered id, and let it pull/report through the CLI. |
+| Claude Code | Compatible through the same `AGENTS.md`, skills and Markdown protocol. UseAgent does not call the Anthropic API. | Start `claude` in the same control-plane root; explicitly tell it to read the UseAgent worker skill and pull its id. |
+| Google Antigravity | Compatible through a local Project, shared files and the repository `.agents/skills` directory. | Add the repository as a Project, choose local/shared-folder mode for the simple setup, then give the agent the same worker prompt. |
+| Any other coding agent | Compatible if it has repository file access and a shell or equivalent way to run `tools/useagent.py`. | Use the generated `work/outbox/*-to-<agent-id>.md` prompt and preserve the report contract. |
+
+Claude.ai chat without local file and shell access is not a worker runtime. An
+Antigravity or other UI that cannot access the repository is also not enough;
+the agent must be attached to the Project containing the control-plane files.
+
+Official runtime references: [Claude Code setup](https://docs.anthropic.com/en/docs/claude-code/getting-started),
+[Claude Code project memory](https://docs.anthropic.com/en/docs/claude-code/memory),
+[Antigravity Projects and agents](https://antigravity.google/docs/home), and
+[Antigravity skills](https://antigravity.google/docs/sdk/tools/).
+
+## 2. Put the control plane in the target repository
+
+`tools/useagent.py` resolves its root from the repository that contains it. For
+the simplest setup, the target application and these UseAgent files live in the
+same Git repository root:
+
+```text
+F:\dev\DemoStore\
+├── AGENTS.md
+├── .agents\skills\
+├── knowledge\
+├── tools\useagent.py
+├── useagent.config.json
+└── work\
+```
+
+For a new project, clone UseAgent and build the application in that repository.
+For an existing project, copy or merge the control-plane files from this
+repository into the application repository. Preserve the application's
+existing `AGENTS.md`, `knowledge/`, `work/` and `useagent.config.json` content;
+merge instructions and configuration instead of blindly overwriting them.
+
+Then run these commands from the target repository root:
+
+```powershell
+python tools/useagent.py init
+python tools/useagent.py validate
+```
+
+If `validate` fails, fix the layout before registering workers. Do not start
+coding against a half-initialized registry.
+
+> **Tiếng Việt:** UseAgent hiện là control plane nằm trong repository. Vì vậy
+> hãy đặt `tools/useagent.py`, `.agents/skills/`, `knowledge/`, `work/`,
+> `AGENTS.md` và `useagent.config.json` trong thư mục gốc của dự án cần làm.
+> Nếu dự án đã có các file này, hãy merge nội dung; không ghi đè mù.
+
+## 3. Complete example: Codex + Claude Code + Antigravity
+
+The following example assumes:
+
+- target repository: `F:\dev\DemoStore`;
+- Codex is the supervisor;
+- Codex implements the backend;
+- Claude Code implements the web client;
+- Antigravity implements a QA/documentation slice;
+- no worker is allowed to own another worker's source subtree.
+
+### Step A — register the real worker sessions
+
+Run these commands once from `F:\dev\DemoStore`:
+
+```powershell
+python tools/useagent.py agent register `
+  --id codex-api `
+  --role worker `
+  --scope src/backend `
+  --scope tests/backend `
+  --capability python `
+  --max-active 1
+
+python tools/useagent.py agent register `
+  --id claude-web `
+  --role worker `
+  --scope src/frontend `
+  --scope tests/frontend `
+  --capability web `
+  --max-active 1
+
+python tools/useagent.py agent register `
+  --id antigravity-qa `
+  --role worker `
+  --scope tests/qa `
+  --scope docs/qa `
+  --capability browser `
+  --max-active 1
+```
+
+Check the roster:
+
+```powershell
+python tools/useagent.py agent list
+```
+
+The names are arbitrary, but they must be unique and must match the session
+that will run `worker pull --agent <id>`. Do not register `claude` once and
+expect three Claude sessions to share that identity; give each concurrent
+worker its own id.
+
+### Step B — give the supervisor one light goal
+
+Open the supervisor runtime in the target repository and send only this:
+
+```text
+Use $useagent in F:\dev\DemoStore.
+
+Goal: build a production-ready DemoStore web application with a Python backend,
+a web frontend, automated tests and operational documentation.
+
+Available worker sessions: codex-api (Python backend), claude-web (frontend),
+antigravity-qa (browser QA and docs).
+
+Use the existing repository conventions. Create a dependency-aware roadmap and
+scoped tasks, dispatch ready work, inspect Markdown reports, run QA, create debug
+tasks when evidence fails, and continue one bounded cycle at a time. Do not
+deploy, change secrets or delete data without my explicit approval.
+```
+
+The supervisor should create work items and then run:
+
+```powershell
+python tools/useagent.py supervisor cycle --run-qa
+```
+
+Inspect what was generated:
+
+```powershell
+Get-ChildItem work\outbox
+Get-Content work\SUPERVISOR_REPORT.md
+```
+
+There should be one copyable prompt such as
+`work/outbox/UA-0001-to-codex-api.md` for every dispatched worker. The task id
+and exact acceptance criteria are in that file; do not invent a second prompt.
+
+### Step C — start the Codex worker
+
+Open a separate Codex session in `F:\dev\DemoStore` and send:
+
+```text
+Use $useagent-worker in F:\dev\DemoStore.
+You are the worker session codex-api. Read AGENTS.md, knowledge/INDEX.md and
+the generated assignment in work/agents/codex-api/inbox/.
+Run `python tools/useagent.py worker pull --agent codex-api`, implement only the
+claimed scope, run every requested check, and report with `task report`.
+Do not edit another worker's scope. If the assignment is ambiguous or blocked,
+report `blocked` with the concrete reason instead of guessing.
+```
+
+The worker pull command changes the assigned task from `assigned` to
+`in_progress` and prints the assignment. When finished, the worker reports with
+the task id shown in that assignment:
+
+```powershell
+python tools/useagent.py task report UA-XXXX `
+  --agent codex-api `
+  --result completed `
+  --summary "Backend slice implemented and verified" `
+  --next-action "Supervisor or reviewer checks the evidence" `
+  --file src/backend/example.py `
+  --check "python -m unittest discover -s tests -v: pass"
+```
+
+The CLI writes the handover to the configured Markdown surfaces. The worker
+does not need to edit `work/registry.json` or manually maintain completed logs.
+
+### Step D — start the Claude Code worker
+
+Claude Code must be a local coding session, not a browser chat. On Windows, use
+the supported Git Bash or WSL setup, then start it in the same repository:
+
+```bash
+cd /f/dev/DemoStore
+claude
+```
+
+Send this prompt:
+
+```text
+You are the worker session claude-web in this repository.
+Read AGENTS.md, knowledge/INDEX.md, and
+.agents/skills/useagent-worker/SKILL.md. Read the assignment in
+work/agents/claude-web/inbox/, then run:
+
+python tools/useagent.py worker pull --agent claude-web
+
+Implement only the claimed frontend scope. Run the requested checks and submit
+the result with `python tools/useagent.py task report <task-id> --agent claude-web ...`.
+Never mark a task done by editing JSON; if blocked, report blocked with evidence.
+```
+
+If Claude Code is not loading project instructions automatically, keep the
+explicit `AGENTS.md` and `SKILL.md` paths in the prompt. A project-level
+`CLAUDE.md` can also import the repository instructions, but it is an adapter
+convenience; the UseAgent source of truth remains `AGENTS.md`, the registry and
+the Markdown contracts.
+
+### Step E — start the Antigravity worker
+
+In Antigravity 2.0 or the Antigravity IDE/CLI:
+
+1. Create or open a Project for `F:\dev\DemoStore`.
+2. Use local/shared-folder mode for this simple example so all sessions see the
+   same `work/` state.
+3. Start an agent and send the prompt below.
+
+```text
+You are the worker session antigravity-qa in the attached project.
+Read AGENTS.md, knowledge/INDEX.md, and
+.agents/skills/useagent-worker/SKILL.md. Open and follow the assignment in
+work/agents/antigravity-qa/inbox/. Then run:
+
+python tools/useagent.py worker pull --agent antigravity-qa
+
+Work only inside the claimed tests/qa and docs/qa scope. Use browser evidence
+only when the assignment requests it. Run the requested checks and report with
+the exact task id using `task report`. Do not deploy or change permissions.
+```
+
+Antigravity can also load a skill directory through its SDK `skills_paths`; if
+you build a custom Antigravity runner, point it at
+`.agents/skills/useagent-worker` and keep the same CLI/report contract. The
+runtime-specific tool surface may differ, but the mailbox protocol does not.
+
+### Step F — let the supervisor close the loop
+
+After workers report, return to the supervisor session and run:
+
+```powershell
+python tools/useagent.py supervisor cycle --run-qa
+Get-Content work\SUPERVISOR_REPORT.md
+python tools/useagent.py task list
+```
+
+The supervisor ingests reports, checks acceptance and evidence, runs configured
+QA, moves valid work toward review, creates a scoped debug task for failures,
+and dispatches the next ready tasks. A worker saying “completed” is not enough
+to make a task `done`.
+
+The user should normally inspect only:
+
+```text
+work/SUPERVISOR_REPORT.md       current health and next action
+work/checkpoints/               durable resume point
+work/evidence/                  reproducible QA output
+work/completed/COMPLETED.md     completed worker handovers
+```
+
+## 4. What happens to each Markdown file?
+
+| File | Written by | Meaning |
+| --- | --- | --- |
+| `work/agents/<id>/INBOX.md` | supervisor/CLI | Human-readable assignment index. |
+| `work/agents/<id>/inbox/<task>.md` | supervisor/CLI | Full task prompt and acceptance criteria. |
+| `work/outbox/<task>-to-<id>.md` | supervisor/CLI | Copyable prompt for an external runtime. |
+| `work/agents/<id>/REPORT.md` | worker/CLI | Per-agent handover history. |
+| `work/reports/inbox/<report>.md` | worker/CLI | Input for the next supervisor ingest. |
+| `work/completed/COMPLETED.md` | worker/CLI | Append-only worker completion log. |
+| `work/SUPERVISOR_REPORT.md` | supervisor/CLI | Current project health, gates and next action. |
+| `work/evidence/<evidence>.md` | supervisor/CLI | Captured test, QA or review evidence. |
+| `work/checkpoints/<checkpoint>.md` | supervisor/CLI | Resume context for the next bounded cycle. |
+
+Do not make a worker write directly to another worker's mailbox. Use
+`task report`; the CLI fans the report out to the configured Markdown files.
+
+## 5. Shared folder or Git worktree?
+
+### Recommended first setup: one shared folder
+
+Use one local checkout when:
+
+- all agents have non-overlapping source scopes;
+- the supervisor and workers must see the same `work/registry.json` immediately;
+- you are learning the protocol.
+
+The active-writer rule is the safety boundary. For example, backend owns
+`src/backend` and frontend owns `src/frontend`; neither claims the whole `src`
+tree or the same test file.
+
+### Worktrees: isolation with an important caveat
+
+A Git worktree isolates source files, but it also has its own checkout of the
+file-first `work/` ledger. It does not automatically share the supervisor's
+`work/registry.json`. Use worktrees only when you have a deliberate process for
+returning the worker's report/evidence to the canonical supervisor checkout, or
+when the orchestration runtime provides shared state. For the beginner flow,
+use the shared folder and narrow scopes.
+
+## 6. Troubleshooting
+
+### `NO_TASK`
+
+The id has no assigned task. Return to the supervisor and run
+`python tools/useagent.py supervisor cycle`, then check
+`work/outbox/` and `python tools/useagent.py agent list`.
+
+### Scope conflict
+
+Another active writer owns an overlapping path. Do not bypass the check. Ask the
+supervisor to serialize the tasks, narrow a scope or use an explicitly managed
+worktree.
+
+### The task is `reported`, not `done`
+
+That is expected. `reported` is the worker's claim. The supervisor/reviewer must
+check the diff and evidence before closing it.
+
+### The runtime cannot find `$useagent-worker`
+
+Use the direct path instead:
+
+```text
+Read .agents/skills/useagent-worker/SKILL.md and follow it.
+```
+
+The skill name is a convenience; the Markdown file and CLI protocol are the
+portable contract.
+
+### Nothing starts automatically
+
+UseAgent does not launch arbitrary external models from a filesystem. It creates
+durable assignments. A native Codex subagent, Claude Code session, Antigravity
+agent, another runner or a human must execute the generated prompt. This is an
+intentional permission boundary, not a failed dispatch.
+
+## 7. First-run checklist
+
+```text
+[ ] UseAgent control-plane files are in the target repository root.
+[ ] `python tools/useagent.py validate` returns VALID.
+[ ] Supervisor has a light goal and the real worker roster.
+[ ] Each worker has a unique id, role, capability and non-overlapping scope.
+[ ] Supervisor has run one bounded `supervisor cycle`.
+[ ] Each worker pulled its assignment before editing.
+[ ] Each worker reported through `task report` with files and checks.
+[ ] Supervisor ran the next cycle and inspected SUPERVISOR_REPORT.md.
+[ ] Production/release work has review, QA, rollback notes and explicit deploy approval.
+```
+
+---
+
+## Hướng dẫn thao tác thực tế bằng tiếng Việt
+
+### UseAgent hỗ trợ những agent nào?
+
+UseAgent không khóa vào một nhà cung cấp model. Nó hỗ trợ mọi runtime có thể
+truy cập cùng repository, đọc/ghi Markdown, chạy lệnh và tuân thủ scope. Các
+role chuẩn là:
+
+| Role | Việc chính |
+| --- | --- |
+| `supervisor` | Là “bộ não”: hiểu goal, lập roadmap/DAG, giao việc, đọc report, QA và chọn next action. |
+| `explorer` | Đọc repository ở chế độ chỉ đọc, tìm đúng file và source anchor. |
+| `planner` | Tách goal thành task có dependency, scope và acceptance rõ ràng. |
+| `worker` | Nhận đúng một task, sửa trong scope, chạy test và nộp handover. |
+| `reviewer` | Review diff, regression, security và test gap. |
+| `release_gate` | Kiểm tra evidence, vận hành, rollback và điều kiện release. |
+
+`Codex`, `Claude Code` và `Antigravity` không phải role; chúng là các runtime
+để chạy những role trên. Vì vậy bạn có thể dùng Codex làm supervisor, Claude
+Code làm frontend worker và Antigravity làm QA worker trong cùng một dự án.
+
+### Người dùng phải làm gì?
+
+1. Đặt control plane của UseAgent trong root của repository dự án.
+2. Chạy `init` và `validate`.
+3. Đăng ký từng session thật bằng một id duy nhất.
+4. Gửi một goal ngắn cho supervisor.
+5. Chạy một cycle để supervisor tạo task và prompt trong `work/outbox/`.
+6. Mở từng runtime worker trong cùng thư mục, cho worker chạy `worker pull`.
+7. Để worker sửa code và dùng `task report`.
+8. Hỏi supervisor hoặc chạy cycle tiếp theo để ingest report, QA, review và giao
+   phần việc còn lại.
+
+Bạn không cần tự viết lại prompt assignment. Prompt đầy đủ nằm trong
+`work/outbox/`; phần prompt mẫu ở trên chỉ là “bootstrap” để runtime biết phải
+đọc file nào và dùng worker id nào.
+
+### Nếu dùng cả Codex, Claude và Antigravity
+
+- **Codex:** mở hai session trở lên trong cùng project: một supervisor và các
+  worker. Dùng `$useagent` cho supervisor, `$useagent-worker` cho worker. Các
+  profile role mẫu nằm trong `.codex/agents/`.
+- **Claude Code:** mở `claude` trong đúng repository local, không dùng Claude.ai
+  chat làm worker. Nếu skill alias không được nhận, yêu cầu đọc trực tiếp
+  `.agents/skills/useagent-worker/SKILL.md`, rồi chạy CLI.
+- **Antigravity:** tạo Project trỏ đến đúng thư mục repository, chọn local mode
+  cho mô hình shared-folder đơn giản, mở agent và đưa prompt worker trực tiếp.
+  Với SDK, cấu hình `skills_paths` trỏ vào thư mục skill.
+
+Tất cả runtime phải dùng chung các file `work/`. Không cho hai worker cùng sửa
+một file; UseAgent sẽ từ chối active-writer scope bị chồng lấn.
+
+### Khi nào người dùng cần can thiệp?
+
+Chỉ cần quyết định khi supervisor gặp goal mơ hồ, thiếu quyền truy cập, scope
+xung đột, lỗi lặp lại không có giả thuyết mới, hoặc cần deploy/thay đổi dữ liệu,
+secret và quyền. Những trường hợp còn lại supervisor tiếp tục theo từng cycle
+hữu hạn và luôn ghi lại next action trong `work/SUPERVISOR_REPORT.md`.
+
+### Lệnh kiểm tra tối thiểu
+
+```powershell
+python tools/useagent.py validate
+python tools/useagent.py agent list
+python tools/useagent.py supervisor cycle --run-qa
+python tools/useagent.py task list
+Get-Content work\SUPERVISOR_REPORT.md
+```
+
+Nếu bạn chỉ muốn nhớ một điều: **mở mọi agent trong cùng control-plane root,
+đặt tên worker duy nhất, để supervisor tạo prompt, và luôn để worker pull/report
+qua CLI thay vì sửa registry bằng tay.**
