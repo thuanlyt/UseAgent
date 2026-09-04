@@ -21,7 +21,8 @@ collection malformed không được làm ingest, pull hoặc dispatch traceback
 
 Task phải đi qua `needs_review` trước khi trở thành `done`. Worker không được
 tự biến report `completed` thành release decision; review evidence là điều kiện
-bắt buộc của trạng thái `done`. Chỉ agent đã đăng ký có role `supervisor`,
+bắt buộc của trạng thái `done`; review evidence phải có giá trị không rỗng.
+Chỉ agent đã đăng ký có role `supervisor`,
 `reviewer` hoặc `release_gate` mới được ghi evidence `kind=review` và chuyển
 task `reported` qua `needs_review` đến `done`. Reviewer có thể khác với worker
 được giao task; worker chỉ được report kết quả và thêm evidence triển khai/test.

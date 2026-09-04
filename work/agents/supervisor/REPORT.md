@@ -167,3 +167,10 @@ Made reported state report-only: direct status mutation is rejected, worker task
 
 - Report: `work/reports/inbox/UA-0025-20260904T073715Z-30ab67.md`
 - Next: Run review gate and a supervisor QA cycle; then commit and push if all gates remain green.
+
+## 2026-09-04T07:44:02Z - UA-0026 (completed)
+
+Done now requires non-empty review evidence; evidence parsing rejects empty kind/value; validator uses the same predicate, with lifecycle and empty-review regressions plus bilingual contract/docs updates.
+
+- Report: `work/reports/inbox/UA-0026-20260904T074402Z-5866e8.md`
+- Next: Run review gate and supervisor QA cycle, then record remote CI evidence and push the hardened control plane.

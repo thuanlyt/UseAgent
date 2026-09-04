@@ -622,8 +622,8 @@ def cmd_task_update(args: argparse.Namespace) -> int:
             raise UseAgentError("a task must be reported or active before review")
         if args.status == "done" and current != "needs_review":
             raise UseAgentError("a task must pass the explicit review gate before done")
-        if args.status == "done" and not item.get("evidence"):
-            raise UseAgentError("a task needs at least one evidence entry before done")
+        if args.status == "done" and not has_review_evidence(item):
+            raise UseAgentError("a task needs non-empty review evidence before done")
         if args.status in ACTIVE_WRITER_STATUSES and not assigned:
             raise UseAgentError("active task needs an existing assignment; use task claim")
         if args.scopes:
@@ -657,14 +657,31 @@ def cmd_task_update(args: argparse.Namespace) -> int:
 
 
 def parse_evidence(value: str, kind: str | None = None) -> dict[str, str]:
+    if not isinstance(value, str):
+        raise UseAgentError("evidence value must be a string")
     if kind:
-        return {"kind": kind, "value": value}
+        if not isinstance(kind, str) or not kind.strip() or not value.strip():
+            raise UseAgentError("evidence kind and value cannot be empty")
+        return {"kind": kind.strip(), "value": value.strip()}
     if "=" not in value:
         raise UseAgentError("evidence must use --kind <kind> --value <value>")
     parsed_kind, parsed_value = value.split("=", 1)
+    parsed_kind = parsed_kind.strip()
+    parsed_value = parsed_value.strip()
     if not parsed_kind or not parsed_value:
         raise UseAgentError("evidence kind and value cannot be empty")
     return {"kind": parsed_kind, "value": parsed_value}
+
+
+def has_review_evidence(item: dict[str, Any]) -> bool:
+    evidence = item.get("evidence")
+    return isinstance(evidence, list) and any(
+        isinstance(entry, dict)
+        and entry.get("kind") == "review"
+        and isinstance(entry.get("value"), str)
+        and bool(entry["value"].strip())
+        for entry in evidence
+    )
 
 
 def cmd_task_evidence(args: argparse.Namespace) -> int:
@@ -1430,11 +1447,8 @@ def validate_registry(data: dict[str, Any], errors: list[str]) -> None:
             errors.append(f"{task_id} evidence must be an array")
         elif item.get("status") == "done" and not evidence:
             errors.append(f"{task_id} is done without evidence")
-        elif item.get("status") == "done" and not any(
-            isinstance(entry, dict) and entry.get("kind") == "review"
-            for entry in evidence
-        ):
-            errors.append(f"{task_id} is done without review evidence")
+        elif item.get("status") == "done" and not has_review_evidence(item):
+            errors.append(f"{task_id} is done without non-empty review evidence")
         if item.get("status") == "assigned" and not item.get("assigned_to"):
             errors.append(f"{task_id} is assigned without assigned_to")
         if item.get("status") == "reported" and not item.get("reports"):

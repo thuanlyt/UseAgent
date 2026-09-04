@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T07:39:31Z",
+  "updated_at": "2026-09-04T07:44:08Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -1786,6 +1786,81 @@
       "attempts": 1,
       "created_at": "2026-09-04T07:35:54Z",
       "updated_at": "2026-09-04T07:39:31Z",
+      "last_result": "completed"
+    },
+    "UA-0026": {
+      "id": "UA-0026",
+      "title": "Require review evidence before done",
+      "objective": "Prevent the CLI from closing a task with only implementation/test evidence; enforce the explicit review-evidence gate before done.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "docs/operations.md",
+        "docs/getting-started.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "task update done rejects tasks that have no non-empty review evidence",
+        "a registered review role can close a reported task only after review evidence and needs_review",
+        "existing lifecycle, malformed-state, multi-runtime and full QA remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate",
+        "python docs-site/build.py --check-only",
+        "git diff --check"
+      ],
+      "files": [
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: pass (38 tests)",
+          "recorded_at": "2026-09-04T07:44:02Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T07:44:02Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T07:44:02Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T07:44:02Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review pass: done transition now requires a non-empty review record, empty evidence is rejected before mutation, validator and CLI share has_review_evidence semantics, and lifecycle tests cover both missing and blank review evidence.",
+          "recorded_at": "2026-09-04T07:44:08Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0026-20260904T074402Z-5866e8.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T07:41:09Z",
+      "updated_at": "2026-09-04T07:44:08Z",
       "last_result": "completed"
     }
   }

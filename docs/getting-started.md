@@ -460,6 +460,9 @@ The assigned worker can report completion and test evidence, but cannot
 self-approve or self-close the task. The reviewer may be a different registered
 agent from the worker.
 
+The review value must contain a non-empty, repeatable finding or check; an empty
+review entry cannot satisfy the release gate.
+
 Use `task report` for worker completion. A direct
 `task update --status reported` is rejected so the registry cannot contain a
 report-less completion.

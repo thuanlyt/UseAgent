@@ -77,7 +77,9 @@ python tools/useagent.py task update UA-0001 --status needs_review --agent revie
 python tools/useagent.py task update UA-0001 --status done --agent reviewer
 ```
 
-`reviewer` phải là agent đã đăng ký trong roster. `completed` trong log chỉ là worker đã báo xong, không phải production-ready.
+`reviewer` phải là agent đã đăng ký trong roster và review value phải mô tả
+evidence thực tế, không được để trống. `completed` trong log chỉ là worker đã
+báo xong, không phải production-ready.
 
 ## Parallelism
 

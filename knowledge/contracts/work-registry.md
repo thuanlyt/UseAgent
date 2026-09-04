@@ -16,7 +16,7 @@
 - Active writer scopes do not overlap exact paths or parent/child subtrees.
 - Recorded task files must be repository-relative and inside the task scope;
   malformed array fields are validation errors, not validator crashes.
-- `done` requires at least one evidence record with a repeatable command/result.
+- `done` requires non-empty review evidence with a repeatable command/result.
 - `assigned` requires an agent mailbox and an assignment Markdown file.
 - `reported` requires a worker report path; it is not equivalent to reviewed `done`.
 - `reported` is written by `task report`; `task update --status reported` is
