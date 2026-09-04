@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T08:55:58Z",
+  "updated_at": "2026-09-04T08:58:46Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -589,6 +589,11 @@
           "kind": "review",
           "value": "Main-agent review: package wheel/install smoke succeeded in a fresh temporary venv; console entry point resolves tools.useagent:main, installed default root uses cwd, and CI now runs install/help/validate after the 3-version test matrix. Final cycle QA evidence: work/evidence/cycle-20260904T054859Z-7d6b24-qa.md.",
           "recorded_at": "2026-09-04T05:49:13Z"
+        },
+        {
+          "kind": "package-smoke",
+          "value": "Current clean-checkout smoke: python -m pip install --no-deps --target <temporary directory> . built and installed useagent 0.1.0; importing the installed console target and invoking useagent validate returned VALID; temporary target removed.",
+          "recorded_at": "2026-09-04T08:58:46Z"
         }
       ],
       "reports": [
@@ -596,7 +601,7 @@
       ],
       "attempts": 1,
       "created_at": "2026-09-04T05:35:24Z",
-      "updated_at": "2026-09-04T05:49:22Z",
+      "updated_at": "2026-09-04T08:58:46Z",
       "last_result": "completed"
     },
     "UA-0010": {
