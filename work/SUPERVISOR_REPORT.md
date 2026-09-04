@@ -1,13 +1,13 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T061503Z-bcb78e`
-- **Generated:** 2026-09-04T06:15:08Z
-- **Next action:** Create the next scoped work item from the project goal.
+- **Cycle:** `cycle-20260904T061900Z-728d40`
+- **Generated:** 2026-09-04T06:19:05Z
+- **Next action:** Complete the review gate for UA-0012; accept evidence or create a scoped debug task.
 - **Production snapshot:** `not_ready`
 
 ## Status counts
 
-- `done`: 11
+- `done`: 12
 - `needs_review`: 1
 
 ## Reports ingested this cycle
@@ -36,6 +36,7 @@
 - `UA-0009` — Package and release the UseAgent CLI — evidence: 6
 - `UA-0010` — Design and scaffold bilingual docs website — evidence: 5
 - `UA-0011` — Build practical bilingual docs experience — evidence: 5
+- `UA-0013` — Prioritize review gates in supervisor next action — evidence: 4
 - none
 
 ## Blocked work
@@ -45,7 +46,7 @@
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T061503Z-bcb78e-qa.md`
+- evidence: `work/evidence/cycle-20260904T061900Z-728d40-qa.md`
 
 ## Production gates
 
@@ -56,4 +57,4 @@
 
 ## Resume instruction
 
-Create the next scoped work item from the project goal.
+Complete the review gate for UA-0012; accept evidence or create a scoped debug task.

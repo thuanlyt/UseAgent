@@ -2,7 +2,7 @@
 
 - `freshness`: verified (2026-09-04)
 - `owner`: orchestrator
-- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:append_markdown`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`
+- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:append_markdown`, `tools/useagent.py:choose_next_action`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`
 
 ## Responsibility
 
@@ -28,6 +28,10 @@ The package entry point is `tools.useagent:main`; an installed CLI uses the
 current working directory when the package is outside a prepared source
 checkout. Markdown append operations preserve block separation without adding
 blank lines at end of file.
+
+Supervisor next-action selection prioritizes `blocked`, failed QA, failed
+reports, `reported` work and then `needs_review` work before planned work or a
+new task. This keeps a review gate from being hidden by unrelated planning.
 
 ## Dependency edges
 

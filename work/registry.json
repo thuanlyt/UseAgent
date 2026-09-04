@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T06:15:23Z",
+  "updated_at": "2026-09-04T06:18:55Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -825,6 +825,65 @@
       "attempts": 1,
       "created_at": "2026-09-04T05:51:45Z",
       "updated_at": "2026-09-04T06:15:23Z",
+      "last_result": "completed"
+    },
+    "UA-0013": {
+      "id": "UA-0013",
+      "title": "Prioritize review gates in supervisor next action",
+      "objective": "Ensure supervisor reports and checkpoints direct attention to reported or needs_review work before creating unrelated new tasks.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "knowledge/modules/useagent-control-plane.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Supervisor next action identifies a needs_review task and asks for its review gate",
+        "A reported task remains prioritized for ingest/review",
+        "Regression tests cover the status distinction and all existing tests remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v; python tools/useagent.py validate"
+      ],
+      "files": [
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 18 tests passed",
+          "recorded_at": "2026-09-04T06:18:30Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T06:18:30Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T06:18:30Z"
+        },
+        {
+          "kind": "review",
+          "value": "Main-agent review: next-action selection now has explicit needs_review precedence and regression coverage; final QA evidence: work/evidence/cycle-20260904T061835Z-c8425b-qa.md.",
+          "recorded_at": "2026-09-04T06:18:44Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0013-20260904T061830Z-ed8906.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T06:17:43Z",
+      "updated_at": "2026-09-04T06:18:55Z",
       "last_result": "completed"
     }
   }

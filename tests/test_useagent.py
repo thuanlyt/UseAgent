@@ -292,6 +292,16 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual(project["scripts"]["useagent"], "tools.useagent:main")
         self.assertEqual(metadata["tool"]["setuptools"]["packages"], ["tools"])
 
+    def test_supervisor_prioritizes_review_gate_before_new_work(self) -> None:
+        config = useagent.load_config()
+        data = {"items": {"UA-9000": {"id": "UA-9000", "title": "Review this change", "status": "needs_review"}}}
+        action = useagent.choose_next_action(data, [], config, {"status": "pass"})
+        self.assertIn("Complete the review gate for UA-9000", action)
+
+        data["items"]["UA-9000"]["status"] = "reported"
+        action = useagent.choose_next_action(data, [], config, {"status": "pass"})
+        self.assertIn("Review worker report for UA-9000", action)
+
     def test_qa_command_is_captured_as_evidence(self) -> None:
         config = useagent.load_config()
         config["supervisor"]["qa_commands"] = ['python -c "print(\'qa-ok\')"']

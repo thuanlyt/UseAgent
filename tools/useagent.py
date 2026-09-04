@@ -1005,6 +1005,7 @@ def choose_next_action(data: dict[str, Any], assignments: list[dict[str, str]], 
     blocked = [item for item in data["items"].values() if item.get("status") == "blocked"]
     failed = [item for item in data["items"].values() if item.get("last_result") == "failed"]
     reported = [item for item in data["items"].values() if item.get("status") == "reported"]
+    needs_review = [item for item in data["items"].values() if item.get("status") == "needs_review"]
     planned = [item for item in data["items"].values() if item.get("status") == "planned" and dependencies_done(data, item)]
     active = [item for item in data["items"].values() if item.get("status") in ACTIVE_WRITER_STATUSES]
     if blocked:
@@ -1015,6 +1016,8 @@ def choose_next_action(data: dict[str, Any], assignments: list[dict[str, str]], 
         return f"Read the failed worker report for {failed[0]['id']} and create a scoped debug task with a new hypothesis."
     if reported:
         return f"Review worker report for {reported[0]['id']}; run QA and create a debug task if evidence fails."
+    if needs_review:
+        return f"Complete the review gate for {needs_review[0]['id']}; accept evidence or create a scoped debug task."
     if assignments:
         return f"Workers pull assigned tasks from their INBOX.md; wait for reports from {', '.join(a['task_id'] for a in assignments)}."
     if planned:

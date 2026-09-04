@@ -16,3 +16,5 @@
 - 2026-09-04T06:09:59Z - `UA-0011` - Build practical bilingual docs experience - pending review - `work/reports/inbox/UA-0011-20260904T060959Z-50ae3b.md`
 
 - 2026-09-04T06:13:19Z - `UA-0012` - Docs website release and hosting readiness - pending review - `work/reports/inbox/UA-0012-20260904T061319Z-b6c002.md`
+
+- 2026-09-04T06:18:30Z - `UA-0013` - Prioritize review gates in supervisor next action - pending review - `work/reports/inbox/UA-0013-20260904T061830Z-ed8906.md`

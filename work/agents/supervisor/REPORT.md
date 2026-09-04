@@ -76,3 +76,10 @@ Added Vercel static hosting configuration with security headers and a reversible
 
 - Report: `work/reports/inbox/UA-0012-20260904T061319Z-b6c002.md`
 - Next: Complete browser visual QA on a working UI automation surface; then obtain the exact production hostname and explicit final deployment approval before any Vercel/Cloudflare action.
+
+## 2026-09-04T06:18:30Z - UA-0013 (completed)
+
+Updated choose_next_action so needs_review work remains ahead of unrelated new work, with a regression test covering both reported and needs_review states.
+
+- Report: `work/reports/inbox/UA-0013-20260904T061830Z-ed8906.md`
+- Next: Run supervisor QA cycle and review the corrected next action.
