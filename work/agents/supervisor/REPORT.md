@@ -30,4 +30,3 @@ Manual checkpoint creation now persists last_checkpoint in supervisor state; reg
 
 - Report: `work/reports/inbox/UA-0005-20260904T015947Z-3ad9a7.md`
 - Next: Run final GitHub CI and verify the final release state.
-
