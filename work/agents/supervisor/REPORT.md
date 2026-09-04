@@ -272,3 +272,10 @@ Created a polished 1200x630 standalone SVG social card using the existing UseAge
 
 - Report: `work/reports/inbox/UA-0041-20260904T161123Z-46dcb9.md`
 - Next: Review the draft pack, then close the work item without staging draft content.
+
+## 2026-09-04T16:29:13Z - UA-0042 (completed)
+
+Corrected draft social SVG after user review. The primary mark now uses the exact docs-site brand geometry and blue-on-white color treatment from the live .brand-mark; the card copy now follows the current web/README description of a file-first control plane for supervising multiple AI agents toward a production-ready result. Removed the hub's gradient/filter dependency for export compatibility while preserving the 1200x630 layout, labels, links and accessibility metadata. Updated bilingual copy to match the same product positioning.
+
+- Report: `work/reports/inbox/UA-0042-20260904T162913Z-7d4773.md`
+- Next: Run review gate, then close UA-0042; keep draft local and ignored.

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T16:12:21Z",
+  "updated_at": "2026-09-04T16:30:27Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -3170,6 +3170,109 @@
       "created_at": "2026-09-04T16:06:49Z",
       "updated_at": "2026-09-04T16:12:21Z",
       "last_result": "completed"
+    },
+    "UA-0042": {
+      "id": "UA-0042",
+      "title": "Fix social SVG export compatibility",
+      "objective": "Make the draft social SVG render consistently in common export tools by removing critical gradient/filter dependencies from the supervisor hub while preserving the established visual system and layout.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "draft",
+        "draft/useagent-social-card.svg"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "The hub has a solid high-contrast blue fill and white icon that remains visible when gradients or filters are unsupported",
+        "The SVG remains valid 1200x630 with the same links, labels and accessible title/desc",
+        "No README/docs or production site content is changed"
+      ],
+      "verification": [
+        "Python XML parse and SVG contract check",
+        "Browser render QA at the SVG intrinsic canvas"
+      ],
+      "files": [
+        "draft/useagent-social-card.svg",
+        "draft/useagent-social-copy.md"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "BRAND_WORDING_EXPORT_CONTRACT_PASS",
+          "recorded_at": "2026-09-04T16:29:13Z"
+        },
+        {
+          "kind": "check",
+          "value": "Browser render QA shows exact brand motif, accurate description and no clipping in the intrinsic canvas",
+          "recorded_at": "2026-09-04T16:29:13Z"
+        },
+        {
+          "kind": "check",
+          "value": "DRAFT_GIT_CONTRACT_PASS; draft remains ignored and untracked",
+          "recorded_at": "2026-09-04T16:29:13Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T16:29:13Z"
+        },
+        {
+          "kind": "check",
+          "value": "Final contract pass: exact docs-site brand paths appear twice in the SVG, hub is solid #2563EB with white icon and no softShadow/gradient dependency, wording matches web/README, XML/canvas/links pass, draft remains ignored.",
+          "recorded_at": "2026-09-04T16:30:27Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review passed: primary logo matches docs-site .brand-mark geometry and blue-on-white treatment; central supervisor node uses the same geometry in an export-safe blue/white inverse; product description is sourced from current web metadata and README; SVG renders cleanly in browser with no visible clipping; no external asset/script/import dependency; no README/docs or production site content changed. No actionable finding.",
+          "recorded_at": "2026-09-04T16:30:27Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0042-20260904T162913Z-7d4773.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T16:23:43Z",
+      "updated_at": "2026-09-04T16:30:27Z",
+      "last_result": "completed"
+    },
+    "UA-0043": {
+      "id": "UA-0043",
+      "title": "Correct social card brand and product wording",
+      "objective": "Correct the local social SVG so its logo matches the live docs brand mark and its product statement matches the current web/README description, while keeping the draft pack ignored and local.",
+      "level": "L1",
+      "status": "cancelled",
+      "owner": "supervisor",
+      "assigned_to": null,
+      "scope": [
+        "draft"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "SVG uses the exact geometry and color treatment of the docs-site brand-mark",
+        "SVG and copy use the current file-first multi-agent supervisor description and requested docs/repository links",
+        "SVG remains standalone, valid at 1200x630, readable and browser-rendered without clipping in its design canvas",
+        "Only draft content changes; draft remains ignored and untracked"
+      ],
+      "verification": [
+        "python tools/useagent.py validate",
+        "git check-ignore -q draft"
+      ],
+      "files": [],
+      "evidence": [],
+      "reports": [],
+      "attempts": 0,
+      "created_at": "2026-09-04T16:27:27Z",
+      "updated_at": "2026-09-04T16:28:00Z"
     }
   }
 }
