@@ -139,3 +139,10 @@ Added a credential-free three-runtime conformance harness modeling Codex, Claude
 
 - Report: `work/reports/inbox/UA-0021-20260904T070447Z-a74df2.md`
 - Next: Supervisor review harness assertions and evidence, then accept UA-0021 if all gates remain green.
+
+## 2026-09-04T07:12:26Z - UA-0022 (completed)
+
+Hardened malformed config/registry handling and recorded-file scope safety. Config sections no longer crash load/validate, path_for returns structured errors, registry arrays/dependency traversal are type-checked, done-evidence shape is safe, and task update --file rejects traversal or out-of-scope paths before persistence. Updated registry contract and module card.
+
+- Report: `work/reports/inbox/UA-0022-20260904T071226Z-f58d3d.md`
+- Next: Supervisor review the new validation invariants and regression evidence, then accept UA-0022 if no actionable finding remains.

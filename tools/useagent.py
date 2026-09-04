@@ -195,8 +195,16 @@ def load_config() -> dict[str, Any]:
         raise UseAgentError(f"{rel(CONFIG)} must contain a JSON object")
     merged = copy.deepcopy(DEFAULT_CONFIG)
     merged.update({key: value[key] for key in value if key not in {"paths", "supervisor"}})
-    merged["paths"].update(value.get("paths", {}))
-    merged["supervisor"].update(value.get("supervisor", {}))
+    raw_paths = value.get("paths", {})
+    if isinstance(raw_paths, dict):
+        merged["paths"].update(raw_paths)
+    elif "paths" in value:
+        merged["paths"] = raw_paths
+    raw_supervisor = value.get("supervisor", {})
+    if isinstance(raw_supervisor, dict):
+        merged["supervisor"].update(raw_supervisor)
+    elif "supervisor" in value:
+        merged["supervisor"] = raw_supervisor
     if not isinstance(merged.get("agents"), list):
         raise UseAgentError("config.agents must be an array")
     return merged
@@ -207,8 +215,11 @@ def save_config(config: dict[str, Any]) -> None:
 
 
 def path_for(config: dict[str, Any], key: str) -> Path:
-    value = config.get("paths", {}).get(key, DEFAULT_CONFIG["paths"].get(key))
-    if not value:
+    paths = config.get("paths", {})
+    if not isinstance(paths, dict):
+        raise UseAgentError("config.paths must be an object")
+    value = paths.get(key, DEFAULT_CONFIG["paths"].get(key))
+    if not isinstance(value, (str, Path)) or not str(value).strip():
         raise UseAgentError(f"missing configured path: {key}")
     return safe_repo_path(value)
 
@@ -589,7 +600,17 @@ def cmd_task_update(args: argparse.Namespace) -> int:
             item["assigned_to"] = None
         item["status"] = args.status
         if args.files:
-            item["files"] = sorted(set(item.get("files", []) + [normalize_scope(path) for path in args.files]))
+            files = [validate_relative_scope(path, "recorded file") for path in args.files]
+            out_of_scope = [
+                path
+                for path in files
+                if not any(scope_within(path, task_scope) for task_scope in item.get("scope", []))
+            ]
+            if out_of_scope:
+                raise UseAgentError(
+                    f"recorded file outside task scope: {', '.join(out_of_scope)}"
+                )
+            item["files"] = sorted(set(item.get("files", []) + files))
         item["updated_at"] = now_iso()
         save_registry(data)
         sync_item_frontmatter(item)
@@ -1253,17 +1274,18 @@ def validate_registry(data: dict[str, Any], errors: list[str]) -> None:
         if not isinstance(item, dict):
             errors.append(f"{task_id} must be an object")
             continue
-        for field in ("title", "level", "status", "owner", "scope", "depends_on", "acceptance", "evidence", "reports"):
+        for field in ("title", "level", "status", "owner", "scope", "depends_on", "acceptance", "files", "evidence", "reports"):
             if field not in item:
                 errors.append(f"{task_id} missing {field}")
         if item.get("level") not in VALID_LEVELS:
             errors.append(f"{task_id} has invalid level {item.get('level')}")
         if item.get("status") not in VALID_STATUSES:
             errors.append(f"{task_id} has invalid status {item.get('status')}")
-        if not isinstance(item.get("scope"), list) or not item.get("scope"):
+        scopes = item.get("scope")
+        if not isinstance(scopes, list) or not scopes:
             errors.append(f"{task_id} needs a non-empty scope")
         else:
-            for scope in item["scope"]:
+            for scope in scopes:
                 if not isinstance(scope, str):
                     errors.append(f"{task_id} has a non-string scope")
                     continue
@@ -1273,14 +1295,26 @@ def validate_registry(data: dict[str, Any], errors: list[str]) -> None:
                     errors.append(f"{task_id}: {exc}")
         if not isinstance(item.get("acceptance"), list) or not item.get("acceptance"):
             errors.append(f"{task_id} needs acceptance criteria")
-        for dependency in item.get("depends_on", []):
-            if dependency not in items:
+        dependencies = item.get("depends_on")
+        if not isinstance(dependencies, list):
+            errors.append(f"{task_id} depends_on must be an array")
+            dependencies = []
+        for dependency in dependencies:
+            if not isinstance(dependency, str):
+                errors.append(f"{task_id} has a non-string dependency")
+            elif dependency not in items:
                 errors.append(f"{task_id} references missing dependency {dependency}")
-        if item.get("status") == "done" and not item.get("evidence"):
+        for field in ("files", "evidence", "reports"):
+            if not isinstance(item.get(field), list):
+                errors.append(f"{task_id} {field} must be an array")
+        evidence = item.get("evidence")
+        if item.get("status") == "done" and not isinstance(evidence, list):
+            errors.append(f"{task_id} evidence must be an array")
+        elif item.get("status") == "done" and not evidence:
             errors.append(f"{task_id} is done without evidence")
         elif item.get("status") == "done" and not any(
             isinstance(entry, dict) and entry.get("kind") == "review"
-            for entry in item.get("evidence", [])
+            for entry in evidence
         ):
             errors.append(f"{task_id} is done without review evidence")
         if item.get("status") == "assigned" and not item.get("assigned_to"):
@@ -1300,8 +1334,11 @@ def validate_registry(data: dict[str, Any], errors: list[str]) -> None:
         if task_id in visited or task_id not in items:
             return
         visiting.add(task_id)
-        for dependency in items[task_id].get("depends_on", []):
-            visit(dependency)
+        dependencies = items[task_id].get("depends_on", [])
+        if isinstance(dependencies, list):
+            for dependency in dependencies:
+                if isinstance(dependency, str):
+                    visit(dependency)
         visiting.remove(task_id)
         visited.add(task_id)
 
@@ -1311,7 +1348,11 @@ def validate_registry(data: dict[str, Any], errors: list[str]) -> None:
     active = [(task_id, item) for task_id, item in items.items() if item.get("status") in ACTIVE_WRITER_STATUSES]
     for index, (left_id, left) in enumerate(active):
         for right_id, right in active[index + 1 :]:
-            if any(scope_overlaps(a, b) for a in left.get("scope", []) for b in right.get("scope", [])):
+            left_scopes = left.get("scope", [])
+            right_scopes = right.get("scope", [])
+            if not isinstance(left_scopes, list) or not isinstance(right_scopes, list):
+                continue
+            if any(scope_overlaps(a, b) for a in left_scopes for b in right_scopes if isinstance(a, str) and isinstance(b, str)):
                 errors.append(f"active writer scope conflict: {left_id} vs {right_id}")
 
 

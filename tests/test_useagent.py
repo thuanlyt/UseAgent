@@ -315,6 +315,66 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertTrue(any("invalid or duplicate agent id" in error for error in errors))
         self.assertTrue(any("agent needs an id" in error for error in errors))
 
+    def test_validator_reports_malformed_config_sections_without_traceback(self) -> None:
+        useagent.CONFIG.write_text(
+            json.dumps({"paths": None, "supervisor": [], "agents": []}),
+            encoding="utf-8",
+        )
+        code, output, error = self.invoke("validate")
+        self.assertEqual(code, 1)
+        self.assertIn("config.paths must be an object", output)
+        self.assertIn("config.supervisor must be an object", output)
+        self.assertNotIn("Traceback", output + error)
+
+    def test_validator_reports_malformed_registry_arrays_without_traceback(self) -> None:
+        task_id = self.new_task("Registry array validation", "src/registry.py")
+        data = useagent.load_registry()
+        data["items"][task_id]["depends_on"] = None
+        data["items"][task_id]["files"] = {"bad": "shape"}
+        data["items"][task_id]["reports"] = "not-an-array"
+        data["items"][task_id]["status"] = "done"
+        data["items"][task_id]["evidence"] = 1
+        errors: list[str] = []
+        useagent.validate_registry(data, errors)
+        self.assertIn(f"{task_id} depends_on must be an array", errors)
+        self.assertIn(f"{task_id} files must be an array", errors)
+        self.assertIn(f"{task_id} reports must be an array", errors)
+        self.assertIn(f"{task_id} evidence must be an array", errors)
+
+    def test_task_update_rejects_unsafe_or_out_of_scope_recorded_files(self) -> None:
+        self.register_worker("worker-1", "src")
+        task_id = self.new_task("Safe recorded file", "src/owned.py")
+        code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke(
+            "task",
+            "update",
+            task_id,
+            "--status",
+            "in_progress",
+            "--agent",
+            "worker-1",
+            "--file",
+            "../outside.py",
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("parent traversal", error)
+        code, _, error = self.invoke(
+            "task",
+            "update",
+            task_id,
+            "--status",
+            "in_progress",
+            "--agent",
+            "worker-1",
+            "--file",
+            "tests/secret.py",
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("outside task scope", error)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["files"], [])
+
     def test_done_registry_requires_review_evidence(self) -> None:
         task_id = self.new_task("Review evidence is required", "src/review-gate.py")
         data = useagent.load_registry()

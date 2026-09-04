@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T07:07:33Z",
+  "updated_at": "2026-09-04T07:13:31Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -1459,6 +1459,83 @@
       "attempts": 1,
       "created_at": "2026-09-04T07:00:16Z",
       "updated_at": "2026-09-04T07:07:33Z",
+      "last_result": "completed"
+    },
+    "UA-0022": {
+      "id": "UA-0022",
+      "title": "Harden malformed-state and recorded-file validation",
+      "objective": "Make config and registry validation fail safely and make supervisor file metadata obey repository-relative task scope invariants, with regression coverage for malformed JSON sections and unsafe recorded files.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Malformed paths or supervisor config sections produce actionable validation errors without traceback or partial state mutation",
+        "Registry array fields and dependency traversal are type-validated without validator crashes",
+        "task update --file rejects traversal and out-of-scope paths before writing state",
+        "Contract and module card document the enforced invariants and all focused/full QA remains green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v; python tools/useagent.py validate; python docs-site/build.py --check-only; git diff --check"
+      ],
+      "files": [
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 32 tests passed",
+          "recorded_at": "2026-09-04T07:12:26Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T07:12:26Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T07:12:26Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T07:12:26Z"
+        },
+        {
+          "kind": "check",
+          "value": "Focused review: 3 malformed-state/file-scope tests passed; python -m py_compile tools/useagent.py passed; git diff --check passed.",
+          "recorded_at": "2026-09-04T07:13:01Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review: no actionable P0/P1/P2 finding. Validation failures are surfaced without traceback, state writes occur only after file checks, and the registry contract/module card match the implementation.",
+          "recorded_at": "2026-09-04T07:13:02Z"
+        },
+        {
+          "kind": "check",
+          "value": "Supervisor cycle cycle-20260904T071307Z-ec2697: 32 tests passed, validate VALID, docs build VALIDATED 10 static files.",
+          "recorded_at": "2026-09-04T07:13:31Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0022-20260904T071226Z-f58d3d.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T07:10:01Z",
+      "updated_at": "2026-09-04T07:13:31Z",
       "last_result": "completed"
     }
   }

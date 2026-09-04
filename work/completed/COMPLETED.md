@@ -35,3 +35,5 @@ Các task worker báo hoàn tất được append tại đây. `completed` nghĩ
 - 2026-09-04T06:52:13Z - `UA-0020` - Enforce review-gated report ingestion - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0020-20260904T065213Z-f9abe3.md`
 
 - 2026-09-04T07:04:47Z - `UA-0021` - Add multi-runtime protocol conformance harness - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0021-20260904T070447Z-a74df2.md`
+
+- 2026-09-04T07:12:26Z - `UA-0022` - Harden malformed-state and recorded-file validation - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0022-20260904T071226Z-f58d3d.md`

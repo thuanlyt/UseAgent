@@ -40,7 +40,7 @@ Consumes `AGENTS.md`, `knowledge/`, `work/` and `useagent.config.json`; is used 
 
 ## Invariants
 
-Lock only the short state transition. Do not hold the lock while doing exploration, implementation or tests. Reject overlapping active writer scopes and reject `done` without evidence. Keep the selected project root explicit and reject configured paths outside it.
+Lock only the short state transition. Do not hold the lock while doing exploration, implementation or tests. Reject overlapping active writer scopes, unsafe/out-of-scope recorded files and `done` without review evidence. Keep the selected project root explicit, validate malformed config/registry shapes without traceback and reject configured paths outside it.
 
 ## Verification
 
