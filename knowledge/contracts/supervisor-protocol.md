@@ -32,6 +32,8 @@ report task implementation.
 `assigned -> in_progress` chỉ qua `task claim`/`worker pull`; transition
 `planned`, `blocked` hoặc `cancelled` bằng `task update` là thao tác hành chính
 và cần identity review-capable. Worker dùng `task report --result blocked`.
+`task claim` và `worker pull` đều phải kiểm tra agent đang `available`, chưa vượt
+`max_active`, đúng scope/capability của task; từ chối xảy ra trước khi đổi state.
 Chỉ agent đã đăng ký có role `supervisor`,
 `reviewer` hoặc `release_gate` mới được ghi evidence `kind=review` và chuyển
 task `reported` qua `needs_review` đến `done`. Reviewer có thể khác với worker

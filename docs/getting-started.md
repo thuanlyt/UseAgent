@@ -479,7 +479,9 @@ implementation work.
 
 An assigned task must be activated with `worker pull` or `task claim`, not a
 direct `task update`. Administrative `planned`, `blocked` and `cancelled`
-updates require a review-capable identity.
+updates require a review-capable identity. Claims and pulls also require the
+agent to be `available`, below `max_active`, and eligible for the task scope
+and capabilities.
 
 ### The runtime cannot find `$useagent-worker`
 

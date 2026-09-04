@@ -83,7 +83,9 @@ kiểm tra là `supervisor`, `explorer`, `planner`, `worker`, `reviewer` và
 `assigned` phải đi qua `worker pull` hoặc `task claim` để thành
 `in_progress`; không dùng `task update` để bypass claim. Các thao tác
 `planned`/`blocked`/`cancelled` bằng `task update` cần review-capable identity;
-worker báo blocked bằng `task report --result blocked`.
+worker báo blocked bằng `task report --result blocked`. Khi claim hoặc pull,
+agent cũng phải `available`, còn capacity dưới `max_active`, và task phải nằm
+trong scope/capability đã đăng ký.
 
 Quy trình review tối thiểu:
 

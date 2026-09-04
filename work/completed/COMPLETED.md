@@ -53,3 +53,7 @@ Các task worker báo hoàn tất được append tại đây. `completed` nghĩ
 - 2026-09-04T07:59:10Z - `UA-0029` - Enforce agent role boundaries - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0029-20260904T075910Z-c1bb29.md`
 
 - 2026-09-04T08:07:48Z - `UA-0030` - Authorize lifecycle transition commands - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0030-20260904T080748Z-fd05fc.md`
+
+- 2026-09-04T08:17:51Z - `UA-0031` - Enforce claim availability and capacity - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0031-20260904T081751Z-ff45f9.md`
+
+- 2026-09-04T08:19:16Z - `UA-0032` - Add malformed capability regression coverage - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0032-20260904T081916Z-2ac700.md`

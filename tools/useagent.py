@@ -592,12 +592,15 @@ def cmd_task_claim(args: argparse.Namespace) -> int:
     config = load_config()
     with state_lock():
         data = load_registry()
-        claim_agent(config, args.agent)
+        agent = claim_agent(config, args.agent)
         item = get_item(data, args.task_id)
         if item["status"] not in {"planned", "assigned", "blocked"}:
             raise UseAgentError(f"{args.task_id} is {item['status']}, not claimable")
         if item.get("assigned_to") and item["assigned_to"] != args.agent:
             raise UseAgentError(f"{args.task_id} is assigned to {item['assigned_to']}, not {args.agent}")
+        blocker = agent_claim_blocker(config, data, item, agent, ignore_id=args.task_id)
+        if blocker:
+            raise UseAgentError(f"{args.task_id} cannot be claimed by {args.agent}: {blocker}")
         if not dependencies_done(data, item):
             raise UseAgentError(f"{args.task_id} has unfinished dependencies: {item.get('depends_on', [])}")
         conflict = active_scope_conflict(data, item, ignore_id=args.task_id)
@@ -893,47 +896,67 @@ def cmd_agent_list(_: argparse.Namespace) -> int:
     return 0
 
 
-def agent_active_count(data: dict[str, Any], agent_id: str) -> int:
+def agent_active_count(data: dict[str, Any], agent_id: str, ignore_id: str | None = None) -> int:
     return sum(
         1
         for item in data["items"].values()
         if isinstance(item, dict)
+        and item.get("id") != ignore_id
         and item.get("assigned_to") == agent_id
         and item.get("status") in ACTIVE_WRITER_STATUSES
     )
 
 
-def agent_can_take(config: dict[str, Any], data: dict[str, Any], item: dict[str, Any], agent: dict[str, Any]) -> bool:
+def agent_claim_blocker(
+    config: dict[str, Any],
+    data: dict[str, Any],
+    item: dict[str, Any],
+    agent: dict[str, Any],
+    ignore_id: str | None = None,
+) -> str | None:
     agent_id = agent.get("id")
     if not isinstance(agent_id, str) or not agent_id:
-        return False
+        return "agent id is missing"
     if agent.get("status") != "available":
-        return False
+        return f"agent status is {agent.get('status', 'missing')}, expected available"
     try:
         max_active = int(agent.get("max_active", 1))
     except (TypeError, ValueError):
-        return False
-    if max_active < 1 or agent_active_count(data, agent_id) >= max_active:
-        return False
+        return "agent max_active is invalid"
+    if max_active < 1:
+        return "agent max_active must be at least 1"
+    active = agent_active_count(data, agent_id, ignore_id=ignore_id)
+    if active >= max_active:
+        return f"agent is at max_active capacity ({active}/{max_active})"
     if agent.get("role") not in CLAIM_ROLES:
-        return False
+        return "agent role cannot claim implementation work"
     allowed_scopes = agent.get("scope", [])
     task_scopes = item.get("scope", [])
     if not isinstance(allowed_scopes, list) or not isinstance(task_scopes, list):
-        return False
+        return "agent/task scope must be arrays"
     if allowed_scopes and not all(
         isinstance(task_scope, str)
         and any(isinstance(allowed, str) and scope_within(task_scope, allowed) for allowed in allowed_scopes)
         for task_scope in task_scopes
     ):
-        return False
+        return "task scope is outside the agent scope"
     agent_capabilities = agent.get("capabilities", [])
     required_capabilities = item.get("capabilities", [])
     if not isinstance(agent_capabilities, list) or not isinstance(required_capabilities, list):
-        return False
+        return "agent/task capabilities must be arrays"
+    if any(not isinstance(capability, str) or not capability.strip() for capability in agent_capabilities):
+        return "agent capabilities must be non-empty strings"
+    if any(not isinstance(capability, str) or not capability.strip() for capability in required_capabilities):
+        return "task capabilities must be non-empty strings"
     capabilities = set(agent_capabilities)
     required = set(required_capabilities)
-    return not required or required.issubset(capabilities)
+    if required and not required.issubset(capabilities):
+        return f"agent lacks required capabilities: {sorted(required - capabilities)}"
+    return None
+
+
+def agent_can_take(config: dict[str, Any], data: dict[str, Any], item: dict[str, Any], agent: dict[str, Any]) -> bool:
+    return agent_claim_blocker(config, data, item, agent) is None
 
 
 def choose_agent(config: dict[str, Any], data: dict[str, Any], item: dict[str, Any]) -> dict[str, Any] | None:
@@ -1028,6 +1051,9 @@ def cmd_worker_pull(args: argparse.Namespace) -> int:
             return 0
         assigned.sort(key=lambda item: item.get("dispatched_at", item.get("id", "")))
         item = assigned[0]
+        blocker = agent_claim_blocker(config, data, item, agent, ignore_id=item["id"])
+        if blocker:
+            raise UseAgentError(f"{item['id']} cannot be pulled by {args.agent}: {blocker}")
         try:
             path = safe_repo_path(item.get("assignment_path", ""))
         except (TypeError, ValueError, UseAgentError) as exc:
@@ -1583,6 +1609,11 @@ def validate_config(config: dict[str, Any], errors: list[str]) -> None:
                     validate_relative_scope(scope, f"scope for agent {agent_id}")
                 except UseAgentError as exc:
                     errors.append(str(exc))
+        capabilities = agent.get("capabilities", [])
+        if not isinstance(capabilities, list) or any(
+            not isinstance(capability, str) or not capability.strip() for capability in capabilities
+        ):
+            errors.append(f"capabilities must be an array of non-empty strings for agent {agent_id}")
         try:
             paths = agent_paths(config, agent)
         except (TypeError, ValueError, UseAgentError) as exc:

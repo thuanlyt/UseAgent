@@ -214,6 +214,89 @@ class UseAgentCliTests(unittest.TestCase):
         code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
         self.assertEqual((code, error), (0, ""))
 
+    def test_task_claim_requires_available_agent_and_capacity(self) -> None:
+        self.register_worker("worker-1", ".")
+        task_id = self.new_task("Claim availability", "src/claim-availability.py")
+
+        for status in ("paused", "offline", "busy"):
+            code, _, error = self.invoke("agent", "status", "worker-1", "--status", status)
+            self.assertEqual((code, error), (0, ""))
+            registry_before = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+            code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
+            self.assertEqual(code, 2)
+            self.assertIn("expected available", error)
+            registry_after = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+            self.assertEqual(registry_after["items"][task_id], registry_before["items"][task_id])
+
+        code, _, error = self.invoke("agent", "status", "worker-1", "--status", "available")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+
+        capacity_id = self.new_task("Claim capacity", "src/claim-capacity.py")
+        registry_before = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        code, _, error = self.invoke("task", "claim", capacity_id, "--agent", "worker-1")
+        self.assertEqual(code, 2)
+        self.assertIn("max_active capacity", error)
+        registry_after = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry_after["items"][capacity_id], registry_before["items"][capacity_id])
+
+    def test_worker_pull_requires_available_agent(self) -> None:
+        self.register_worker("worker-1", "src")
+        task_id = self.new_task("Pull availability", "src/pull-availability.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+
+        code, _, error = self.invoke("agent", "status", "worker-1", "--status", "paused")
+        self.assertEqual((code, error), (0, ""))
+        registry_before = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        code, _, error = self.invoke("worker", "pull", "--agent", "worker-1")
+        self.assertEqual(code, 2)
+        self.assertIn("expected available", error)
+        registry_after = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry_after["items"][task_id], registry_before["items"][task_id])
+
+        code, _, error = self.invoke("agent", "status", "worker-1", "--status", "available")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("worker", "pull", "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "in_progress")
+
+    def test_task_claim_rejects_scope_and_capability_mismatch(self) -> None:
+        self.register_worker("scoped-worker", "src/allowed")
+        outside_id = self.new_task("Claim scope mismatch", "src/other/task.py")
+        code, _, error = self.invoke("task", "claim", outside_id, "--agent", "scoped-worker")
+        self.assertEqual(code, 2)
+        self.assertIn("outside the agent scope", error)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][outside_id]["status"], "planned")
+
+        self.register_worker("capability-worker", ".")
+        code, output, error = self.invoke(
+            "task",
+            "new",
+            "--title",
+            "Claim capability mismatch",
+            "--level",
+            "L1",
+            "--owner",
+            "worker",
+            "--scope",
+            "src/capability.py",
+            "--capability",
+            "browser-qa",
+            "--acceptance",
+            "capability is present",
+        )
+        self.assertEqual((code, error), (0, ""))
+        capability_id = output.strip()
+        code, _, error = self.invoke("task", "claim", capability_id, "--agent", "capability-worker")
+        self.assertEqual(code, 2)
+        self.assertIn("lacks required capabilities", error)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][capability_id]["status"], "planned")
+
     def test_agent_role_boundaries_are_enforced(self) -> None:
         self.register_reviewer()
         task_id = self.new_task("Review role cannot claim", "src/role-boundary.py")
@@ -558,6 +641,17 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertIn("config.paths must be an object", output)
         self.assertIn("config.supervisor must be an object", output)
         self.assertNotIn("Traceback", output + error)
+
+    def test_validator_rejects_malformed_agent_capabilities(self) -> None:
+        self.register_worker("worker-1", ".")
+        config = useagent.load_config()
+        config["agents"][0]["capabilities"] = [["nested"]]
+        errors: list[str] = []
+        useagent.validate_config(config, errors)
+        self.assertIn(
+            "capabilities must be an array of non-empty strings for agent worker-1",
+            errors,
+        )
 
     def test_validator_reports_malformed_registry_arrays_without_traceback(self) -> None:
         task_id = self.new_task("Registry array validation", "src/registry.py")

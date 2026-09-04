@@ -34,4 +34,7 @@
 - `assigned -> in_progress` is claim-only. `planned`, `blocked` and `cancelled`
   administrative updates require a registered review-capable identity; workers
   use `task report --result blocked` for a blocked handover.
+- Direct `task claim` and `worker pull` must use an available claim-capable agent
+  below `max_active` whose scope and capabilities satisfy the task; rejection
+  occurs before registry mutation.
 - Updates are serialized by `tools/useagent.py`; consumers must tolerate `updated_at` changing after every transition.

@@ -202,3 +202,17 @@ Lifecycle activation and administrative transition authority are now enforced. D
 
 - Report: `work/reports/inbox/UA-0030-20260904T080748Z-fd05fc.md`
 - Next: Review the focused diff and record review evidence, then close UA-0030 after supervisor QA.
+
+## 2026-09-04T08:17:51Z - UA-0031 (completed)
+
+Direct task claim and worker pull now share an eligibility gate with dispatcher. Claims and pulls reject unavailable agents, invalid or exhausted max_active capacity, scope mismatch and capability mismatch before registry mutation; valid registered available flows remain unchanged. Validator now rejects malformed agent capability arrays.
+
+- Report: `work/reports/inbox/UA-0031-20260904T081751Z-ff45f9.md`
+- Next: Review the focused eligibility diff and record review evidence, then close UA-0031 after supervisor QA.
+
+## 2026-09-04T08:19:16Z - UA-0032 (completed)
+
+Added validator regression coverage for malformed agent capability arrays. The test asserts a readable validation error and preserves the no-traceback malformed-config safety contract.
+
+- Report: `work/reports/inbox/UA-0032-20260904T081916Z-2ac700.md`
+- Next: Review the focused test and close UA-0032 after supervisor QA.

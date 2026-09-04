@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T08:10:09Z",
+  "updated_at": "2026-09-04T08:19:53Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -2195,6 +2195,150 @@
       "attempts": 1,
       "created_at": "2026-09-04T08:02:09Z",
       "updated_at": "2026-09-04T08:10:09Z",
+      "last_result": "completed"
+    },
+    "UA-0031": {
+      "id": "UA-0031",
+      "title": "Enforce claim availability and capacity",
+      "objective": "Make direct task claim honor the same registered-role, availability, max_active, dependency and scope safety assumptions as supervisor dispatch and worker pull.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "docs/operations.md",
+        "docs/getting-started.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "task claim rejects paused, offline or busy agents",
+        "task claim rejects agents at max_active capacity without mutating the registry",
+        "valid registered available claims and worker pull flows remain green",
+        "contracts/docs describe claim availability and capacity requirements",
+        "full lifecycle, multi-runtime, validator, docs and QA checks remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate",
+        "python docs-site/build.py --check-only",
+        "python examples/multi-runtime-conformance/run_conformance.py",
+        "git diff --check"
+      ],
+      "files": [
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 45 tests pass",
+          "recorded_at": "2026-09-04T08:17:51Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T08:17:51Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T08:17:51Z"
+        },
+        {
+          "kind": "check",
+          "value": "python examples/multi-runtime-conformance/run_conformance.py: PASS",
+          "recorded_at": "2026-09-04T08:17:51Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T08:17:51Z"
+        },
+        {
+          "kind": "check",
+          "value": "Post-review regression: python -m unittest discover -s tests -v: 46 tests pass after malformed capability validation coverage was added in UA-0032.",
+          "recorded_at": "2026-09-04T08:19:23Z"
+        },
+        {
+          "kind": "review",
+          "value": "Focused review pass: direct task claim and worker pull use the shared agent_claim_blocker eligibility gate; unavailable, over-capacity, scope-ineligible and capability-ineligible actions fail before mutation; assigned task capacity is evaluated with the current task excluded; validator rejects malformed capability arrays; valid dispatch/pull/claim behavior remains covered.",
+          "recorded_at": "2026-09-04T08:19:53Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0031-20260904T081751Z-ff45f9.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T08:12:13Z",
+      "updated_at": "2026-09-04T08:19:53Z",
+      "last_result": "completed"
+    },
+    "UA-0032": {
+      "id": "UA-0032",
+      "title": "Add malformed capability regression coverage",
+      "objective": "Add regression coverage proving malformed registered agent capabilities are reported by the validator without a traceback.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tests/test_useagent.py"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "validator reports malformed agent capability arrays with a readable error",
+        "the regression suite remains green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate",
+        "git diff --check"
+      ],
+      "files": [
+        "tests/test_useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 46 tests pass",
+          "recorded_at": "2026-09-04T08:19:16Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T08:19:16Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T08:19:16Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review pass: regression targets the new validator branch, asserts the exact readable error, and introduces no application behavior or scope changes outside the assigned test file.",
+          "recorded_at": "2026-09-04T08:19:16Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0032-20260904T081916Z-2ac700.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T08:19:04Z",
+      "updated_at": "2026-09-04T08:19:17Z",
       "last_result": "completed"
     }
   }
