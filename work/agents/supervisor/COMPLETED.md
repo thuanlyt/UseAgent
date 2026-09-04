@@ -76,3 +76,5 @@
 - 2026-09-04T16:29:13Z - `UA-0042` - Fix social SVG export compatibility - pending review - `work/reports/inbox/UA-0042-20260904T162913Z-7d4773.md`
 
 - 2026-09-04T17:30:26Z - `UA-0044` - Draft Tech article about UseAgent - pending review - `work/reports/inbox/UA-0044-20260904T173026Z-cfcc71.md`
+
+- 2026-09-04T18:04:41Z - `UA-0045` - Create animated UseAgent workflow demo - pending review - `work/reports/inbox/UA-0045-20260904T180441Z-8c15be.md`

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T17:30:52Z",
+  "updated_at": "2026-09-04T18:05:25Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -3336,6 +3336,72 @@
       "attempts": 1,
       "created_at": "2026-09-04T17:28:13Z",
       "updated_at": "2026-09-04T17:30:52Z",
+      "last_result": "completed"
+    },
+    "UA-0045": {
+      "id": "UA-0045",
+      "title": "Create animated UseAgent workflow demo",
+      "objective": "Create a deterministic, source-reproducible animation that demonstrates a realistic UseAgent supervisor cycle from goal through dispatch, worker reports, QA and checkpoint, with GIF and MP4 outputs kept local under draft.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "draft"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "draft contains a reproducible generator and both GIF and MP4 outputs in a 16:9 format with readable labels and no external network assets",
+        "animation accurately shows the repository workflow and distinguishes simulated activity from real external agent execution",
+        "GIF is suitable for README preview and MP4 is suitable for docs embedding, with poster/caption/alt-text guidance",
+        "draft remains ignored and no generated media or source is tracked or staged"
+      ],
+      "verification": [
+        "python generator exits successfully and validates output dimensions/frame count",
+        "git check-ignore -q draft",
+        "python tools/useagent.py validate"
+      ],
+      "files": [
+        "draft/generate-useagent-workflow-demo.py",
+        "draft/useagent-workflow-demo.md"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "MEDIA_CONTRACT_PASS: GIF 800x450 100 frames; MP4 1280x720 24 FPS 240 frames; poster 1280x720; first and last GIF frames differ.",
+          "recorded_at": "2026-09-04T18:04:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T18:04:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "git check-ignore -q draft and git ls-files draft empty: DRAFT_GIT_IGNORE_PASS",
+          "recorded_at": "2026-09-04T18:04:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T18:04:41Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review gate PASS. Acceptance is evidenced: deterministic generator is self-contained with no network assets; animation visibly and textually marks SIMULATION and follows goal -> context/plan -> dispatch -> workers -> reports -> QA -> checkpoint; GIF/MP4/poster contracts and integration guidance are present; draft is ignored and git ls-files draft is empty. Focused checks passed: media contract, tools/useagent.py validate, git check-ignore, git diff --check, and visual poster inspection. No actionable P0/P1/P2 finding; no follow-up code task required.",
+          "recorded_at": "2026-09-04T18:05:20Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0045-20260904T180441Z-8c15be.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T17:54:43Z",
+      "updated_at": "2026-09-04T18:05:25Z",
       "last_result": "completed"
     }
   }
