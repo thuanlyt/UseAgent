@@ -52,5 +52,5 @@
   "last_ingest_at": "2026-09-04T06:48:01Z",
   "last_qa_at": "2026-09-04T07:05:33Z",
   "last_cycle_id": "cycle-20260904T070524Z-d7103b",
-  "last_checkpoint": "work/checkpoints/20260904T070533Z-cycle-20260904t070524z-d7103b.md"
+  "last_checkpoint": "work/checkpoints/20260904T070734Z-multi-runtime-ci-gate-v1.md"
 }

@@ -1,7 +1,7 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T070524Z-d7103b`
-- **Generated:** 2026-09-04T07:05:33Z
+- **Cycle:** `manual-20260904T070734Z`
+- **Generated:** 2026-09-04T07:07:34Z
 - **Next action:** Complete the review gate for UA-0012; accept evidence or create a scoped debug task.
 - **Production snapshot:** `not_ready`
 
@@ -44,7 +44,7 @@
 - `UA-0018` — Build the deployable docs artifact in CI — evidence: 6
 - `UA-0019` — Harden scope and worker identity invariants — evidence: 5
 - `UA-0020` — Enforce review-gated report ingestion — evidence: 13
-- `UA-0021` — Add multi-runtime protocol conformance harness — evidence: 7
+- `UA-0021` — Add multi-runtime protocol conformance harness — evidence: 10
 - none
 
 ## Blocked work
