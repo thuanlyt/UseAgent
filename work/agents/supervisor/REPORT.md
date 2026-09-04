@@ -111,3 +111,10 @@ Added a deterministic hosting dry-run test that parses vercel.json, verifies bui
 
 - Report: `work/reports/inbox/UA-0017-20260904T063721Z-d12b4d.md`
 - Next: Supervisor review the hosting dry-run evidence, run the configured QA cycle and keep UA-0012 open until browser/hostname gates are real.
+
+## 2026-09-04T06:41:28Z - UA-0018 (completed)
+
+Added a CI step that runs the same deployable docs build from repository root with python docs-site/build.py --output dist, matching Vercel's docs-site root plus python3 build.py --output dist configuration. The output is ignored and only validates the artifact; no generated dist is committed. Corrected an initial path-resolution mismatch before final verification.
+
+- Report: `work/reports/inbox/UA-0018-20260904T064128Z-61c61e.md`
+- Next: Supervisor review the CI build evidence, run the full cycle and push the corrected workflow.

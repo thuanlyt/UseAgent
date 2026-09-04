@@ -27,3 +27,5 @@ Các task worker báo hoàn tất được append tại đây. `completed` nghĩ
 - 2026-09-04T06:34:25Z - `UA-0016` - Harden docs SEO metadata without a guessed domain - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0016-20260904T063425Z-75f525.md`
 
 - 2026-09-04T06:37:21Z - `UA-0017` - Automate hosting dry-run contract - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0017-20260904T063721Z-d12b4d.md`
+
+- 2026-09-04T06:41:28Z - `UA-0018` - Build the deployable docs artifact in CI - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0018-20260904T064128Z-61c61e.md`

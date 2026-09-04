@@ -36,6 +36,9 @@ jobs:
       - name: Validate documentation site links
         run: python docs-site/build.py --check-only
 
+      - name: Build deployable documentation artifact
+        run: python docs-site/build.py --output dist
+
       - name: Install and smoke-test console package
         run: |
           python -m pip install --no-deps .
