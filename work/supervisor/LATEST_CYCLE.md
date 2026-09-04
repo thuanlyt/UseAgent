@@ -1,14 +1,14 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T163037Z-a89491`
-- **Generated:** 2026-09-04T16:30:52Z
+- **Cycle:** `cycle-20260904T173057Z-9904fd`
+- **Generated:** 2026-09-04T17:31:12Z
 - **Next action:** Run the production release gate and obtain explicit deploy approval.
 - **Production snapshot:** `ready`
 
 ## Status counts
 
 - `cancelled`: 2
-- `done`: 41
+- `done`: 42
 
 ## Reports ingested this cycle
 
@@ -65,6 +65,7 @@
 - `UA-0040` — Optimize visual asset delivery — evidence: 7
 - `UA-0041` — Create social media draft pack — evidence: 5
 - `UA-0042` — Fix social SVG export compatibility — evidence: 6
+- `UA-0044` — Draft Tech article about UseAgent — evidence: 5
 - none
 
 ## Blocked work
@@ -74,7 +75,7 @@
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T163037Z-a89491-qa.md`
+- evidence: `work/evidence/cycle-20260904T173057Z-9904fd-qa.md`
 
 ## Production gates
 

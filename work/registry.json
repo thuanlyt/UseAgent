@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T16:30:27Z",
+  "updated_at": "2026-09-04T17:30:52Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -3273,6 +3273,70 @@
       "attempts": 0,
       "created_at": "2026-09-04T16:27:27Z",
       "updated_at": "2026-09-04T16:28:00Z"
+    },
+    "UA-0044": {
+      "id": "UA-0044",
+      "title": "Draft Tech article about UseAgent",
+      "objective": "Write a polished Vietnamese Tech article for thuanlyt.id.vn that explains UseAgent accurately to a broad technical audience, includes SEO-ready metadata and practical multi-agent examples, and remains local under draft.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "draft"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "draft contains one publication-ready Markdown article assigned to the Tech category with title, slug, excerpt, description, keywords and editorial image guidance",
+        "article accurately explains the supervisor/control-plane model, file-first knowledge/work ledgers, worker reports, review/QA/checkpoints, Codex/Claude Code/Antigravity compatibility and bounded autopilot",
+        "article includes practical commands, a lightweight prompt example, requested docs and GitHub links, and avoids claims not supported by the repository",
+        "draft remains ignored and no article content is tracked or staged"
+      ],
+      "verification": [
+        "python tools/useagent.py validate",
+        "git check-ignore -q draft"
+      ],
+      "files": [
+        "draft/thuanlyt-tech-useagent.md"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "ARTICLE_CONTENT_CONTRACT_PASS words=1804",
+          "recorded_at": "2026-09-04T17:30:26Z"
+        },
+        {
+          "kind": "check",
+          "value": "Live docs, Getting Started, Architecture and GitHub links return HTTP 200",
+          "recorded_at": "2026-09-04T17:30:26Z"
+        },
+        {
+          "kind": "check",
+          "value": "DRAFT_GIT_CONTRACT_PASS; draft remains ignored and untracked",
+          "recorded_at": "2026-09-04T17:30:26Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T17:30:26Z"
+        },
+        {
+          "kind": "review",
+          "value": "Editorial review passed: article structure is publishable, wording matches README/docs sources, runtime compatibility and bounded runner/autopilot claims are qualified, safety boundaries are preserved, practical commands are repository-valid, metadata is suitable for the Tech category, and both requested links resolve. Featured image guidance references the existing local draft asset. No actionable finding; no public content was changed.",
+          "recorded_at": "2026-09-04T17:30:52Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0044-20260904T173026Z-cfcc71.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T17:28:13Z",
+      "updated_at": "2026-09-04T17:30:52Z",
+      "last_result": "completed"
     }
   }
 }

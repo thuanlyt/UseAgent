@@ -279,3 +279,10 @@ Corrected draft social SVG after user review. The primary mark now uses the exac
 
 - Report: `work/reports/inbox/UA-0042-20260904T162913Z-7d4773.md`
 - Next: Run review gate, then close UA-0042; keep draft local and ignored.
+
+## 2026-09-04T17:30:26Z - UA-0044 (completed)
+
+Created a publication-ready Vietnamese Tech article draft for thuanlyt.id.vn. The Markdown includes CMS-friendly metadata (Tech category, title, slug, excerpt, description, keywords, featured-image guidance), a source-aligned explanation of UseAgent as a file-first supervisor/control plane, the context-to-checkpoint lifecycle, knowledge/work ledgers, Codex/Claude Code/Antigravity compatibility, practical prompt and CLI examples, bounded autopilot safety boundaries, and CTA links to the live docs and MIT GitHub repository. No public README/docs content was changed.
+
+- Report: `work/reports/inbox/UA-0044-20260904T173026Z-cfcc71.md`
+- Next: Run the editorial/review gate, then close the draft task; keep article local under ignored draft/.
