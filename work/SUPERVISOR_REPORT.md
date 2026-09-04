@@ -1,13 +1,14 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T084919Z-87c0be`
-- **Generated:** 2026-09-04T08:49:31Z
-- **Next action:** Run the production release gate and obtain explicit deploy approval.
-- **Production snapshot:** `ready`
+- **Cycle:** `manual-20260904T085420Z`
+- **Generated:** 2026-09-04T08:54:20Z
+- **Next action:** Register an eligible worker or widen its configured scope/capabilities, then dispatch again.
+- **Production snapshot:** `not_ready`
 
 ## Status counts
 
 - `done`: 34
+- `planned`: 1
 
 ## Reports ingested this cycle
 
@@ -70,11 +71,11 @@
 
 ## Production gates
 
-- [x] `all_tasks_done`: `pass`
+- [ ] `all_tasks_done`: `fail`
 - [x] `qa`: `pass`
 - [x] `no_blocked_tasks`: `pass`
 - [x] `operational_rollback_notes`: `pass`
 
 ## Resume instruction
 
-Run the production release gate and obtain explicit deploy approval.
+Register an eligible worker or widen its configured scope/capabilities, then dispatch again.
