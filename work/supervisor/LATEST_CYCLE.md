@@ -1,14 +1,14 @@
 # UseAgent supervisor report
 
-- **Cycle:** `manual-20260904T085420Z`
-- **Generated:** 2026-09-04T08:54:20Z
-- **Next action:** Register an eligible worker or widen its configured scope/capabilities, then dispatch again.
+- **Cycle:** `manual-20260904T085558Z`
+- **Generated:** 2026-09-04T08:55:58Z
+- **Next action:** Resolve blocker for UA-0035 and attach the missing decision/evidence.
 - **Production snapshot:** `not_ready`
 
 ## Status counts
 
+- `blocked`: 1
 - `done`: 34
-- `planned`: 1
 
 ## Reports ingested this cycle
 
@@ -62,6 +62,7 @@
 
 ## Blocked work
 
+- `UA-0035` — Deploy docs website and connect production domain
 - none
 
 ## QA
@@ -73,9 +74,9 @@
 
 - [ ] `all_tasks_done`: `fail`
 - [x] `qa`: `pass`
-- [x] `no_blocked_tasks`: `pass`
+- [ ] `no_blocked_tasks`: `fail`
 - [x] `operational_rollback_notes`: `pass`
 
 ## Resume instruction
 
-Register an eligible worker or widen its configured scope/capabilities, then dispatch again.
+Resolve blocker for UA-0035 and attach the missing decision/evidence.
