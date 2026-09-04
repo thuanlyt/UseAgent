@@ -44,6 +44,10 @@ def check_links(files: list[Path]) -> list[str]:
             target = SITE_ROOT / relative if raw_target.startswith("/") else source.parent / relative
             if target.is_dir():
                 target /= "index.html"
+            elif not target.exists() and target.suffix == "":
+                clean_route_target = target.with_suffix(".html")
+                if clean_route_target.exists():
+                    target = clean_route_target
             if not target.exists():
                 errors.append(f"{source.relative_to(SITE_ROOT)} -> {raw_target}")
     return errors

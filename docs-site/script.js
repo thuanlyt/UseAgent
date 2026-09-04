@@ -1,10 +1,10 @@
 const docsIndex = [
-  { title: "Get started", description: "Set up UseAgent and run your first supervisor-to-worker handover.", href: "getting-started.html" },
-  { title: "Runtime roster", description: "Connect Codex, Claude Code, Antigravity or another compatible runtime.", href: "getting-started.html#runtimes" },
-  { title: "Architecture", description: "Understand the knowledge ledger, registry, mailbox and production gate.", href: "architecture.html" },
-  { title: "Worker loop", description: "Pull one task, implement in scope, report checks and continue the cycle.", href: "operations.html#worker-loop" },
-  { title: "Autopilot cycle", description: "Run bounded cycles with QA, checkpoints and explicit stop conditions.", href: "operations.html#cycle" },
-  { title: "Hướng dẫn tiếng Việt", description: "Thiết lập supervisor, worker và chu trình report bằng tiếng Việt.", href: "vi.html" },
+  { title: "Get started", description: "Set up UseAgent and run your first supervisor-to-worker handover.", href: "/getting-started" },
+  { title: "Runtime roster", description: "Connect Codex, Claude Code, Antigravity or another compatible runtime.", href: "/getting-started#runtimes" },
+  { title: "Architecture", description: "Understand the knowledge ledger, registry, mailbox and production gate.", href: "/architecture" },
+  { title: "Worker loop", description: "Pull one task, implement in scope, report checks and continue the cycle.", href: "/operations#worker-loop" },
+  { title: "Autopilot cycle", description: "Run bounded cycles with QA, checkpoints and explicit stop conditions.", href: "/operations#cycle" },
+  { title: "Hướng dẫn tiếng Việt", description: "Thiết lập supervisor, worker và chu trình report bằng tiếng Việt.", href: "/vi" },
 ];
 
 const menuButton = document.querySelector(".menu-toggle");

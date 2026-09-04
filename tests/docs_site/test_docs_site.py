@@ -14,10 +14,10 @@ SITE = ROOT / "docs-site"
 PRIMARY_ORIGIN = "https://useagent.thuanlyt.id.vn"
 INDEXABLE_URLS = {
     "index.html": f"{PRIMARY_ORIGIN}/",
-    "getting-started.html": f"{PRIMARY_ORIGIN}/getting-started.html",
-    "architecture.html": f"{PRIMARY_ORIGIN}/architecture.html",
-    "operations.html": f"{PRIMARY_ORIGIN}/operations.html",
-    "vi.html": f"{PRIMARY_ORIGIN}/vi.html",
+    "getting-started.html": f"{PRIMARY_ORIGIN}/getting-started",
+    "architecture.html": f"{PRIMARY_ORIGIN}/architecture",
+    "operations.html": f"{PRIMARY_ORIGIN}/operations",
+    "vi.html": f"{PRIMARY_ORIGIN}/vi",
 }
 
 
