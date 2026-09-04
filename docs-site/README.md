@@ -34,10 +34,11 @@ deployment fallback rather than a second SEO source of truth.
 
 The persisted source of truth is
 `../design-system/useagent-docs/MASTER.md`, generated with the UI/UX Pro Max
-design-system workflow. The current direction is Minimalism/Swiss: IBM Plex
-Sans for body copy, JetBrains Mono for headings and code, a slate/blue
-high-contrast palette, restrained motion, visible keyboard focus and responsive
-layouts at 375px, 768px, 1024px and 1440px.
+design-system workflow. The current direction is Minimalism/Swiss: a system
+sans stack for body copy, a system mono stack for headings and code, a
+slate/blue high-contrast palette, restrained motion, visible keyboard focus
+and responsive layouts at 375px, 768px, 1024px and 1440px. System fonts are
+intentional: they keep the critical path free of third-party font requests.
 
 The content foundation now includes English and Vietnamese journeys, runtime
 examples and operator guidance. Final browser visual QA, hosting and DNS remain

@@ -117,6 +117,7 @@ class DocsSiteTests(unittest.TestCase):
             self.assertIn("<meta name=\"description\"", content, page.name)
             self.assertIn('href="#main-content"', content, page.name)
             self.assertIn('id="main-content"', content, page.name)
+            self.assertNotIn("style=", content, page.name)
             if "https://" in content:
                 self.assertIn('rel="noreferrer"', content, page.name)
 
@@ -268,6 +269,8 @@ class DocsSiteTests(unittest.TestCase):
         self.assertEqual(headers["X-Frame-Options"], "DENY")
         self.assertEqual(headers["Permissions-Policy"], "camera=(), geolocation=(), microphone=()")
         self.assertIn("frame-ancestors 'none'", headers["Content-Security-Policy"])
+        self.assertIn("style-src 'self'", headers["Content-Security-Policy"])
+        self.assertNotIn("fonts.googleapis.com", headers["Content-Security-Policy"])
 
         runbook = (SITE / "DEPLOYMENT.md").read_text(encoding="utf-8").lower()
         for required_phrase in (
