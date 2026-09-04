@@ -1,7 +1,7 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T072341Z-b7a589`
-- **Generated:** 2026-09-04T07:23:51Z
+- **Cycle:** `manual-20260904T072515Z`
+- **Generated:** 2026-09-04T07:25:15Z
 - **Next action:** Complete the review gate for UA-0012; accept evidence or create a scoped debug task.
 - **Production snapshot:** `not_ready`
 
@@ -46,7 +46,7 @@
 - `UA-0020` — Enforce review-gated report ingestion — evidence: 13
 - `UA-0021` — Add multi-runtime protocol conformance harness — evidence: 10
 - `UA-0022` — Harden malformed-state and recorded-file validation — evidence: 7
-- `UA-0023` — Make report ingest and roster boundaries fail-safe — evidence: 8
+- `UA-0023` — Make report ingest and roster boundaries fail-safe — evidence: 10
 - none
 
 ## Blocked work
