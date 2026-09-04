@@ -24,3 +24,10 @@ GitHub Actions now uses current checkout/setup-python releases compatible with t
 
 - Report: `work/reports/inbox/UA-0004-20260903T184432Z-793eab.md`
 - Next: Keep the repository on reviewed work-item flow and request explicit authorization before deployment.
+## 2026-09-04T01:59:47Z - UA-0005 (completed)
+
+Manual checkpoint creation now persists last_checkpoint in supervisor state; regression coverage confirms the pointer matches the created file.
+
+- Report: `work/reports/inbox/UA-0005-20260904T015947Z-3ad9a7.md`
+- Next: Run final GitHub CI and verify the final release state.
+

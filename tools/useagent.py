@@ -1058,6 +1058,9 @@ def cmd_checkpoint_create(args: argparse.Namespace) -> int:
     with state_lock():
         ensure_layout()
         path = write_checkpoint(config, args.name, args.status, args.summary, args.next_action, args.tasks or [], args.blockers or [], args.agent)
+        state = load_supervisor_state(config)
+        state["last_checkpoint"] = rel(path)
+        save_supervisor_state(config, state)
     print(rel(path))
     return 0
 

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-03T18:44:33Z",
+  "updated_at": "2026-09-04T01:59:48Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -260,6 +260,65 @@
       "attempts": 1,
       "created_at": "2026-09-03T18:43:22Z",
       "updated_at": "2026-09-03T18:44:33Z",
+      "last_result": "completed"
+    },
+    "UA-0005": {
+      "id": "UA-0005",
+      "title": "Persist manually created checkpoint pointer",
+      "objective": "Ensure every checkpoint created through the CLI updates supervisor state so resume context always points to an existing checkpoint.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools",
+        "tests",
+        "work/supervisor"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "checkpoint create persists last_checkpoint in supervisor state",
+        "Regression test verifies the pointer and checkpoint file"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate"
+      ],
+      "files": [
+        "tests/test_useagent.py",
+        "tools/useagent.py",
+        "work/supervisor/state.json"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py: pass",
+          "recorded_at": "2026-09-04T01:59:47Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 12 tests pass",
+          "recorded_at": "2026-09-04T01:59:47Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T01:59:47Z"
+        },
+        {
+          "kind": "review",
+          "value": "Release review: checkpoint pointer is updated atomically under the existing state lock and points to an existing repository-relative file.",
+          "recorded_at": "2026-09-04T01:59:47Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0005-20260904T015947Z-3ad9a7.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-03T18:48:38Z",
+      "updated_at": "2026-09-04T01:59:48Z",
       "last_result": "completed"
     }
   }

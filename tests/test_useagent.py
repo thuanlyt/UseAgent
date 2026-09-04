@@ -288,6 +288,8 @@ class UseAgentCliTests(unittest.TestCase):
         )
         self.assertEqual((code, error), (0, ""))
         self.assertTrue((useagent.ROOT / output.strip()).exists())
+        state = json.loads((useagent.ROOT / "work" / "supervisor" / "state.json").read_text(encoding="utf-8"))
+        self.assertEqual(state["last_checkpoint"], output.strip())
         code, output, error = self.invoke("context", "--task", task_id, "--max-chars", "3000")
         self.assertEqual((code, error), (0, ""))
         self.assertIn("knowledge/INDEX.md", output)
