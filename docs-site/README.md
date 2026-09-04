@@ -30,6 +30,21 @@ indexable pages publish absolute canonical and EN/VI alternate metadata;
 `robots.txt` references `sitemap.xml`. The `vercel.app` hostname remains a
 deployment fallback rather than a second SEO source of truth.
 
+## Visual asset contract
+
+The local `assets/` directory contains the visual layer used by the site:
+
+- `useagent-control-plane-hero.png` — generated text-free hero and social image;
+- `useagent-supervisor-loop.svg` — goal → supervisor → worker → QA loop;
+- `useagent-shared-ledger.svg` — knowledge, work, evidence and checkpoint memory;
+- `useagent-runtime-handoff.svg` — Codex, Claude Code and Antigravity on one protocol.
+
+Every page image has explicit `alt`, `width` and `height` attributes. The
+homepage hero is eager because it is above the fold; article diagrams are
+lazy-loaded. Keep future assets local, lightweight and free of tracking pixels,
+remote image hosts or unreviewed third-party marks. The visual source of truth
+is [ADR-0007](../knowledge/decisions/0007-visual-documentation-system.md).
+
 ## Design contract
 
 The persisted source of truth is

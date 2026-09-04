@@ -34,4 +34,4 @@
 - `freshness`: verified
 - `last_verified`: 2026-09-04
 - `owner`: planner/release_gate
-- `next_refresh`: sau khi thêm module, public contract, build command hoặc deploy path.
+- `next_refresh`: sau khi thêm module, public contract, build command hoặc deploy path; visual asset contract hiện được ghi tại `knowledge/decisions/0007-visual-documentation-system.md`.

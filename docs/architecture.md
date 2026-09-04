@@ -4,6 +4,11 @@
 
 UseAgent is a repository-local coordination layer. It does not replace the model that plans work or the runtime that executes a worker. It makes their shared state explicit, durable and reviewable.
 
+![UseAgent supervisor loop from user goal to worker evidence and checkpoint](../docs-site/assets/useagent-supervisor-loop.svg)
+
+*The visual summary: the supervisor turns one goal into scoped work, then uses
+reports, QA and checkpoints to choose the next safe cycle.*
+
 ### Layers
 
 1. **Supervisor skill** — interprets the user's goal, records assumptions, derives milestones and decides the next bounded action.
@@ -39,6 +44,11 @@ Deployment remains outside the CLI. A supervisor may recommend a release only af
 ## Tiếng Việt
 
 UseAgent là lớp điều phối nằm trong repository. Nó không thay thế model lập kế hoạch hoặc runtime thực thi worker; nó làm cho state chung trở nên rõ ràng, bền vững và có thể review.
+
+![Sơ đồ vòng lặp supervisor của UseAgent](../docs-site/assets/useagent-supervisor-loop.svg)
+
+*Sơ đồ chỉ để định hướng nhanh; contract và state thực tế vẫn nằm trong
+`knowledge/`, `work/` và CLI.*
 
 ### Các lớp kiến trúc
 

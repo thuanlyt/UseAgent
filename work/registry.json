@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T14:31:58Z",
+  "updated_at": "2026-09-04T15:09:55Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -2920,6 +2920,105 @@
       "attempts": 1,
       "created_at": "2026-09-04T14:11:58Z",
       "updated_at": "2026-09-04T14:31:58Z",
+      "last_result": "completed"
+    },
+    "UA-0039": {
+      "id": "UA-0039",
+      "title": "Add visual documentation system and branded illustrations",
+      "objective": "Add purposeful, accessible visual assets to the open-source repository and deployed bilingual docs so the architecture, worker loop and runtime handoff are understandable at a glance without sacrificing static performance or SEO.",
+      "level": "L3",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "README.md",
+        "design-system",
+        "docs",
+        "docs-site",
+        "knowledge/INDEX.md",
+        "knowledge/decisions/0007-visual-documentation-system.md",
+        "knowledge/project-map.md",
+        "tests/docs_site/test_docs_site.py"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "Repository contains a small, license-safe visual asset library with a branded hero illustration and semantic architecture/workflow diagrams.",
+        "Docs website uses meaningful responsive images with descriptive alt text, captions or nearby explanatory text, lazy loading below the fold and no layout-shifting external dependency.",
+        "README and bilingual docs reference the visuals to explain supervisor-to-worker flow, shared knowledge/work ledger and multi-runtime handoff.",
+        "Static build, validator, docs tests and visual asset integrity checks pass; visual changes do not regress route, accessibility or SEO contracts.",
+        "Visual design decision and project map are updated with source anchors and a clear no-tracking/no-third-party-asset policy."
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python docs-site/build.py --check-only",
+        "python tools/useagent.py validate"
+      ],
+      "files": [
+        "README.md",
+        "docs-site/README.md",
+        "docs-site/architecture.html",
+        "docs-site/assets",
+        "docs-site/build.py",
+        "docs-site/getting-started.html",
+        "docs-site/index.html",
+        "docs-site/operations.html",
+        "docs-site/styles.css",
+        "docs-site/vi.html",
+        "docs/architecture.md",
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "knowledge/INDEX.md",
+        "knowledge/decisions/0007-visual-documentation-system.md",
+        "knowledge/project-map.md",
+        "tests/docs_site/test_docs_site.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 59 tests passed",
+          "recorded_at": "2026-09-04T15:09:28Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --output dist: BUILT 15 static files including assets",
+          "recorded_at": "2026-09-04T15:09:28Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T15:09:28Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 15 static files",
+          "recorded_at": "2026-09-04T15:09:28Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: no content errors",
+          "recorded_at": "2026-09-04T15:09:28Z"
+        },
+        {
+          "kind": "check",
+          "value": "Local browser visual QA: hero and article diagram rendered at mobile and desktop; alt/caption exposed in accessibility tree",
+          "recorded_at": "2026-09-04T15:09:28Z"
+        },
+        {
+          "kind": "review",
+          "value": "Visual review passed: generated hero was inspected and edited to remove the accidental C-like glyph; repository-owned SVGs have title/desc/role=image; consuming pages use explicit alt, width, height, caption and lazy loading below the fold; homepage hero has social preview metadata and eager priority; build copies all assets; no remote images, fonts, trackers or layout-shifting dependency added. Responsive browser preview was checked on mobile/default and 1440px desktop. Residual note: hero PNG is 2.03 MB and should be watched in live performance, though it is within the task budget.",
+          "recorded_at": "2026-09-04T15:09:54Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0039-20260904T150928Z-244197.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T14:56:41Z",
+      "updated_at": "2026-09-04T15:09:55Z",
       "last_result": "completed"
     }
   }

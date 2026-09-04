@@ -40,6 +40,7 @@ class SiteContractParser(HTMLParser):
         self.navs: list[dict[str, str]] = []
         self.external_links: list[dict[str, str]] = []
         self.links: list[dict[str, str]] = []
+        self.images: list[dict[str, str]] = []
         self.jsonld: list[str] = []
         self._active_jsonld = False
         self._jsonld_text = ""
@@ -69,6 +70,8 @@ class SiteContractParser(HTMLParser):
             self.inputs.append(attributes)
         elif tag == "nav":
             self.navs.append(attributes)
+        elif tag == "img":
+            self.images.append(attributes)
         elif tag == "script" and attributes.get("type") == "application/ld+json":
             self._active_jsonld = True
             self._jsonld_text = ""
@@ -165,7 +168,14 @@ class DocsSiteTests(unittest.TestCase):
                 self.assertTrue(meta_by_property.get("og:title", "").strip(), page.name)
                 self.assertTrue(meta_by_property.get("og:description", "").strip(), page.name)
                 self.assertEqual(meta_by_property.get("og:type"), "website", page.name)
-                self.assertEqual(meta_by_name.get("twitter:card"), "summary", page.name)
+                self.assertEqual(meta_by_name.get("twitter:card"), "summary_large_image", page.name)
+                self.assertTrue(meta_by_property.get("og:image", "").strip(), page.name)
+                self.assertEqual(
+                    meta_by_property.get("og:image"),
+                    f"{PRIMARY_ORIGIN}/assets/useagent-control-plane-hero.png",
+                    page.name,
+                )
+                self.assertTrue(meta_by_name.get("twitter:image", "").strip(), page.name)
                 self.assertEqual(meta_by_property.get("og:url"), INDEXABLE_URLS[page.name], page.name)
                 self.assertTrue(meta_by_property.get("og:site_name", "").strip(), page.name)
                 self.assertTrue(meta_by_property.get("og:locale", "").strip(), page.name)
@@ -252,6 +262,41 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("worker run", operations)
         self.assertIn('id="runner"', vietnamese)
         self.assertIn("Tự động nhận task", vietnamese)
+
+    def test_visual_asset_contract(self) -> None:
+        assets = SITE / "assets"
+        expected_assets = {
+            "useagent-control-plane-hero.png",
+            "useagent-supervisor-loop.svg",
+            "useagent-shared-ledger.svg",
+            "useagent-runtime-handoff.svg",
+        }
+        self.assertEqual({path.name for path in assets.iterdir() if path.is_file()}, expected_assets)
+        hero = assets / "useagent-control-plane-hero.png"
+        self.assertLess(hero.stat().st_size, 3_000_000)
+        for filename in expected_assets - {hero.name}:
+            root = ElementTree.parse(assets / filename).getroot()
+            self.assertEqual(root.tag, "{http://www.w3.org/2000/svg}svg", filename)
+            self.assertEqual(root.attrib.get("role"), "img", filename)
+            self.assertIn("aria-labelledby", root.attrib, filename)
+            self.assertIsNotNone(root.find("{http://www.w3.org/2000/svg}title"), filename)
+            self.assertIsNotNone(root.find("{http://www.w3.org/2000/svg}desc"), filename)
+
+        for page in sorted(SITE.glob("*.html")):
+            parser = SiteContractParser()
+            parser.feed(page.read_text(encoding="utf-8"))
+            if page.name == "404.html":
+                self.assertFalse(parser.images, page.name)
+                continue
+            self.assertGreaterEqual(len(parser.images), 1, page.name)
+            for image in parser.images:
+                self.assertTrue(image.get("alt", "").strip(), page.name)
+                self.assertTrue(image.get("width", "").strip(), page.name)
+                self.assertTrue(image.get("height", "").strip(), page.name)
+                target = SITE / image["src"].lstrip("/")
+                self.assertTrue(target.is_file(), f"{page.name} -> {image['src']}")
+            if page.name != "index.html":
+                self.assertTrue(any(image.get("loading") == "lazy" for image in parser.images), page.name)
 
     def test_mobile_layout_prevents_content_overflow(self) -> None:
         styles = (SITE / "styles.css").read_text(encoding="utf-8")

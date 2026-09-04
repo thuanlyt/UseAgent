@@ -24,6 +24,11 @@ The vendor is not the identity. A Codex session and a Claude Code session are
 both just workers if they are assigned implementation work. The supervisor uses
 the runtime identity to route a task to the right mailbox.
 
+![Codex, Claude Code and Antigravity sharing one assignment and report protocol](../docs-site/assets/useagent-runtime-handoff.svg)
+
+*Different runtimes can join the same repository because the assignment,
+scope and report contract stays provider-neutral.*
+
 ```text
 User goal
    |

@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 SITE_ROOT = Path(__file__).resolve().parent
-STATIC_SUFFIXES = {".html", ".css", ".js", ".svg", ".txt", ".xml", ".webmanifest"}
+STATIC_SUFFIXES = {".html", ".css", ".js", ".svg", ".png", ".txt", ".xml", ".webmanifest"}
 SKIP_PARTS = {"dist", ".git"}
 
 

@@ -30,6 +30,10 @@ h1, h2 { font-family: "Cascadia Mono", "Segoe UI Mono", ui-monospace, monospace;
 h1 span, h2 span { color: var(--color-accent); }
 .hero { display: grid; grid-template-columns: minmax(0,1.08fr) minmax(20rem,.92fr); gap: clamp(3rem,8vw,8rem); align-items: center; min-height: 39rem; padding-top: clamp(4rem,9vw,8rem); padding-bottom: clamp(4rem,9vw,8rem); }
 .hero-copy, .hero-visual { min-width: 0; }
+.hero-art { margin: 0 0 1rem; }
+.hero-art img, .article-figure img { display: block; width: 100%; height: auto; border: 1px solid #cbd5e1; border-radius: var(--radius-md); background: white; box-shadow: 0 24px 60px rgba(30,41,59,.12); }
+.hero-art img { aspect-ratio: 3 / 2; object-fit: cover; }
+.hero-art figcaption, .article-figure figcaption { margin-top: .75rem; color: var(--color-secondary); font-size: .78rem; line-height: 1.5; }
 .eyebrow { display: flex; align-items: center; gap: .6rem; margin: 0 0 1.25rem; color: var(--color-accent); font-size: .7rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
 .eyebrow-dot { width: .45rem; height: .45rem; border-radius: 50%; background: var(--color-accent); }
 h1 { max-width: 12ch; margin: 0; font-size: clamp(3rem,7vw,6.4rem); line-height: .99; }
@@ -120,6 +124,8 @@ h2 { margin: 0; font-size: clamp(2rem,4vw,3.5rem); line-height: 1.08; }
 .article-sidebar a:hover { color: var(--color-accent); }
 .article h1 { max-width: 15ch; font-size: clamp(2.8rem,6vw,5.2rem); }
 .article-lede { max-width: 39rem; margin: 1.75rem 0 3rem; color: var(--color-secondary); font-size: 1.15rem; }
+.article-figure { margin: 2rem 0 3rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: white; box-shadow: var(--shadow-sm); }
+.article-figure img { aspect-ratio: 1200 / 560; object-fit: contain; }
 .article h2 { margin-top: 4rem; margin-bottom: 1rem; font-size: clamp(1.65rem,3vw,2.3rem); }
 .article p { color: var(--color-secondary); }
 .article p code, .article li code { overflow-wrap: anywhere; padding: .12rem .3rem; color: var(--color-foreground); border: 1px solid var(--color-border); border-radius: .25rem; background: white; font-size: .83em; }

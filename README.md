@@ -60,6 +60,24 @@ Multi-agent projects commonly lose time because context is reread from scratch, 
 | Long runs lose direction | Bounded cycles and resumable checkpoints |
 | Supervisors repeat stale conclusions | Ingested reports plus fresh QA evidence |
 
+### See the system
+
+UseAgent is easier to understand as a system map than as a wall of prose. The
+repository includes lightweight SVG diagrams for the supervisor loop, shared
+ledger and runtime handoff, plus a branded hero illustration used by the docs
+site and social previews.
+
+![UseAgent supervisor coordinating workers, reports and production gates](docs-site/assets/useagent-control-plane-hero.png)
+
+![UseAgent supervisor loop from user goal to checkpoint](docs-site/assets/useagent-supervisor-loop.svg)
+
+![UseAgent shared knowledge and work ledger](docs-site/assets/useagent-shared-ledger.svg)
+
+![Codex, Claude Code and Antigravity sharing one UseAgent protocol](docs-site/assets/useagent-runtime-handoff.svg)
+
+These visuals are explanatory assets, not a second source of truth. Commands,
+contracts and current state remain in the linked Markdown, registry and code.
+
 ### Features
 
 - Supervisor front door through `$useagent`.

@@ -45,6 +45,11 @@ python tools/useagent.py supervisor cycle
 
 `supervisor cycle` tìm task ready, tự chọn worker còn rảnh theo scope/capability, ghi assignment vào `work/agents/<id>/inbox/`, cập nhật `INBOX.md`, và tạo prompt gửi ngoài phiên tại `work/outbox/`. Nếu Codex có subagent runtime, supervisor nên spawn worker trực tiếp; nếu không, gửi file outbox cho agent tương ứng.
 
+![UseAgent shared repository ledger for knowledge, work and evidence](../docs-site/assets/useagent-shared-ledger.svg)
+
+*The repository is the shared memory: agents read compact context before code,
+then leave reports, evidence and checkpoints for the next supervisor cycle.*
+
 Có thể chỉ định file Markdown riêng cho từng worker:
 
 ```powershell

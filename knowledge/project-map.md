@@ -1,6 +1,7 @@
 # Project map
 
-`freshness: verified` — updated 2026-09-04 after adding the installable CLI and conformance demo.
+`freshness: verified` — updated 2026-09-04 after adding the installable CLI,
+conformance demo and visual documentation assets.
 
 ## Topology
 
@@ -19,6 +20,7 @@
 | `templates/` | Mẫu hồ sơ | Tạo artifact mới |
 | `docs/` | Tài liệu onboarding và vận hành | Setup, provider walkthrough, autopilot |
 | `docs-site/` | Static bilingual documentation website | Build, content and hosting QA |
+| `docs-site/assets/` | Local hero illustration and explanatory SVG diagrams | Visual docs, social preview and image integrity QA |
 | `.github/` | CI, issue forms và pull-request template | Đóng góp hoặc release |
 | `README.md` | Public overview, bilingual quick start và contracts | Onboarding |
 | `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md` | Open-source governance | Phát hành hoặc đóng góp |
@@ -38,6 +40,7 @@
 - `python -m pip install --no-deps .` / `useagent validate`: smoke test package entry point.
 - `.github/workflows/ci.yml`: lặp lại compile, unit test và protocol validation trên Python 3.11–3.13.
 - `docs/getting-started.md`: hands-on onboarding, provider/runtime matrix and Codex + Claude Code + Antigravity walkthrough.
+- `docs-site/assets/*.svg` / `useagent-control-plane-hero.png`: source-owned diagrams and hero visual; keep alt text/dimensions in consuming HTML.
 
 ## Code ownership hiện tại
 
