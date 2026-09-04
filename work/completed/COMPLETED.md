@@ -57,3 +57,5 @@ Các task worker báo hoàn tất được append tại đây. `completed` nghĩ
 - 2026-09-04T08:17:51Z - `UA-0031` - Enforce claim availability and capacity - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0031-20260904T081751Z-ff45f9.md`
 
 - 2026-09-04T08:19:16Z - `UA-0032` - Add malformed capability regression coverage - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0032-20260904T081916Z-2ac700.md`
+
+- 2026-09-04T08:28:00Z - `UA-0033` - Require activation before worker report - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0033-20260904T082800Z-f27ba8.md`

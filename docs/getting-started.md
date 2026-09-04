@@ -467,6 +467,9 @@ Use `task report` for worker completion. A direct
 `task update --status reported` is rejected so the registry cannot contain a
 report-less completion.
 
+The worker must pull or claim the assignment first; reporting directly from
+`assigned` is rejected so the activation step cannot be bypassed.
+
 The reviewer must wait for the task to be `reported`; reviewing an active,
 unreported task is rejected.
 

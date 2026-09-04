@@ -18,7 +18,8 @@
   malformed array fields are validation errors, not validator crashes.
 - `done` requires non-empty review evidence with a repeatable command/result.
 - `assigned` requires an agent mailbox and an assignment Markdown file.
-- `reported` requires a worker report path; it is not equivalent to reviewed `done`.
+- `reported` requires a worker report path from an already `in_progress` task; it
+  is not equivalent to reviewed `done`.
 - `reported` is written by `task report`; `task update --status reported` is
   rejected so a report-less completion cannot enter the registry.
 - `needs_review` requires the task to already be `reported`; active workers

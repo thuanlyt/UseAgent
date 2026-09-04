@@ -67,7 +67,8 @@ Worker report tự ghi vào `work/agents/backend/REPORT.md`, `work/reports/inbox
 
 Worker phải dùng `task report` để chuyển task sang `reported`; không dùng
 `task update --status reported`, vì CLI cố ý từ chối trạng thái reported không có
-report Markdown và evidence đi kèm.
+report Markdown và evidence đi kèm. Task cũng phải được `worker pull` hoặc
+`task claim` kích hoạt trước; report trực tiếp từ `assigned` bị từ chối.
 
 Reviewer chỉ được chuyển `reported` sang `needs_review`; task còn
 `in_progress` phải chờ worker report trước khi review.

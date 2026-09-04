@@ -216,3 +216,10 @@ Added validator regression coverage for malformed agent capability arrays. The t
 
 - Report: `work/reports/inbox/UA-0032-20260904T081916Z-2ac700.md`
 - Next: Review the focused test and close UA-0032 after supervisor QA.
+
+## 2026-09-04T08:28:00Z - UA-0033 (completed)
+
+Worker reporting now requires prior activation: task report accepts only in_progress tasks, and supervisor ingest ignores worker reports for assigned tasks. Regression tests prove direct reports and forged assigned-state reports do not create reports or mutate the registry; existing valid report flows remain green.
+
+- Report: `work/reports/inbox/UA-0033-20260904T082800Z-f27ba8.md`
+- Next: Review the activation/report diff and record review evidence, then close UA-0033 after supervisor QA.

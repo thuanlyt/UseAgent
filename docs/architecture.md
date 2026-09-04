@@ -23,7 +23,7 @@ The CLI uses atomic replacement for files and a short-lived exclusive lock for s
 
 The supervisor selects tasks that are `planned` and whose dependencies are complete. A worker is eligible when it is available, below `max_active`, matches the task's preferred agent/capability constraints, and has no overlapping active writer scope. A dispatch writes both a mailbox assignment and an outbox prompt, then marks the task `assigned`.
 
-The worker claims through `worker pull` or `task claim`, which changes `assigned` to `in_progress`. It must report through `task report`; the command writes the report inbox, per-agent report/completed files, global completed log, report index and task handover metadata.
+The worker claims through `worker pull` or `task claim`, which changes `assigned` to `in_progress`. It may report through `task report` only after that activation; the command writes the report inbox, per-agent report/completed files, global completed log, report index and task handover metadata.
 
 ### Production gates
 
@@ -59,7 +59,7 @@ CLI ghi file theo cách atomic, dùng exclusive lock ngắn cho transition, gi�
 
 Supervisor chọn task `planned` đã hoàn tất dependency. Worker phải available, chưa vượt `max_active`, khớp agent/capability và không trùng active writer scope. Dispatch ghi assignment vào mailbox và prompt vào outbox, rồi chuyển task thành `assigned`.
 
-Worker dùng `worker pull` hoặc `task claim` để chuyển sang `in_progress`, chỉ sửa trong scope đã claim và nộp bằng `task report`. Lệnh report cập nhật report inbox, file của agent, completed log toàn cục, report index và handover của task.
+Worker dùng `worker pull` hoặc `task claim` để chuyển sang `in_progress`, chỉ sửa trong scope đã claim và chỉ nộp bằng `task report` sau khi activation. Lệnh report cập nhật report inbox, file của agent, completed log toàn cục, report index và handover của task.
 
 ### Production gate
 

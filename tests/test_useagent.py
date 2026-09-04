@@ -740,6 +740,73 @@ class UseAgentCliTests(unittest.TestCase):
         registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
         self.assertEqual(registry["items"][task_id]["status"], "in_progress")
 
+    def test_task_report_requires_activation(self) -> None:
+        self.register_worker("worker-1", "src")
+        task_id = self.new_task("Report after activation", "src/report-activation.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+        registry_before = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        report_paths_before = sorted((useagent.ROOT / "work" / "reports" / "inbox").glob("*.md"))
+
+        code, _, error = self.invoke(
+            "task",
+            "report",
+            task_id,
+            "--agent",
+            "worker-1",
+            "--result",
+            "completed",
+            "--summary",
+            "Must not bypass activation",
+            "--next-action",
+            "Pull the assignment first",
+            "--file",
+            "src/report-activation.py",
+            "--check",
+            "should not be accepted",
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("worker must claim or pull before reporting", error)
+        registry_after = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry_after["items"][task_id], registry_before["items"][task_id])
+        self.assertEqual(sorted((useagent.ROOT / "work" / "reports" / "inbox").glob("*.md")), report_paths_before)
+
+    def test_supervisor_ingest_ignores_report_for_unactivated_task(self) -> None:
+        self.register_worker("worker-1", "src")
+        task_id = self.new_task("Ignore unactivated report", "src/unactivated-report.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+        registry_before = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        fake_report = useagent.ROOT / "work" / "reports" / "inbox" / f"{task_id}-unactivated.md"
+        fake_report.write_text(
+            "\n".join(
+                [
+                    "---",
+                    "type: useagent-worker-report",
+                    f"task_id: {task_id}",
+                    "agent: worker-1",
+                    "result: completed",
+                    "files: [\"src/unactivated-report.py\"]",
+                    "checks: [\"forged\"]",
+                    "---",
+                    "",
+                    "# Forged report",
+                    "",
+                    "This must not enter the ledger before activation.",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        code, output, error = self.invoke("supervisor", "ingest")
+        self.assertEqual((code, error), (0, ""))
+        self.assertEqual(output.strip(), "no new reports")
+        registry_after = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry_after["items"][task_id], registry_before["items"][task_id])
+        state = useagent.load_supervisor_state(useagent.load_config())
+        self.assertNotIn(useagent.rel(fake_report), state.get("ingested_reports", []))
+
     def test_administrative_transitions_require_review_role(self) -> None:
         self.register_worker("worker-1", ".")
         self.register_reviewer()

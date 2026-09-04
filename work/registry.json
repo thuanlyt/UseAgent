@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T08:22:27Z",
+  "updated_at": "2026-09-04T08:28:16Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -2349,6 +2349,93 @@
       "attempts": 1,
       "created_at": "2026-09-04T08:19:04Z",
       "updated_at": "2026-09-04T08:22:27Z",
+      "last_result": "completed"
+    },
+    "UA-0033": {
+      "id": "UA-0033",
+      "title": "Require activation before worker report",
+      "objective": "Prevent task report and supervisor ingest from bypassing assigned-to-in_progress activation.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "knowledge/architecture.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "docs/architecture.md",
+        "docs/operations.md",
+        "docs/getting-started.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "task report rejects an assigned task before creating report files or mutating registry",
+        "supervisor ingest ignores a worker report for an assigned task until worker pull or task claim activates it",
+        "valid in_progress completed and blocked report flows remain green",
+        "architecture, contracts and operator docs state that reports require activation",
+        "full lifecycle, multi-runtime, validator, docs and QA checks remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate",
+        "python docs-site/build.py --check-only",
+        "python examples/multi-runtime-conformance/run_conformance.py",
+        "git diff --check"
+      ],
+      "files": [
+        "docs/architecture.md",
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "knowledge/architecture.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 48 tests pass",
+          "recorded_at": "2026-09-04T08:28:00Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T08:28:00Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T08:28:00Z"
+        },
+        {
+          "kind": "check",
+          "value": "python examples/multi-runtime-conformance/run_conformance.py: PASS",
+          "recorded_at": "2026-09-04T08:28:00Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T08:28:00Z"
+        },
+        {
+          "kind": "review",
+          "value": "Focused review pass: task report now rejects assigned status before creating any report artifact; ingest requires an authenticated worker report for an in_progress task, so assigned-state forged reports are ignored; normal claim/pull/report and blocked flows remain covered by the regression suite.",
+          "recorded_at": "2026-09-04T08:28:15Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0033-20260904T082800Z-f27ba8.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T08:25:14Z",
+      "updated_at": "2026-09-04T08:28:16Z",
       "last_result": "completed"
     }
   }

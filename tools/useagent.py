@@ -752,8 +752,10 @@ def cmd_task_report(args: argparse.Namespace) -> int:
         item = get_item(data, args.task_id)
         if item.get("assigned_to") != args.agent:
             raise UseAgentError(f"{args.task_id} is assigned to {item.get('assigned_to')}, not {args.agent}")
-        if item.get("status") not in {"assigned", "in_progress"}:
-            raise UseAgentError(f"{args.task_id} is {item.get('status')}, not reportable")
+        if item.get("status") != "in_progress":
+            raise UseAgentError(
+                f"{args.task_id} is {item.get('status')}; worker must claim or pull before reporting"
+            )
         agent = claim_agent(config, args.agent)
         paths = agent_paths(config, agent)
         report_id = f"{args.task_id}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}"
@@ -1148,7 +1150,7 @@ def ingest_reports_locked(config: dict[str, Any], data: dict[str, Any], state: d
         item = data["items"][task_id]
         if not isinstance(item, dict):
             continue
-        if item.get("assigned_to") != agent_id or item.get("status") not in {"assigned", "in_progress"}:
+        if item.get("assigned_to") != agent_id or item.get("status") != "in_progress":
             continue
         reports = item.get("reports")
         files_on_item = item.get("files")

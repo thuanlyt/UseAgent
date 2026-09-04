@@ -2,7 +2,7 @@
 
 - `freshness`: verified (2026-09-04)
 - `owner`: orchestrator
-- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:validate_relative_scope`, `tools/useagent.py:scope_overlaps`, `tools/useagent.py:scope_within`, `tools/useagent.py:append_markdown`, `tools/useagent.py:agent_claim_blocker`, `tools/useagent.py:cmd_task_claim`, `tools/useagent.py:cmd_worker_pull`, `tools/useagent.py:choose_next_action`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`
+- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:validate_relative_scope`, `tools/useagent.py:scope_overlaps`, `tools/useagent.py:scope_within`, `tools/useagent.py:append_markdown`, `tools/useagent.py:agent_claim_blocker`, `tools/useagent.py:cmd_task_claim`, `tools/useagent.py:cmd_task_report`, `tools/useagent.py:cmd_worker_pull`, `tools/useagent.py:ingest_reports_locked`, `tools/useagent.py:choose_next_action`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`
 
 ## Responsibility
 
@@ -40,7 +40,7 @@ Consumes `AGENTS.md`, `knowledge/`, `work/` and `useagent.config.json`; is used 
 
 ## Invariants
 
-Lock only the short state transition. Do not hold the lock while doing exploration, implementation or tests. Reject claim bypasses from `assigned` to `in_progress`, unavailable or over-capacity direct claims/pulls, scope/capability-ineligible claims, unauthorized administrative transitions, report-less `reported` transitions, review of active unreported work, lifecycle updates to terminal states, invalid roster roles, review-only agents claiming/reporting implementation work, overlapping active writer scopes, unsafe/out-of-scope recorded files, review actions from non-review roles and `done` without non-empty review evidence. Keep the selected project root explicit, validate malformed config/registry shapes without traceback, ignore unreadable/escaping reports safely and reject configured paths outside it.
+Lock only the short state transition. Do not hold the lock while doing exploration, implementation or tests. Reject claim bypasses from `assigned` to `in_progress`, unavailable or over-capacity direct claims/pulls, scope/capability-ineligible claims, unactivated worker reports, unauthorized administrative transitions, report-less `reported` transitions, review of active unreported work, lifecycle updates to terminal states, invalid roster roles, review-only agents claiming/reporting implementation work, overlapping active writer scopes, unsafe/out-of-scope recorded files, review actions from non-review roles and `done` without non-empty review evidence. Keep the selected project root explicit, validate malformed config/registry shapes without traceback, ignore unreadable/escaping reports safely and reject configured paths outside it.
 
 ## Verification
 

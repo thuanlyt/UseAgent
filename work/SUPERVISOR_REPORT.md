@@ -1,13 +1,13 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T081958Z-b8d730`
-- **Generated:** 2026-09-04T08:20:10Z
+- **Cycle:** `cycle-20260904T082820Z-07a4a2`
+- **Generated:** 2026-09-04T08:28:32Z
 - **Next action:** Complete the review gate for UA-0012; accept evidence or create a scoped debug task.
 - **Production snapshot:** `not_ready`
 
 ## Status counts
 
-- `done`: 31
+- `done`: 32
 - `needs_review`: 1
 
 ## Reports ingested this cycle
@@ -54,8 +54,9 @@
 - `UA-0028` — Make terminal task states immutable — evidence: 6
 - `UA-0029` — Enforce agent role boundaries — evidence: 6
 - `UA-0030` — Authorize lifecycle transition commands — evidence: 7
-- `UA-0031` — Enforce claim availability and capacity — evidence: 7
-- `UA-0032` — Add malformed capability regression coverage — evidence: 4
+- `UA-0031` — Enforce claim availability and capacity — evidence: 8
+- `UA-0032` — Add malformed capability regression coverage — evidence: 5
+- `UA-0033` — Require activation before worker report — evidence: 6
 - none
 
 ## Blocked work
@@ -65,7 +66,7 @@
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T081958Z-b8d730-qa.md`
+- evidence: `work/evidence/cycle-20260904T082820Z-07a4a2-qa.md`
 
 ## Production gates
 
