@@ -36,3 +36,22 @@ Added a bilingual hands-on onboarding guide and clarified provider-neutral runti
 
 - Report: `work/reports/inbox/UA-0006-20260904T025215Z-632c51.md`
 - Next: Review documentation links and run final CI before release.
+## 2026-09-04T05:39:56Z - UA-0007 (completed)
+
+Added explicit --root support for central UseAgent invocation; all runtime state paths rebind to one existing target root and configured escape paths remain rejected.
+
+- Report: `work/reports/inbox/UA-0007-20260904T053956Z-ba86a0.md`
+- Next: Supervisor review, run the bounded cycle, then close the task.
+## 2026-09-04T05:43:08Z - UA-0008 (completed)
+
+Added a credential-free conformance demo and a smoke test. It creates a temporary root and drives the real CLI through register, dispatch, worker pull, report, ingest, QA and checkpoint assertions.
+
+- Report: `work/reports/inbox/UA-0008-20260904T054308Z-265874.md`
+- Next: Run supervisor ingest/QA, review the demo evidence, then close the task.
+
+## 2026-09-04T05:48:54Z - UA-0009 (completed)
+
+Packaged the dependency-free CLI as useagent 0.1.0 with MIT metadata and console entry point, added installed-root behavior, normalized Markdown append logs, documented installation and updated CI package smoke coverage.
+
+- Report: `work/reports/inbox/UA-0009-20260904T054854Z-fafaae.md`
+- Next: Run the final supervisor QA cycle, inspect production gates and close the core release gate if all evidence remains green.

@@ -6,3 +6,7 @@
 - 2026-09-03T18:44:32Z - `UA-0004` - Refresh GitHub Actions runtime versions - pending review - `work/reports/inbox/UA-0004-20260903T184432Z-793eab.md`
 - 2026-09-04T01:59:47Z - `UA-0005` - Persist manually created checkpoint pointer - pending review - `work/reports/inbox/UA-0005-20260904T015947Z-3ad9a7.md`
 - 2026-09-04T02:52:15Z - `UA-0006` - Add provider-neutral hands-on onboarding guide - pending review - `work/reports/inbox/UA-0006-20260904T025215Z-632c51.md`
+- 2026-09-04T05:39:56Z - `UA-0007` - Add explicit target-root bootstrap support - pending review - `work/reports/inbox/UA-0007-20260904T053956Z-ba86a0.md`
+- 2026-09-04T05:43:08Z - `UA-0008` - Add runnable multi-agent conformance demo - pending review - `work/reports/inbox/UA-0008-20260904T054308Z-265874.md`
+
+- 2026-09-04T05:48:54Z - `UA-0009` - Package and release the UseAgent CLI - pending review - `work/reports/inbox/UA-0009-20260904T054854Z-fafaae.md`

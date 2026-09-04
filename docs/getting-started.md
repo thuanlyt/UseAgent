@@ -105,13 +105,43 @@ python tools/useagent.py init
 python tools/useagent.py validate
 ```
 
+If the UseAgent CLI lives in a central checkout, pass the target repository
+explicitly. The target directory must already exist; the CLI rebinds the
+registry, config, lock and every configured Markdown path to that root:
+
+```powershell
+python F:\dev\UseAgent\tools\useagent.py --root F:\dev\DemoStore init
+python F:\dev\UseAgent\tools\useagent.py --root F:\dev\DemoStore validate
+```
+
+`--root` is accepted before the subcommand. Relative configured paths are
+resolved under the selected root and are rejected if they escape it. This is
+useful for a central CLI, but the target project still needs the UseAgent
+control-plane files before `validate` can pass.
+
 If `validate` fails, fix the layout before registering workers. Do not start
 coding against a half-initialized registry.
+
+You can also install the CLI from a UseAgent checkout and invoke it from the
+target project:
+
+```powershell
+python -m pip install --no-deps .
+useagent validate
+```
+
+The installed command uses the current directory as its default root. For a
+central CLI, use `useagent --root F:\dev\DemoStore validate`.
 
 > **Tiếng Việt:** UseAgent hiện là control plane nằm trong repository. Vì vậy
 > hãy đặt `tools/useagent.py`, `.agents/skills/`, `knowledge/`, `work/`,
 > `AGENTS.md` và `useagent.config.json` trong thư mục gốc của dự án cần làm.
 > Nếu dự án đã có các file này, hãy merge nội dung; không ghi đè mù.
+> Nếu CLI nằm ở checkout trung tâm, dùng `python F:\dev\UseAgent\tools\useagent.py
+> --root F:\dev\DemoStore init`. Root phải tồn tại và mọi path cấu hình phải nằm
+> bên trong root đã chọn.
+> Có thể cài lệnh `useagent` bằng `python -m pip install --no-deps .`, sau đó
+> chạy `useagent validate` tại root dự án.
 
 ## 3. Complete example: Codex + Claude Code + Antigravity
 
@@ -314,6 +344,28 @@ work/evidence/                  reproducible QA output
 work/completed/COMPLETED.md     completed worker handovers
 ```
 
+### Step G — run the credential-free conformance demo
+
+Before connecting real runtimes, verify the protocol with the included
+simulated worker:
+
+```powershell
+python examples/multi-agent-demo/run_demo.py
+```
+
+The demo creates a temporary project root, registers `demo-worker`, dispatches
+one task, pulls it, submits a report, runs supervisor ingest plus QA, and
+asserts the assignment mailbox, report inbox, completed logs, supervisor state
+and checkpoint. It does not call Codex, Claude, Antigravity or any external
+service. A successful run prints:
+
+```text
+PASS: UA-0001 assignment -> pull -> report -> ingest -> QA -> checkpoint
+```
+
+This is a protocol smoke test, not a substitute for application tests or a
+review of a real production change.
+
 ## 4. What happens to each Markdown file?
 
 | File | Written by | Meaning |
@@ -443,6 +495,20 @@ Code làm frontend worker và Antigravity làm QA worker trong cùng một dự 
 Bạn không cần tự viết lại prompt assignment. Prompt đầy đủ nằm trong
 `work/outbox/`; phần prompt mẫu ở trên chỉ là “bootstrap” để runtime biết phải
 đọc file nào và dùng worker id nào.
+
+### Chạy demo không cần credential
+
+Trước khi kết nối Codex, Claude Code hoặc Antigravity, chạy:
+
+```powershell
+python examples/multi-agent-demo/run_demo.py
+```
+
+Demo dùng worker giả lập nhưng vẫn gọi CLI thật để kiểm tra `dispatch`,
+`worker pull`, `task report`, supervisor ingest, QA và checkpoint. Nó tạo
+project tạm, không gọi API bên ngoài và tự assert mailbox, report, completed log
+và supervisor state. Dòng `PASS` nghĩa là protocol nền đã chạy thông suốt;
+không có nghĩa application production đã được QA.
 
 ### Nếu dùng cả Codex, Claude và Antigravity
 

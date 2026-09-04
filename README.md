@@ -69,6 +69,7 @@ Multi-agent projects commonly lose time because context is reread from scratch, 
 - Cycle stop conditions for ambiguity, missing access, scope conflict, repeated failure and unsafe side effects.
 - Custom Markdown paths for teams that already have an established folder layout.
 - No third-party Python dependencies.
+- Credential-free end-to-end conformance demo for the assignment/report protocol.
 
 ### Which agents are supported?
 
@@ -105,12 +106,36 @@ Set-Location UseAgent
 python tools/useagent.py init
 python tools/useagent.py validate
 python -m unittest discover -s tests -v
+python examples/multi-agent-demo/run_demo.py
 ```
 
 `tools/useagent.py` operates on the repository root that contains it. For a
 different application, vendor or merge the UseAgent control-plane files into
 that application's repository first; see
 [Put the control plane in the target repository](docs/getting-started.md#2-put-the-control-plane-in-the-target-repository).
+
+If the CLI is kept in a central UseAgent checkout, target an existing prepared
+repository explicitly:
+
+```powershell
+python F:\dev\UseAgent\tools\useagent.py --root F:\dev\MyProject init
+python F:\dev\UseAgent\tools\useagent.py --root F:\dev\MyProject validate
+```
+
+`--root` must appear before the subcommand. It makes the selected project root
+the boundary for the registry, mailboxes, reports and configured paths; a
+configured path that escapes that boundary is rejected.
+
+For a reusable console command:
+
+```powershell
+python -m pip install --no-deps .
+useagent --help
+useagent validate
+```
+
+An installed CLI uses the current directory as its default root. Use
+`useagent --root F:\dev\MyProject ...` when operating from a central checkout.
 
 For a new project, register the workers that actually exist:
 

@@ -9,6 +9,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import tomllib
+
 import tools.useagent as useagent
 
 
@@ -200,6 +202,7 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual(registry["items"][task_id]["status"], "reported")
         self.assertIn(task_id, (useagent.ROOT / "work" / "completed" / "COMPLETED.md").read_text(encoding="utf-8"))
         self.assertIn(task_id, (useagent.ROOT / "work" / "agents" / "frontend" / "REPORT.md").read_text(encoding="utf-8"))
+        self.assertFalse((useagent.ROOT / "work" / "agents" / "frontend" / "REPORT.md").read_text(encoding="utf-8").endswith("\n\n"))
 
         code, _, error = self.invoke("supervisor", "cycle")
         self.assertEqual((code, error), (0, ""))
@@ -234,6 +237,60 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual((code, error), (0, ""))
         for path in ("work/mail/qa-inbox.md", "work/mail/qa-report.md", "work/mail/qa-completed.md"):
             self.assertTrue((useagent.ROOT / path).exists())
+
+    def test_explicit_root_switches_runtime_state(self) -> None:
+        target_root = Path(self.temp_dir.name) / "selected-project"
+        target_root.mkdir()
+
+        code, _, error = self.invoke("--root", str(target_root), "init")
+        self.assertEqual((code, error), (0, ""))
+        self.assertEqual(useagent.ROOT, target_root.resolve())
+        self.assertTrue((target_root / "work" / "registry.json").exists())
+        self.assertTrue((target_root / "useagent.config.json").exists())
+
+        code, task_id, error = self.invoke(
+            "--root",
+            str(target_root),
+            "task",
+            "new",
+            "--title",
+            "Target-root task",
+            "--level",
+            "L1",
+            "--owner",
+            "worker",
+            "--scope",
+            "src/app.py",
+            "--acceptance",
+            "target root is used",
+        )
+        self.assertEqual((code, error), (0, ""))
+        task_id = task_id.strip()
+        self.assertTrue((target_root / "work" / "items" / f"{task_id}.md").exists())
+        self.assertFalse((Path(self.temp_dir.name) / "work" / "items" / f"{task_id}.md").exists())
+
+    def test_explicit_root_rejects_paths_outside_selected_root(self) -> None:
+        target_root = Path(self.temp_dir.name) / "selected-project"
+        target_root.mkdir()
+        code, _, error = self.invoke("--root", str(target_root), "init")
+        self.assertEqual((code, error), (0, ""))
+
+        with self.assertRaises(useagent.UseAgentError):
+            useagent.safe_repo_path("../outside")
+
+        missing_root = target_root / "does-not-exist"
+        code, _, error = self.invoke("--root", str(missing_root), "validate")
+        self.assertEqual(code, 2)
+        self.assertIn("project root does not exist", error)
+
+    def test_package_metadata_declares_supported_cli(self) -> None:
+        metadata = tomllib.loads((self.original_root / "pyproject.toml").read_text(encoding="utf-8"))
+        project = metadata["project"]
+        self.assertEqual(project["name"], "useagent")
+        self.assertEqual(project["license"], {"file": "LICENSE"})
+        self.assertEqual(project["requires-python"], ">=3.11")
+        self.assertEqual(project["scripts"]["useagent"], "tools.useagent:main")
+        self.assertEqual(metadata["tool"]["setuptools"]["packages"], ["tools"])
 
     def test_qa_command_is_captured_as_evidence(self) -> None:
         config = useagent.load_config()

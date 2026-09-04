@@ -1,5 +1,26 @@
 # UseAgent operations
 
+## Install the CLI
+
+UseAgent can run directly from a checkout, or as an installed console command:
+
+```powershell
+python -m pip install --no-deps .
+useagent --help
+useagent validate
+```
+
+The installed command uses the current directory as its default project root.
+To operate on another prepared repository, pass the root before the command:
+
+```powershell
+useagent --root F:\dev\DemoStore validate
+useagent --root F:\dev\DemoStore supervisor cycle --run-qa
+```
+
+The package has no runtime dependencies. Python 3.11 or newer is required;
+the build backend is used only during installation.
+
 ## Tạo task
 
 ```powershell

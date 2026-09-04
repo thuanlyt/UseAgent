@@ -32,3 +32,9 @@ jobs:
 
       - name: Validate project protocol
         run: python tools/useagent.py validate
+
+      - name: Install and smoke-test console package
+        run: |
+          python -m pip install --no-deps .
+          useagent --help
+          useagent validate

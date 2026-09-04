@@ -29,7 +29,17 @@ from pathlib import Path
 from typing import Any, Iterator
 
 
-ROOT = Path(__file__).resolve().parents[1]
+
+def default_root() -> Path:
+    """Choose a useful project root for source-checkout and installed use."""
+
+    source_root = Path(__file__).resolve().parents[1]
+    if (source_root / "AGENTS.md").exists() and (source_root / "knowledge" / "INDEX.md").exists():
+        return source_root
+    return Path.cwd().resolve()
+
+
+ROOT = default_root()
 REGISTRY = ROOT / "work" / "registry.json"
 CONFIG = ROOT / "useagent.config.json"
 LOCK = ROOT / "work" / ".state.lock"
@@ -84,6 +94,31 @@ DEFAULT_CONFIG: dict[str, Any] = {
 
 class UseAgentError(RuntimeError):
     """Expected user-facing error from the control plane."""
+
+
+def configure_root(value: str | Path) -> None:
+    """Point this invocation at an existing project root.
+
+    The CLI normally derives its root from the checkout containing this file.
+    A central UseAgent checkout can operate on another prepared repository by
+    passing ``--root``. All state/config paths are rebound together so a
+    process cannot accidentally mix two project ledgers.
+    """
+
+    candidate = Path(value).expanduser()
+    if not candidate.is_absolute():
+        candidate = Path.cwd() / candidate
+    candidate = candidate.resolve()
+    if not candidate.exists():
+        raise UseAgentError(f"project root does not exist: {candidate}")
+    if not candidate.is_dir():
+        raise UseAgentError(f"project root is not a directory: {candidate}")
+
+    global ROOT, REGISTRY, CONFIG, LOCK
+    ROOT = candidate
+    REGISTRY = ROOT / "work" / "registry.json"
+    CONFIG = ROOT / "useagent.config.json"
+    LOCK = ROOT / "work" / ".state.lock"
 
 
 def now_iso() -> str:
@@ -288,8 +323,11 @@ def agent_paths(config: dict[str, Any], agent: dict[str, Any]) -> dict[str, Path
 
 def append_markdown(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8", newline="\n") as handle:
-        handle.write(content)
+    content = content.rstrip("\n")
+    existing = path.read_text(encoding="utf-8") if path.exists() else ""
+    if existing.strip():
+        content = existing.rstrip("\n") + "\n\n" + content
+    atomic_write(path, content + "\n")
 
 
 def write_if_missing(path: Path, content: str) -> None:
@@ -1304,6 +1342,11 @@ def clip(text: str, limit: int) -> str:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="useagent", description="UseAgent supervisor control plane")
+    parser.add_argument(
+        "--root",
+        dest="root",
+        help="operate on this existing project root (default: source checkout or current directory when installed)",
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     init = sub.add_parser("init", help="create missing runtime directories and config")
@@ -1437,6 +1480,8 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
+        if args.root:
+            configure_root(args.root)
         return int(args.func(args))
     except UseAgentError as exc:
         print(f"error: {exc}", file=sys.stderr)

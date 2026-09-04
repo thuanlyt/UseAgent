@@ -2,7 +2,7 @@
 
 - `freshness`: verified (2026-09-04)
 - `owner`: orchestrator
-- `source_anchor`: `tools/useagent.py:main`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`
+- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:append_markdown`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`
 
 ## Responsibility
 
@@ -11,6 +11,8 @@ Create and transition work items, serialize state changes, print bounded context
 ## Entry points
 
 - `python tools/useagent.py context`
+- `python tools/useagent.py --root <project-root> context`
+- `useagent context` after `python -m pip install --no-deps .`
 - `python tools/useagent.py task new|claim|update|evidence|report|list|show`
 - `python tools/useagent.py agent register|status|list`
 - `python tools/useagent.py worker pull --agent <id>`
@@ -20,7 +22,12 @@ Create and transition work items, serialize state changes, print bounded context
 
 ## Public interfaces / contracts
 
-See `knowledge/contracts/work-registry.md` and `knowledge/contracts/supervisor-protocol.md`. State lives in `work/registry.json`; item Markdown lives in `work/items/`. Repeated `--scope` options are preserved for a task, task scope can be extended through `task update`, configured QA commands are shell command strings, and production readiness files are repository-safe.
+See `knowledge/contracts/work-registry.md` and `knowledge/contracts/supervisor-protocol.md`. State lives in `work/registry.json`; item Markdown lives in `work/items/`. Repeated `--scope` options are preserved for a task, task scope can be extended through `task update`, configured QA commands are shell command strings, and production readiness files are repository-safe. A central checkout may pass `--root <project-root>` before the subcommand; all runtime globals and configured paths are rebound to that existing directory, and escape paths are rejected.
+
+The package entry point is `tools.useagent:main`; an installed CLI uses the
+current working directory when the package is outside a prepared source
+checkout. Markdown append operations preserve block separation without adding
+blank lines at end of file.
 
 ## Dependency edges
 
@@ -28,11 +35,11 @@ Consumes `AGENTS.md`, `knowledge/`, `work/` and `useagent.config.json`; is used 
 
 ## Invariants
 
-Lock only the short state transition. Do not hold the lock while doing exploration, implementation or tests. Reject overlapping active writer scopes and reject `done` without evidence.
+Lock only the short state transition. Do not hold the lock while doing exploration, implementation or tests. Reject overlapping active writer scopes and reject `done` without evidence. Keep the selected project root explicit and reject configured paths outside it.
 
 ## Verification
 
-`python -m unittest discover -s tests -v`, `python tools/useagent.py validate`, configured supervisor QA and a temp-roster supervisor cycle.
+`python -m unittest discover -s tests -v`, `python tools/useagent.py validate`, explicit-root CLI tests, package metadata/wheel smoke test, configured supervisor QA and a temp-roster supervisor cycle.
 
 ## Operator onboarding
 

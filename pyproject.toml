@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "useagent"
+version = "0.1.0"
+description = "File-first supervisor control plane for coordinating multiple AI agents"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Thuan Ly" },
+]
+keywords = ["ai-agents", "multi-agent", "orchestration", "supervisor", "autopilot"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+
+[project.urls]
+Homepage = "https://github.com/thuanlyt/UseAgent"
+Repository = "https://github.com/thuanlyt/UseAgent"
+Issues = "https://github.com/thuanlyt/UseAgent/issues"
+
+[project.scripts]
+useagent = "tools.useagent:main"
+
+[tool.setuptools]
+packages = ["tools"]

@@ -1,1 +1,1 @@
-"""UseAgent control-plane tools."""
+"""UseAgent command-line package."""

@@ -1,6 +1,6 @@
 # Project map
 
-`freshness: verified` — updated 2026-09-04 after adding the public architecture guide and GitHub release files.
+`freshness: verified` — updated 2026-09-04 after adding the installable CLI and conformance demo.
 
 ## Topology
 
@@ -15,6 +15,7 @@
 | `work/` | Task/evidence/checkpoint | Lập kế hoạch hoặc handover |
 | `useagent.config.json` | Roster, mailbox path, QA và production gates | Setup supervisor |
 | `tools/useagent.py` | State CLI/validator | Tạo claim/update/checkpoint |
+| `pyproject.toml`, `tools/__init__.py` | Installable `useagent` console package | Cài CLI hoặc kiểm tra release |
 | `templates/` | Mẫu hồ sơ | Tạo artifact mới |
 | `docs/` | Tài liệu onboarding và vận hành | Setup, provider walkthrough, autopilot |
 | `.github/` | CI, issue forms và pull-request template | Đóng góp hoặc release |
@@ -31,6 +32,7 @@
 - `python tools/useagent.py worker pull --agent <id>` / `task report ...`: nhận assignment và gửi report vào các file Markdown cấu hình.
 - `python tools/useagent.py validate`: kiểm tra layout, registry, skills và agent TOML.
 - `python -m unittest discover -s tests -v`: kiểm tra CLI và state transitions.
+- `python -m pip install --no-deps .` / `useagent validate`: smoke test package entry point.
 - `.github/workflows/ci.yml`: lặp lại compile, unit test và protocol validation trên Python 3.11–3.13.
 - `docs/getting-started.md`: hands-on onboarding, provider/runtime matrix and Codex + Claude Code + Antigravity walkthrough.
 
