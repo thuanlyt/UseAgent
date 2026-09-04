@@ -19,6 +19,8 @@
 - `done` requires at least one evidence record with a repeatable command/result.
 - `assigned` requires an agent mailbox and an assignment Markdown file.
 - `reported` requires a worker report path; it is not equivalent to reviewed `done`.
+- `reported` is written by `task report`; `task update --status reported` is
+  rejected so a report-less completion cannot enter the registry.
 - Review evidence and `needs_review`/`done` transitions require a registered
   `supervisor`, `reviewer` or `release_gate` identity; the assigned worker may
   not self-approve or self-close the task.

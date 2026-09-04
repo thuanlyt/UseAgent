@@ -460,6 +460,10 @@ The assigned worker can report completion and test evidence, but cannot
 self-approve or self-close the task. The reviewer may be a different registered
 agent from the worker.
 
+Use `task report` for worker completion. A direct
+`task update --status reported` is rejected so the registry cannot contain a
+report-less completion.
+
 ### The runtime cannot find `$useagent-worker`
 
 Use the direct path instead:

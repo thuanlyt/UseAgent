@@ -40,3 +40,5 @@
 - 2026-09-04T07:21:30Z - `UA-0023` - Make report ingest and roster boundaries fail-safe - pending review - `work/reports/inbox/UA-0023-20260904T072130Z-adab37.md`
 
 - 2026-09-04T07:31:24Z - `UA-0024` - Enforce reviewer authority for release transitions - pending review - `work/reports/inbox/UA-0024-20260904T073124Z-490138.md`
+
+- 2026-09-04T07:37:15Z - `UA-0025` - Make reported state report-only - pending review - `work/reports/inbox/UA-0025-20260904T073715Z-30ab67.md`

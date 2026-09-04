@@ -65,6 +65,10 @@ python tools/useagent.py supervisor cycle --run-qa
 
 Worker report tự ghi vào `work/agents/backend/REPORT.md`, `work/reports/inbox/`, `work/reports/REPORTS.md` và `work/completed/COMPLETED.md`. Reviewer kiểm tra diff và evidence, sau đó cập nhật `needs_review`/`done`. Chỉ identity có role `supervisor`, `reviewer` hoặc `release_gate` được làm review; worker không thể tự approve hoặc tự close task.
 
+Worker phải dùng `task report` để chuyển task sang `reported`; không dùng
+`task update --status reported`, vì CLI cố ý từ chối trạng thái reported không có
+report Markdown và evidence đi kèm.
+
 Quy trình review tối thiểu:
 
 ```powershell

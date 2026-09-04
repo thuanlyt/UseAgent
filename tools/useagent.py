@@ -616,7 +616,7 @@ def cmd_task_update(args: argparse.Namespace) -> int:
             raise UseAgentError("use supervisor cycle/dispatch to assign a task")
         if args.status == "in_progress" and current not in {"assigned", "in_progress"}:
             raise UseAgentError("use task claim before moving a task into in_progress")
-        if args.status == "reported" and current not in {"assigned", "in_progress"}:
+        if args.status == "reported":
             raise UseAgentError("use task report for a worker completion")
         if args.status == "needs_review" and current not in {"reported", "in_progress"}:
             raise UseAgentError("a task must be reported or active before review")

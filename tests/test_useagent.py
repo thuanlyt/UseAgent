@@ -510,6 +510,41 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertIn("task claim", error)
 
+    def test_reported_status_requires_worker_report(self) -> None:
+        self.register_worker("worker-1", ".")
+        task_id = self.new_task("Report-only completion", "src/report-only.py")
+        code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+
+        code, _, error = self.invoke("task", "update", task_id, "--status", "reported", "--agent", "worker-1")
+        self.assertEqual(code, 2)
+        self.assertIn("use task report for a worker completion", error)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "in_progress")
+        self.assertEqual(registry["items"][task_id]["reports"], [])
+
+        code, _, error = self.invoke(
+            "task",
+            "report",
+            task_id,
+            "--agent",
+            "worker-1",
+            "--result",
+            "completed",
+            "--summary",
+            "Implementation complete",
+            "--next-action",
+            "Review",
+            "--file",
+            "src/report-only.py",
+            "--check",
+            "unit test: pass",
+        )
+        self.assertEqual((code, error), (0, ""))
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "reported")
+        self.assertEqual(len(registry["items"][task_id]["reports"]), 1)
+
     def test_dispatch_pull_report_and_supervisor_cycle(self) -> None:
         self.register_worker()
         self.register_reviewer()

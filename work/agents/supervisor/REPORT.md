@@ -160,3 +160,10 @@ Reviewer authority is enforced for review evidence and release transitions; work
 
 - Report: `work/reports/inbox/UA-0024-20260904T073124Z-490138.md`
 - Next: Run review gate, supervisor QA cycle, then commit and push if the repository remains green.
+
+## 2026-09-04T07:37:15Z - UA-0025 (completed)
+
+Made reported state report-only: direct status mutation is rejected, worker task report remains the authenticated completion path, and bilingual contracts/docs plus regression coverage now describe the invariant.
+
+- Report: `work/reports/inbox/UA-0025-20260904T073715Z-30ab67.md`
+- Next: Run review gate and a supervisor QA cycle; then commit and push if all gates remain green.

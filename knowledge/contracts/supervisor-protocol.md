@@ -10,7 +10,7 @@ Assignment phải có task id, objective, scope, acceptance, dependency, files/c
 
 ## Report contract
 
-Report phải có task id, agent, result (`completed|blocked|failed`), summary, files, checks/evidence, blockers và next action. `completed` chỉ là worker report; supervisor/reviewer mới quyết định `done`. `task report` tự append vào `work/agents/<agent>/REPORT.md`, `work/reports/REPORTS.md` và `work/completed/COMPLETED.md` khi phù hợp.
+Report phải có task id, agent, result (`completed|blocked|failed`), summary, files, checks/evidence, blockers và next action. `completed` chỉ là worker report; supervisor/reviewer mới quyết định `done`. `task report` tự append vào `work/agents/<agent>/REPORT.md`, `work/reports/REPORTS.md` và `work/completed/COMPLETED.md` khi phù hợp. Không dùng `task update --status reported`; CLI từ chối transition này để mọi trạng thái `reported` đều có report path xác thực.
 
 Supervisor chỉ ingest report có result hợp lệ, agent đã đăng ký, agent trùng
 `assigned_to` của task đang active và các file khai báo nằm trong task scope.

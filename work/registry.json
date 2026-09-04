@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T07:31:35Z",
+  "updated_at": "2026-09-04T07:37:23Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -1701,6 +1701,86 @@
       "attempts": 1,
       "created_at": "2026-09-04T07:27:28Z",
       "updated_at": "2026-09-04T07:31:35Z",
+      "last_result": "completed"
+    },
+    "UA-0025": {
+      "id": "UA-0025",
+      "title": "Make reported state report-only",
+      "objective": "Prevent task update from creating a report-less reported state; keep worker completion authenticated through task report.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "task update --status reported is rejected and cannot create a report-less reported state",
+        "task report remains the only worker completion path and preserves valid report lifecycle",
+        "Regression coverage, contracts and full QA remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate",
+        "python docs-site/build.py --check-only",
+        "git diff --check"
+      ],
+      "files": [
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: pass (37 tests)",
+          "recorded_at": "2026-09-04T07:37:15Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T07:37:15Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T07:37:15Z"
+        },
+        {
+          "kind": "check",
+          "value": "python examples/multi-runtime-conformance/run_conformance.py: PASS for Codex + Claude Code + Antigravity identities",
+          "recorded_at": "2026-09-04T07:37:15Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T07:37:15Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review pass: reported is now reachable only via task report, regression proves no state mutation on direct status update, valid worker report remains intact, and contract/docs align with implementation.",
+          "recorded_at": "2026-09-04T07:37:22Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0025-20260904T073715Z-30ab67.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T07:35:54Z",
+      "updated_at": "2026-09-04T07:37:23Z",
       "last_result": "completed"
     }
   }
