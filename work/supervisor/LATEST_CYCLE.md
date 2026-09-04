@@ -1,13 +1,13 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T062439Z-f478ff`
-- **Generated:** 2026-09-04T06:24:43Z
+- **Cycle:** `cycle-20260904T063038Z-18724d`
+- **Generated:** 2026-09-04T06:30:43Z
 - **Next action:** Complete the review gate for UA-0012; accept evidence or create a scoped debug task.
 - **Production snapshot:** `not_ready`
 
 ## Status counts
 
-- `done`: 13
+- `done`: 14
 - `needs_review`: 1
 
 ## Reports ingested this cycle
@@ -38,6 +38,7 @@
 - `UA-0011` — Build practical bilingual docs experience — evidence: 5
 - `UA-0013` — Prioritize review gates in supervisor next action — evidence: 4
 - `UA-0014` — Harden public repository discoverability metadata — evidence: 4
+- `UA-0015` — Strengthen static docs accessibility gate — evidence: 5
 - none
 
 ## Blocked work
@@ -47,7 +48,7 @@
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T062439Z-f478ff-qa.md`
+- evidence: `work/evidence/cycle-20260904T063038Z-18724d-qa.md`
 
 ## Production gates
 

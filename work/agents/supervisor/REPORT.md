@@ -90,3 +90,10 @@ Updated the public GitHub description and added focused discoverability topics f
 
 - Report: `work/reports/inbox/UA-0014-20260904T062231Z-364a7c.md`
 - Next: Review metadata readback and retain the hosting/domain gate until a real hostname is supplied.
+
+## 2026-09-04T06:30:03Z - UA-0015 (completed)
+
+Added a dependency-free HTML contract parser and static CSS safeguards to docs-site tests. Every page is checked for language, title, viewport, description, main landmark, one h1, named buttons/inputs/navs and safe external links; CSS checks preserve focus-visible, mobile navigation and reduced-motion rules.
+
+- Report: `work/reports/inbox/UA-0015-20260904T063003Z-4eafde.md`
+- Next: Supervisor review the static quality evidence, then ingest and run the full configured QA cycle.

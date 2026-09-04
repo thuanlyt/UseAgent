@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T06:24:32Z",
+  "updated_at": "2026-09-04T06:30:29Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -938,6 +938,67 @@
       "attempts": 1,
       "created_at": "2026-09-04T06:21:55Z",
       "updated_at": "2026-09-04T06:24:32Z",
+      "last_result": "completed"
+    },
+    "UA-0015": {
+      "id": "UA-0015",
+      "title": "Strengthen static docs accessibility gate",
+      "objective": "Add deterministic static checks for bilingual docs page structure, semantic metadata, accessible controls and responsive motion safeguards so release QA fails early on regressions.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tests/docs_site",
+        "docs-site"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Each HTML page has valid language/title/viewport/main structure and one non-empty h1",
+        "Interactive controls and forms expose accessible names or labels; external links include safe rel metadata",
+        "Styles retain visible focus treatment, mobile navigation breakpoint and reduced-motion safeguards"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v; python tools/useagent.py validate; python docs-site/build.py --check-only"
+      ],
+      "files": [
+        "tests/docs_site/test_docs_site.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 19 tests passed",
+          "recorded_at": "2026-09-04T06:30:03Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T06:30:03Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T06:30:03Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T06:30:03Z"
+        },
+        {
+          "kind": "review",
+          "value": "Reviewed the parser and assertions against all six HTML pages: semantic landmarks, language/title/viewport/description, h1 uniqueness, accessible button/input/nav naming and safe external links are covered; CSS safeguards cover focus-visible, mobile navigation and reduced-motion. Full cycle QA cycle-20260904T063012Z-ef2162 passed.",
+          "recorded_at": "2026-09-04T06:30:28Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0015-20260904T063003Z-4eafde.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T06:28:36Z",
+      "updated_at": "2026-09-04T06:30:29Z",
       "last_result": "completed"
     }
   }
