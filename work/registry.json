@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T07:44:08Z",
+  "updated_at": "2026-09-04T07:46:13Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -1853,6 +1853,11 @@
           "kind": "review",
           "value": "Review pass: done transition now requires a non-empty review record, empty evidence is rejected before mutation, validator and CLI share has_review_evidence semantics, and lifecycle tests cover both missing and blank review evidence.",
           "recorded_at": "2026-09-04T07:44:08Z"
+        },
+        {
+          "kind": "github-ci",
+          "value": "https://github.com/thuanlyt/UseAgent/actions/runs/33850124869: success on Python 3.11, 3.12 and 3.13 with unit tests, validation, docs build and package smoke.",
+          "recorded_at": "2026-09-04T07:46:13Z"
         }
       ],
       "reports": [
@@ -1860,7 +1865,7 @@
       ],
       "attempts": 1,
       "created_at": "2026-09-04T07:41:09Z",
-      "updated_at": "2026-09-04T07:44:08Z",
+      "updated_at": "2026-09-04T07:46:13Z",
       "last_result": "completed"
     }
   }
