@@ -237,3 +237,10 @@ Live hosting audit completed: custom domain DNS, HTTPS, Vercel app routes, missi
 
 - Report: `work/reports/inbox/UA-0035-20260904T131948Z-cbbcf5.md`
 - Next: Review the recorded evidence, then run UA-0036 to add canonical/sitemap/alternate metadata and fix the two Lighthouse accessibility findings before final SEO sign-off.
+
+## 2026-09-04T13:51:26Z - UA-0036 (completed)
+
+Implemented and verified production SEO, accessibility, security and performance hardening for the Vercel docs site. Clean URL canonical strategy is live on both hostnames with passing local tests, CI and five-route Lighthouse evidence.
+
+- Report: `work/reports/inbox/UA-0036-20260904T135126Z-ff2589.md`
+- Next: Run reviewer gate and then monitor indexing/Search Console and real-user performance.

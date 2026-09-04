@@ -1,14 +1,13 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T132059Z-b8c22a`
-- **Generated:** 2026-09-04T13:21:12Z
-- **Next action:** Workers pull assigned tasks from their INBOX.md; wait for reports from UA-0036.
-- **Production snapshot:** `not_ready`
+- **Cycle:** `cycle-20260904T135206Z-ef7960`
+- **Generated:** 2026-09-04T13:52:18Z
+- **Next action:** Run the production release gate and obtain explicit deploy approval.
+- **Production snapshot:** `ready`
 
 ## Status counts
 
-- `assigned`: 1
-- `done`: 35
+- `done`: 36
 
 ## Reports ingested this cycle
 
@@ -16,7 +15,6 @@
 
 ## Assignments issued this cycle
 
-- `UA-0036` -> `supervisor` — `work/agents/supervisor/inbox/UA-0036.md`
 - none
 
 ## Worker reports awaiting review
@@ -60,6 +58,7 @@
 - `UA-0033` — Require activation before worker report — evidence: 7
 - `UA-0034` — Fix docs-site mobile overflow — evidence: 9
 - `UA-0035` — Deploy docs website and connect production domain — evidence: 12
+- `UA-0036` — Close production SEO metadata and discoverability gaps — evidence: 13
 - none
 
 ## Blocked work
@@ -69,15 +68,15 @@
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T132059Z-b8c22a-qa.md`
+- evidence: `work/evidence/cycle-20260904T135206Z-ef7960-qa.md`
 
 ## Production gates
 
-- [ ] `all_tasks_done`: `fail`
+- [x] `all_tasks_done`: `pass`
 - [x] `qa`: `pass`
 - [x] `no_blocked_tasks`: `pass`
 - [x] `operational_rollback_notes`: `pass`
 
 ## Resume instruction
 
-Workers pull assigned tasks from their INBOX.md; wait for reports from UA-0036.
+Run the production release gate and obtain explicit deploy approval.

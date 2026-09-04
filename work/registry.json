@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T13:30:49Z",
+  "updated_at": "2026-09-04T13:51:55Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -2659,7 +2659,7 @@
       "title": "Close production SEO metadata and discoverability gaps",
       "objective": "Add a primary-domain canonical strategy, sitemap and robots sitemap reference, bilingual hreflang/locale metadata, and complete social preview metadata without introducing guessed domains or secrets.",
       "level": "L2",
-      "status": "in_progress",
+      "status": "done",
       "owner": "supervisor",
       "assigned_to": "supervisor",
       "scope": [
@@ -2682,7 +2682,18 @@
         "python tools/useagent.py validate",
         "live HTTP metadata and sitemap smoke on https://useagent.thuanlyt.id.vn"
       ],
-      "files": [],
+      "files": [
+        "docs-site/404.html",
+        "docs-site/architecture.html",
+        "docs-site/build.py",
+        "docs-site/getting-started.html",
+        "docs-site/index.html",
+        "docs-site/operations.html",
+        "docs-site/script.js",
+        "docs-site/sitemap.xml",
+        "docs-site/vi.html",
+        "tests/docs_site/test_docs_site.py"
+      ],
       "evidence": [
         {
           "kind": "implementation",
@@ -2693,15 +2704,73 @@
           "kind": "check",
           "value": "Focused checks pass: python -m unittest discover -s tests -v -> 50 tests OK; python docs-site/build.py --check-only -> VALIDATED 11 static files; python tools/useagent.py validate -> VALID; git diff --check -> pass.",
           "recorded_at": "2026-09-04T13:30:49Z"
+        },
+        {
+          "kind": "implementation",
+          "value": "Commit a490c2c uses Vercel clean URL routes consistently: canonical, hreflang, og:url and sitemap now publish /getting-started, /architecture, /operations and /vi; internal navigation and search targets use clean routes; local link validator maps clean routes to source .html files.",
+          "recorded_at": "2026-09-04T13:51:24Z"
+        },
+        {
+          "kind": "check",
+          "value": "Final local gate: python -m unittest discover -s tests -v -> 50 tests OK; python docs-site/build.py --check-only -> VALIDATED 11 static files; python tools/useagent.py validate -> VALID; git diff --check -> pass.",
+          "recorded_at": "2026-09-04T13:51:25Z"
+        },
+        {
+          "kind": "live-qa",
+          "value": "Live 2026-09-04 on both https://useagent.thuanlyt.id.vn and https://useagent.vercel.app: /, /getting-started, /architecture, /operations, /vi, /sitemap.xml and /robots.txt all 200; invalid route 404; assets styles.css/script.js/favicon.svg 200; HTTP -> HTTPS 308. Primary pages expose matching canonical and og:url on the custom domain, 5 sitemap locs, and robots Sitemap directive.",
+          "recorded_at": "2026-09-04T13:51:25Z"
+        },
+        {
+          "kind": "lighthouse",
+          "value": "Lighthouse 13.4.1 live mobile after a490c2c: all five primary routes scored Performance 99, Accessibility 100, Best Practices 100, SEO 100. Only reported advisory was speed-index; no actionable accessibility, SEO or best-practice audit failure.",
+          "recorded_at": "2026-09-04T13:51:25Z"
+        },
+        {
+          "kind": "ci",
+          "value": "GitHub Actions CI run 33880052184 for a490c2c69006b80666e8a91fdcdb6eec11927c15 completed with conclusion success: https://github.com/thuanlyt/UseAgent/actions/runs/33880052184",
+          "recorded_at": "2026-09-04T13:51:25Z"
+        },
+        {
+          "kind": "design",
+          "value": "UI/UX Pro Max review applied static-first documentation guidance: system fonts remove third-party critical path, responsive CSS keeps content stable, focus/skip-link/combobox semantics are covered, and secondary text contrast is above 4.5:1.",
+          "recorded_at": "2026-09-04T13:51:25Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-04T13:51:26Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only",
+          "recorded_at": "2026-09-04T13:51:26Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate",
+          "recorded_at": "2026-09-04T13:51:26Z"
+        },
+        {
+          "kind": "check",
+          "value": "Live Lighthouse 13.4.1 mobile on five routes",
+          "recorded_at": "2026-09-04T13:51:26Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review gate passed on 2026-09-04: inspected a490c2c diff and report; git diff --check passed; local 50-test/build/validator gate passed; live primary and fallback route/header/metadata smoke passed; Lighthouse five-route mobile scores were 99/100/100/100 with no actionable audit failure. Acceptance fully met. Residual operational note: Google Search Console ownership/indexing and ranking are external signals not verifiable from repository/live HTTP alone; monitor after release.",
+          "recorded_at": "2026-09-04T13:51:55Z"
         }
       ],
-      "reports": [],
+      "reports": [
+        "work/reports/inbox/UA-0036-20260904T135126Z-ff2589.md"
+      ],
       "attempts": 0,
       "created_at": "2026-09-04T13:18:15Z",
-      "updated_at": "2026-09-04T13:30:49Z",
+      "updated_at": "2026-09-04T13:51:55Z",
       "assignment_path": "work/agents/supervisor/inbox/UA-0036.md",
       "dispatched_at": "2026-09-04T13:20:59Z",
-      "started_at": "2026-09-04T13:24:24Z"
+      "started_at": "2026-09-04T13:24:24Z",
+      "last_result": "completed"
     }
   }
 }
