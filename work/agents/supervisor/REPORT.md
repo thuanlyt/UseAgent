@@ -146,3 +146,10 @@ Hardened malformed config/registry handling and recorded-file scope safety. Conf
 
 - Report: `work/reports/inbox/UA-0022-20260904T071226Z-f58d3d.md`
 - Next: Supervisor review the new validation invariants and regression evidence, then accept UA-0022 if no actionable finding remains.
+
+## 2026-09-04T07:21:30Z - UA-0023 (completed)
+
+Hardened supervisor/worker boundaries against malformed roster entries, malformed collections, unreadable report files, report paths that resolve outside the project, invalid assignment path types, and malformed scope/capability data. Valid reports keep the existing authentication and safe-file filtering path. Updated the supervisor protocol and control-plane module card.
+
+- Report: `work/reports/inbox/UA-0023-20260904T072130Z-adab37.md`
+- Next: Run independent review of boundary guards and regression evidence, then accept UA-0023 if no actionable finding remains.

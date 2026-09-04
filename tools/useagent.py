@@ -302,9 +302,20 @@ def scope_within(scope: str, allowed: str) -> bool:
 
 def active_scope_conflict(data: dict[str, Any], candidate: dict[str, Any], ignore_id: str | None = None) -> dict[str, Any] | None:
     for other_id, other in data["items"].items():
+        if not isinstance(other, dict):
+            continue
         if other_id == ignore_id or other.get("status") not in ACTIVE_WRITER_STATUSES:
             continue
-        if any(scope_overlaps(left, right) for left in candidate.get("scope", []) for right in other.get("scope", [])):
+        candidate_scopes = candidate.get("scope", [])
+        other_scopes = other.get("scope", [])
+        if not isinstance(candidate_scopes, list) or not isinstance(other_scopes, list):
+            continue
+        if any(
+            scope_overlaps(left, right)
+            for left in candidate_scopes
+            for right in other_scopes
+            if isinstance(left, str) and isinstance(right, str)
+        ):
             return other
     return None
 
@@ -326,12 +337,22 @@ def get_item(data: dict[str, Any], task_id: str) -> dict[str, Any]:
 
 
 def dependencies_done(data: dict[str, Any], item: dict[str, Any]) -> bool:
-    return all(data["items"].get(dep, {}).get("status") == "done" for dep in item.get("depends_on", []))
+    dependencies = item.get("depends_on", [])
+    if not isinstance(dependencies, list):
+        return False
+    for dependency in dependencies:
+        dependency_item = data["items"].get(dependency)
+        if not isinstance(dependency_item, dict) or dependency_item.get("status") != "done":
+            return False
+    return True
 
 
 def agent_config(config: dict[str, Any], agent_id: str) -> dict[str, Any]:
-    for agent in config.get("agents", []):
-        if agent.get("id") == agent_id:
+    agents = config.get("agents", [])
+    if not isinstance(agents, list):
+        raise UseAgentError("config.agents must be an array")
+    for agent in agents:
+        if isinstance(agent, dict) and agent.get("id") == agent_id:
             return agent
     raise UseAgentError(f"unknown registered agent: {agent_id}")
 
@@ -796,33 +817,68 @@ def cmd_agent_list(_: argparse.Namespace) -> int:
     config = load_config()
     data = load_registry()
     for agent in config.get("agents", []):
-        active = sum(1 for item in data["items"].values() if item.get("assigned_to") == agent.get("id") and item.get("status") in ACTIVE_WRITER_STATUSES)
+        if not isinstance(agent, dict) or not agent.get("id"):
+            continue
+        active = sum(
+            1
+            for item in data["items"].values()
+            if isinstance(item, dict)
+            and item.get("assigned_to") == agent.get("id")
+            and item.get("status") in ACTIVE_WRITER_STATUSES
+        )
         print(f"{agent['id']}\t{agent.get('status', 'available')}\tactive:{active}/{agent.get('max_active', 1)}\trole:{agent.get('role', 'worker')}")
     return 0
 
 
 def agent_active_count(data: dict[str, Any], agent_id: str) -> int:
-    return sum(1 for item in data["items"].values() if item.get("assigned_to") == agent_id and item.get("status") in ACTIVE_WRITER_STATUSES)
+    return sum(
+        1
+        for item in data["items"].values()
+        if isinstance(item, dict)
+        and item.get("assigned_to") == agent_id
+        and item.get("status") in ACTIVE_WRITER_STATUSES
+    )
 
 
 def agent_can_take(config: dict[str, Any], data: dict[str, Any], item: dict[str, Any], agent: dict[str, Any]) -> bool:
+    agent_id = agent.get("id")
+    if not isinstance(agent_id, str) or not agent_id:
+        return False
     if agent.get("status") != "available":
         return False
-    if agent_active_count(data, agent["id"]) >= int(agent.get("max_active", 1)):
+    try:
+        max_active = int(agent.get("max_active", 1))
+    except (TypeError, ValueError):
+        return False
+    if max_active < 1 or agent_active_count(data, agent_id) >= max_active:
         return False
     if agent.get("role") in {"supervisor", "reviewer", "release_gate"}:
         return False
     allowed_scopes = agent.get("scope", [])
-    if allowed_scopes and not all(any(scope_within(task_scope, allowed) for allowed in allowed_scopes) for task_scope in item.get("scope", [])):
+    task_scopes = item.get("scope", [])
+    if not isinstance(allowed_scopes, list) or not isinstance(task_scopes, list):
         return False
-    capabilities = set(agent.get("capabilities", []))
-    required = set(item.get("capabilities", []))
+    if allowed_scopes and not all(
+        isinstance(task_scope, str)
+        and any(isinstance(allowed, str) and scope_within(task_scope, allowed) for allowed in allowed_scopes)
+        for task_scope in task_scopes
+    ):
+        return False
+    agent_capabilities = agent.get("capabilities", [])
+    required_capabilities = item.get("capabilities", [])
+    if not isinstance(agent_capabilities, list) or not isinstance(required_capabilities, list):
+        return False
+    capabilities = set(agent_capabilities)
+    required = set(required_capabilities)
     return not required or required.issubset(capabilities)
 
 
 def choose_agent(config: dict[str, Any], data: dict[str, Any], item: dict[str, Any]) -> dict[str, Any] | None:
-    agents = config.get("agents", [])
+    raw_agents = config.get("agents", [])
+    agents = [agent for agent in raw_agents if isinstance(agent, dict)] if isinstance(raw_agents, list) else []
     preferred = item.get("preferred_agents", [])
+    if not isinstance(preferred, list):
+        preferred = []
     ordered = [agent for agent_id in preferred for agent in agents if agent.get("id") == agent_id]
     ordered += [agent for agent in agents if agent.get("id") not in preferred]
     for agent in ordered:
@@ -853,7 +909,8 @@ def dispatch_ready_locked(config: dict[str, Any], data: dict[str, Any], max_assi
     candidates = [
         item
         for item in data["items"].values()
-        if item.get("status") == "planned" or (retry_blocked and item.get("status") == "blocked")
+        if isinstance(item, dict)
+        and (item.get("status") == "planned" or (retry_blocked and item.get("status") == "blocked"))
     ]
     candidates.sort(key=lambda item: (item.get("level", "L4"), item.get("id", "")))
     assignments: list[dict[str, str]] = []
@@ -896,16 +953,32 @@ def cmd_worker_pull(args: argparse.Namespace) -> int:
     with state_lock():
         data = load_registry()
         agent = agent_config(config, args.agent)
-        assigned = [item for item in data["items"].values() if item.get("assigned_to") == args.agent and item.get("status") == "assigned"]
+        assigned = [
+            item
+            for item in data["items"].values()
+            if isinstance(item, dict)
+            and item.get("assigned_to") == args.agent
+            and item.get("status") == "assigned"
+        ]
         if not assigned:
             print("NO_TASK")
             return 0
         assigned.sort(key=lambda item: item.get("dispatched_at", item.get("id", "")))
         item = assigned[0]
-        path = safe_repo_path(item.get("assignment_path", ""))
+        try:
+            path = safe_repo_path(item.get("assignment_path", ""))
+        except (TypeError, ValueError, UseAgentError) as exc:
+            raise UseAgentError(
+                f"invalid assignment path for {item.get('id', args.agent)}: {exc}"
+            ) from exc
         if not path.is_file():
             raise UseAgentError(f"assignment file does not exist: {rel(path)}")
-        assignment_text = path.read_text(encoding="utf-8")
+        try:
+            assignment_text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as exc:
+            raise UseAgentError(
+                f"assignment file cannot be read for {item.get('id', args.agent)}: {exc}"
+            ) from exc
         item["status"] = "in_progress"
         item["started_at"] = now_iso()
         item["updated_at"] = now_iso()
@@ -956,12 +1029,20 @@ def save_supervisor_state(config: dict[str, Any], state: dict[str, Any]) -> None
 
 def ingest_reports_locked(config: dict[str, Any], data: dict[str, Any], state: dict[str, Any]) -> list[str]:
     inbox = path_for(config, "reports_inbox")
-    processed = set(state.get("ingested_reports", []))
+    raw_processed = state.get("ingested_reports", [])
+    processed = set(value for value in raw_processed if isinstance(value, str)) if isinstance(raw_processed, list) else set()
     ingested: list[str] = []
-    for report_path in sorted(inbox.glob("*.md")):
-        if report_path.name.lower() == "readme.md" or rel(report_path) in processed:
+    for candidate_path in sorted(inbox.glob("*.md")):
+        try:
+            report_path = safe_repo_path(candidate_path)
+            if not report_path.is_file():
+                continue
+            report_rel = rel(report_path)
+            if report_path.name.lower() == "readme.md" or report_rel in processed:
+                continue
+            frontmatter = parse_frontmatter(report_path)
+        except (OSError, UnicodeError, TypeError, ValueError, UseAgentError):
             continue
-        frontmatter = parse_frontmatter(report_path)
         if frontmatter.get("type") != "useagent-worker-report":
             continue
         task_id = frontmatter.get("task_id")
@@ -976,26 +1057,42 @@ def ingest_reports_locked(config: dict[str, Any], data: dict[str, Any], state: d
         except UseAgentError:
             continue
         item = data["items"][task_id]
+        if not isinstance(item, dict):
+            continue
         if item.get("assigned_to") != agent_id or item.get("status") not in {"assigned", "in_progress"}:
             continue
-        report_rel = rel(report_path)
-        if report_rel not in item.setdefault("reports", []):
-            item["reports"].append(report_rel)
+        reports = item.get("reports")
+        files_on_item = item.get("files")
+        evidence = item.get("evidence")
+        scopes = item.get("scope")
+        if (
+            not isinstance(reports, list)
+            or not isinstance(files_on_item, list)
+            or not isinstance(evidence, list)
+            or not isinstance(scopes, list)
+            or any(not isinstance(scope, str) for scope in scopes)
+        ):
+            continue
+        if report_rel not in reports:
+            reports.append(report_rel)
         files = parse_frontmatter_json(frontmatter, "files", [])
         safe_files: list[str] = []
         unsafe_files: list[str] = []
         if isinstance(files, list):
             for raw_path in files:
-                try:
-                    candidate = validate_relative_scope(str(raw_path), "reported file")
-                except UseAgentError:
-                    unsafe_files.append(str(raw_path))
+                if not isinstance(raw_path, str):
+                    unsafe_files.append(repr(raw_path))
                     continue
-                if any(scope_within(candidate, task_scope) for task_scope in item.get("scope", [])):
+                try:
+                    candidate = validate_relative_scope(raw_path, "reported file")
+                except UseAgentError:
+                    unsafe_files.append(raw_path)
+                    continue
+                if any(scope_within(candidate, task_scope) for task_scope in scopes):
                     safe_files.append(candidate)
                 else:
                     unsafe_files.append(candidate)
-            item["files"] = sorted(set(item.get("files", []) + safe_files))
+            item["files"] = sorted(set(files_on_item + safe_files))
         if unsafe_files:
             item.setdefault("evidence", []).append(
                 {

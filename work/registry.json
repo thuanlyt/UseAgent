@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T07:13:31Z",
+  "updated_at": "2026-09-04T07:24:16Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -1536,6 +1536,93 @@
       "attempts": 1,
       "created_at": "2026-09-04T07:10:01Z",
       "updated_at": "2026-09-04T07:13:31Z",
+      "last_result": "completed"
+    },
+    "UA-0023": {
+      "id": "UA-0023",
+      "title": "Make report ingest and roster boundaries fail-safe",
+      "objective": "Prevent supervisor and worker boundary commands from crashing on malformed report files, unsafe report paths, malformed roster entries or malformed state collections; ignore unsafe input with explicit evidence where appropriate and preserve state safety.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Supervisor ingest ignores invalid-encoding, unreadable or repository-escaping report files without traceback or state mutation",
+        "Malformed report collections and roster entries are handled as validation/skip outcomes rather than uncaught exceptions",
+        "Valid reports continue to authenticate, ingest and filter files exactly as before",
+        "Focused/full QA and updated boundary contract evidence remain green"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v; python tools/useagent.py validate; python docs-site/build.py --check-only; git diff --check"
+      ],
+      "files": [
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 35 tests passed",
+          "recorded_at": "2026-09-04T07:21:30Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T07:21:30Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T07:21:30Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T07:21:30Z"
+        },
+        {
+          "kind": "check",
+          "value": "Focused review checks: valid authenticated ingest plus unreadable report, malformed roster and invalid assignment path tests passed (4/4); py_compile passed; diff check passed.",
+          "recorded_at": "2026-09-04T07:21:58Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review: no actionable P0/P1/P2 finding. Invalid boundary input is skipped or reported through UseAgentError without state mutation; valid report ingestion remains covered and contract text matches the guards.",
+          "recorded_at": "2026-09-04T07:21:59Z"
+        },
+        {
+          "kind": "check",
+          "value": "Post-review regression: worker pull rejects unreadable assignment without state mutation; full suite now covers 36 tests.",
+          "recorded_at": "2026-09-04T07:23:40Z"
+        },
+        {
+          "kind": "review",
+          "value": "Post-review audit: added worker assignment read guard and malformed roster/collection guards; final source remains within UA-0023 scope and no unresolved P0/P1 finding is present.",
+          "recorded_at": "2026-09-04T07:23:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "Supervisor cycle cycle-20260904T072341Z-b7a589: 36 tests passed, validate VALID, docs build VALIDATED 10 static files.",
+          "recorded_at": "2026-09-04T07:24:16Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0023-20260904T072130Z-adab37.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T07:14:46Z",
+      "updated_at": "2026-09-04T07:24:16Z",
       "last_result": "completed"
     }
   }

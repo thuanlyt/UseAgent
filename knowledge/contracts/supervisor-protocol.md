@@ -15,7 +15,9 @@ Report phải có task id, agent, result (`completed|blocked|failed`), summary, 
 Supervisor chỉ ingest report có result hợp lệ, agent đã đăng ký, agent trùng
 `assigned_to` của task đang active và các file khai báo nằm trong task scope.
 File không an toàn hoặc ngoài scope bị bỏ qua và được ghi warning evidence để
-reviewer nhìn thấy; report không hợp lệ không được dùng để chuyển trạng thái.
+reviewer nhìn thấy; report không hợp lệ, không đọc được hoặc nằm ngoài project
+root bị bỏ qua an toàn và không được dùng để chuyển trạng thái. Roster/task
+collection malformed không được làm ingest, pull hoặc dispatch traceback.
 
 Task phải đi qua `needs_review` trước khi trở thành `done`. Worker không được
 tự biến report `completed` thành release decision; review evidence là điều kiện

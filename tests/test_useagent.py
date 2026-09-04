@@ -297,6 +297,60 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual(item["files"], ["src/owned.py"])
         self.assertTrue(any(entry["kind"] == "warning" for entry in item["evidence"]))
 
+    def test_supervisor_ingest_ignores_unreadable_reports_without_state_change(self) -> None:
+        self.register_worker("worker-1", "src")
+        task_id = self.new_task("Ignore unreadable report", "src")
+        code, _, error = self.invoke("task", "claim", task_id, "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+        unreadable = useagent.ROOT / "work" / "reports" / "inbox" / "unreadable.md"
+        unreadable.write_bytes(b"\xff\xfe\xfa")
+        code, output, error = self.invoke("supervisor", "ingest")
+        self.assertEqual((code, error), (0, ""))
+        self.assertEqual(output.strip(), "no new reports")
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "in_progress")
+        self.assertEqual(registry["items"][task_id]["reports"], [])
+
+    def test_agent_list_skips_malformed_roster_entry_without_traceback(self) -> None:
+        self.register_worker("worker-1", ".")
+        config = useagent.load_config()
+        config["agents"].insert(0, None)
+        useagent.save_config(config)
+        code, output, error = self.invoke("agent", "list")
+        self.assertEqual((code, error), (0, ""))
+        self.assertIn("worker-1", output)
+        self.assertNotIn("Traceback", output + error)
+
+    def test_worker_pull_rejects_non_string_assignment_without_state_change(self) -> None:
+        self.register_worker("worker-1", "src")
+        task_id = self.new_task("Typed assignment path", "src/assignment.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        registry["items"][task_id]["assignment_path"] = ["invalid"]
+        useagent.REGISTRY.write_text(json.dumps(registry), encoding="utf-8")
+
+        code, _, error = self.invoke("worker", "pull", "--agent", "worker-1")
+        self.assertEqual(code, 2)
+        self.assertIn("invalid assignment path", error)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "assigned")
+
+    def test_worker_pull_rejects_unreadable_assignment_without_state_change(self) -> None:
+        self.register_worker("worker-1", "src")
+        task_id = self.new_task("Readable assignment", "src/readable.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        assignment = useagent.ROOT / registry["items"][task_id]["assignment_path"]
+        assignment.write_bytes(b"\xff\xfe\xfa")
+
+        code, _, error = self.invoke("worker", "pull", "--agent", "worker-1")
+        self.assertEqual(code, 2)
+        self.assertIn("assignment file cannot be read", error)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "assigned")
+
     def test_validator_reports_malformed_config_without_traceback(self) -> None:
         config = useagent.load_config()
         config["supervisor"]["qa_timeout_seconds"] = 0

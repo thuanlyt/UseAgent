@@ -1,13 +1,13 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T071307Z-ec2697`
-- **Generated:** 2026-09-04T07:13:16Z
+- **Cycle:** `cycle-20260904T072341Z-b7a589`
+- **Generated:** 2026-09-04T07:23:51Z
 - **Next action:** Complete the review gate for UA-0012; accept evidence or create a scoped debug task.
 - **Production snapshot:** `not_ready`
 
 ## Status counts
 
-- `done`: 21
+- `done`: 22
 - `needs_review`: 1
 
 ## Reports ingested this cycle
@@ -45,7 +45,8 @@
 - `UA-0019` — Harden scope and worker identity invariants — evidence: 5
 - `UA-0020` — Enforce review-gated report ingestion — evidence: 13
 - `UA-0021` — Add multi-runtime protocol conformance harness — evidence: 10
-- `UA-0022` — Harden malformed-state and recorded-file validation — evidence: 6
+- `UA-0022` — Harden malformed-state and recorded-file validation — evidence: 7
+- `UA-0023` — Make report ingest and roster boundaries fail-safe — evidence: 8
 - none
 
 ## Blocked work
@@ -55,7 +56,7 @@
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T071307Z-ec2697-qa.md`
+- evidence: `work/evidence/cycle-20260904T072341Z-b7a589-qa.md`
 
 ## Production gates
 
