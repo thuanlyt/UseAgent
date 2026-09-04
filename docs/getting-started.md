@@ -231,6 +231,30 @@ There should be one copyable prompt such as
 `work/outbox/UA-0001-to-codex-api.md` for every dispatched worker. The task id
 and exact acceptance criteria are in that file; do not invent a second prompt.
 
+### Step B.5 — optionally automate the worker handoff
+
+Manual sessions can follow Step C. If a worker runtime has a local CLI or an
+adapter, configure it once so UseAgent can pull and invoke it automatically:
+
+```powershell
+python tools/useagent.py agent register --id codex-api --role worker `
+  --scope src/backend --scope tests/backend `
+  --runner-arg=python `
+  --runner-arg=tools/codex_worker_adapter.py `
+  --runner-arg=--assignment `
+  --runner-arg={assignment_path} `
+  --runner-timeout 3600
+
+python tools/useagent.py worker run --agent codex-api --max-tasks 1
+```
+
+The runner is an argv list, not a shell string, and must contain the
+`{assignment_path}` placeholder. The adapter runs from the project root, reads
+the assignment, performs the work and submits `task report`. UseAgent records
+runner evidence and creates a failed report if the adapter exits without one.
+The default remains manual/no-runner, so configuring this is an explicit
+permission boundary. Keep `--max-tasks` and `--wait-seconds` finite.
+
 ### Step C — start the Codex worker
 
 Open a separate Codex session in `F:\dev\DemoStore` and send:
@@ -378,15 +402,16 @@ python examples/multi-runtime-conformance/run_conformance.py
 It registers three isolated worker identities (`codex-backend`,
 `claude-frontend` and `antigravity-qa`), creates one task per scope, confirms
 that automatic routing selects the matching worker, runs every worker through
-`worker pull` and `task report`, then runs supervisor ingest, QA and checkpoint
-creation. It uses a temporary project and no vendor credentials. A successful
-run prints a `PASS` line naming all three runtimes.
+the opt-in runner bridge and automatic `task report`, then runs supervisor
+ingest, QA and checkpoint creation. It uses a temporary project and no vendor
+credentials. A successful run prints a `PASS` line naming all three runtimes.
 
 This is a protocol and routing conformance test, not a test of the Codex,
 Claude Code or Antigravity product APIs. To replace a simulated runtime with a
-real one, keep the generated worker id, open that runtime in the same project,
-send the corresponding `work/outbox/*-to-<agent-id>.md` prompt and let the real
-session execute the same pull/report commands from the earlier steps.
+real one, keep the generated worker id, configure an adapter with the same
+`{assignment_path}` contract, and test one bounded `worker run` before enabling
+more tasks. If no adapter/CLI exists, keep using the generated outbox prompt and
+the manual pull/report flow.
 
 ## 4. What happens to each Markdown file?
 
@@ -398,6 +423,7 @@ session execute the same pull/report commands from the earlier steps.
 | `work/agents/<id>/REPORT.md` | worker/CLI | Per-agent handover history. |
 | `work/reports/inbox/<report>.md` | worker/CLI | Input for the next supervisor ingest. |
 | `work/completed/COMPLETED.md` | worker/CLI | Append-only worker completion log. |
+| `work/evidence/runner-*.md` | worker/CLI | Captured adapter return code and bounded output. |
 | `work/SUPERVISOR_REPORT.md` | supervisor/CLI | Current project health, gates and next action. |
 | `work/evidence/<evidence>.md` | supervisor/CLI | Captured test, QA or review evidence. |
 | `work/checkpoints/<checkpoint>.md` | supervisor/CLI | Resume context for the next bounded cycle. |
@@ -497,12 +523,15 @@ Read .agents/skills/useagent-worker/SKILL.md and follow it.
 The skill name is a convenience; the Markdown file and CLI protocol are the
 portable contract.
 
-### Nothing starts automatically
+### The automatic path is opt-in
 
-UseAgent does not launch arbitrary external models from a filesystem. It creates
-durable assignments. A native Codex subagent, Claude Code session, Antigravity
-agent, another runner or a human must execute the generated prompt. This is an
-intentional permission boundary, not a failed dispatch.
+UseAgent does not guess how to launch arbitrary external models from a
+filesystem. By default it creates durable assignments for a native Codex
+subagent, Claude Code session, Antigravity agent, another runner or a human to
+execute. If you explicitly configure an argv runner for an agent, bounded
+`worker run` performs the pull and launch for you. This is an intentional
+permission boundary: the adapter still owns vendor-specific invocation and
+must submit the report through the CLI.
 
 ## 7. First-run checklist
 
@@ -549,13 +578,16 @@ Code làm frontend worker và Antigravity làm QA worker trong cùng một dự 
 4. Gửi một goal ngắn cho supervisor.
 5. Chạy một cycle để supervisor tạo task và prompt trong `work/outbox/`.
 6. Mở từng runtime worker trong cùng thư mục, cho worker chạy `worker pull`.
-7. Để worker sửa code và dùng `task report`.
+7. Để worker sửa code và dùng `task report`, hoặc cấu hình runner một lần rồi
+   chạy `worker run --agent <id> --max-tasks 1` để tự pull/gọi adapter.
 8. Hỏi supervisor hoặc chạy cycle tiếp theo để ingest report, QA, review và giao
    phần việc còn lại.
 
 Bạn không cần tự viết lại prompt assignment. Prompt đầy đủ nằm trong
 `work/outbox/`; phần prompt mẫu ở trên chỉ là “bootstrap” để runtime biết phải
-đọc file nào và dùng worker id nào.
+đọc file nào và dùng worker id nào. Với runner đã cấu hình, adapter nhận
+`{assignment_path}` và UseAgent tự ghi runner evidence/failed report nếu adapter
+không report.
 
 ### Chạy demo không cần credential
 

@@ -61,6 +61,9 @@ VALID_AGENT_STATUSES = {"available", "busy", "paused", "offline"}
 VALID_AGENT_ROLES = {"supervisor", "explorer", "planner", "worker", "reviewer", "release_gate"}
 CLAIM_ROLES = {"supervisor", "explorer", "planner", "worker"}
 REVIEW_ROLES = {"supervisor", "reviewer", "release_gate"}
+DEFAULT_RUNNER_TIMEOUT_SECONDS = 3600
+MAX_RUNNER_TIMEOUT_SECONDS = 86400
+MAX_RUNNER_WAIT_SECONDS = 86400
 
 
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -404,6 +407,54 @@ def agent_paths(config: dict[str, Any], agent: dict[str, Any]) -> dict[str, Path
         "completed": safe_repo_path(agent.get("completed", base / "COMPLETED.md")),
         "inbox_dir": safe_repo_path(agent.get("inbox_dir", base / "inbox")),
     }
+
+
+def runner_settings(agent: dict[str, Any]) -> tuple[list[str], int] | None:
+    """Return a validated, argv-only runner definition for a worker."""
+
+    raw_runner = agent.get("runner")
+    if raw_runner is None:
+        return None
+    if not isinstance(raw_runner, dict):
+        raise UseAgentError(f"runner must be an object for agent {agent.get('id')}")
+    command = raw_runner.get("command")
+    if not isinstance(command, list) or not command or any(
+        not isinstance(argument, str) or not argument.strip() for argument in command
+    ):
+        raise UseAgentError(
+            f"runner.command must be a non-empty array of strings for agent {agent.get('id')}"
+        )
+    if not any("{assignment_path}" in argument for argument in command):
+        raise UseAgentError(
+            f"runner.command for agent {agent.get('id')} must include {{assignment_path}}"
+        )
+    timeout = raw_runner.get("timeout_seconds", DEFAULT_RUNNER_TIMEOUT_SECONDS)
+    if isinstance(timeout, bool) or not isinstance(timeout, int) or not 1 <= timeout <= MAX_RUNNER_TIMEOUT_SECONDS:
+        raise UseAgentError(
+            f"runner.timeout_seconds for agent {agent.get('id')} must be between 1 and {MAX_RUNNER_TIMEOUT_SECONDS}"
+        )
+    return command, timeout
+
+
+def render_runner_command(agent: dict[str, Any], item: dict[str, Any], assignment_path: Path) -> tuple[list[str], int]:
+    settings = runner_settings(agent)
+    if settings is None:
+        raise UseAgentError(
+            f"agent {agent.get('id')} has no configured runner; use worker pull for a manual runtime"
+        )
+    command, timeout = settings
+    values = {
+        "{assignment_path}": rel(assignment_path),
+        "{task_id}": str(item["id"]),
+        "{agent_id}": str(agent["id"]),
+    }
+    rendered = [
+        argument.replace("{assignment_path}", values["{assignment_path}"])
+        .replace("{task_id}", values["{task_id}"])
+        .replace("{agent_id}", values["{agent_id}"])
+        for argument in command
+    ]
+    return rendered, timeout
 
 
 def append_markdown(path: Path, content: str) -> None:
@@ -859,6 +910,12 @@ def cmd_agent_register(args: argparse.Namespace) -> int:
             agent["report"] = args.report_file
         if args.completed_file:
             agent["completed"] = args.completed_file
+        if args.runner_command:
+            agent["runner"] = {
+                "command": args.runner_command,
+                "timeout_seconds": args.runner_timeout,
+            }
+            runner_settings(agent)
         paths = agent_paths(config, agent)
         paths["directory"].mkdir(parents=True, exist_ok=True)
         paths["inbox_dir"].mkdir(parents=True, exist_ok=True)
@@ -894,7 +951,11 @@ def cmd_agent_list(_: argparse.Namespace) -> int:
             and item.get("assigned_to") == agent.get("id")
             and item.get("status") in ACTIVE_WRITER_STATUSES
         )
-        print(f"{agent['id']}\t{agent.get('status', 'available')}\tactive:{active}/{agent.get('max_active', 1)}\trole:{agent.get('role', 'worker')}")
+        execution = "runner" if agent.get("runner") is not None else "manual"
+        print(
+            f"{agent['id']}\t{agent.get('status', 'available')}\tactive:{active}/{agent.get('max_active', 1)}"
+            f"\trole:{agent.get('role', 'worker')}\texecution:{execution}"
+        )
     return 0
 
 
@@ -1036,31 +1097,30 @@ def cmd_supervisor_dispatch(args: argparse.Namespace) -> int:
     return 0
 
 
-def cmd_worker_pull(args: argparse.Namespace) -> int:
+def pull_next_assignment(agent_id: str) -> tuple[dict[str, Any], Path, str] | None:
     config = load_config()
     with state_lock():
         data = load_registry()
-        agent = claim_agent(config, args.agent)
+        agent = claim_agent(config, agent_id)
         assigned = [
             item
             for item in data["items"].values()
             if isinstance(item, dict)
-            and item.get("assigned_to") == args.agent
+            and item.get("assigned_to") == agent_id
             and item.get("status") == "assigned"
         ]
         if not assigned:
-            print("NO_TASK")
-            return 0
+            return None
         assigned.sort(key=lambda item: item.get("dispatched_at", item.get("id", "")))
         item = assigned[0]
         blocker = agent_claim_blocker(config, data, item, agent, ignore_id=item["id"])
         if blocker:
-            raise UseAgentError(f"{item['id']} cannot be pulled by {args.agent}: {blocker}")
+            raise UseAgentError(f"{item['id']} cannot be pulled by {agent_id}: {blocker}")
         try:
             path = safe_repo_path(item.get("assignment_path", ""))
         except (TypeError, ValueError, UseAgentError) as exc:
             raise UseAgentError(
-                f"invalid assignment path for {item.get('id', args.agent)}: {exc}"
+                f"invalid assignment path for {item.get('id', agent_id)}: {exc}"
             ) from exc
         if not path.is_file():
             raise UseAgentError(f"assignment file does not exist: {rel(path)}")
@@ -1068,15 +1128,211 @@ def cmd_worker_pull(args: argparse.Namespace) -> int:
             assignment_text = path.read_text(encoding="utf-8")
         except (OSError, UnicodeError) as exc:
             raise UseAgentError(
-                f"assignment file cannot be read for {item.get('id', args.agent)}: {exc}"
+                f"assignment file cannot be read for {item.get('id', agent_id)}: {exc}"
             ) from exc
         item["status"] = "in_progress"
         item["started_at"] = now_iso()
         item["updated_at"] = now_iso()
         save_registry(data)
         sync_item_frontmatter(item)
-        append_event(item["id"], f"pulled by {args.agent}")
+        append_event(item["id"], f"pulled by {agent_id}")
+    return item, path, assignment_text
+
+
+def cmd_worker_pull(args: argparse.Namespace) -> int:
+    assignment = pull_next_assignment(args.agent)
+    if assignment is None:
+        print("NO_TASK")
+        return 0
+    _, _, assignment_text = assignment
     print(assignment_text)
+    return 0
+
+
+def runner_task_status(task_id: str) -> tuple[str, str | None]:
+    data = load_registry()
+    item = get_item(data, task_id)
+    return str(item.get("status")), item.get("last_result") if isinstance(item.get("last_result"), str) else None
+
+
+def write_runner_evidence(
+    config: dict[str, Any],
+    item: dict[str, Any],
+    agent: dict[str, Any],
+    command: list[str],
+    returncode: int,
+    duration_seconds: float,
+    stdout: str,
+    stderr: str,
+) -> Path:
+    evidence_path = path_for(config, "evidence") / (
+        f"runner-{item['id']}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}.md"
+    )
+    lines = [
+        f"# Runner evidence {item['id']}",
+        "",
+        f"- agent: `{agent['id']}`",
+        f"- command: `{json.dumps(command, ensure_ascii=False)}`",
+        f"- returncode: `{returncode}`",
+        f"- duration_seconds: `{duration_seconds:.2f}`",
+        "",
+        "## stdout",
+        "",
+        "```text",
+        clip(stdout, 20000),
+        "```",
+        "",
+        "## stderr",
+        "",
+        "```text",
+        clip(stderr, 20000),
+        "```",
+        "",
+    ]
+    atomic_write(evidence_path, "\n".join(lines))
+    return evidence_path
+
+
+def record_task_evidence(task_id: str, kind: str, value: str) -> None:
+    with state_lock():
+        data = load_registry()
+        item = get_item(data, task_id)
+        evidence = parse_evidence(value, kind)
+        evidence["recorded_at"] = now_iso()
+        item.setdefault("evidence", []).append(evidence)
+        item["updated_at"] = now_iso()
+        save_registry(data)
+        append_event(task_id, f"evidence {evidence['kind']}: {evidence['value']}")
+
+
+def auto_report_runner_failure(
+    task_id: str,
+    agent_id: str,
+    summary: str,
+    next_action: str,
+    check: str,
+) -> None:
+    cmd_task_report(
+        argparse.Namespace(
+            task_id=task_id,
+            agent=agent_id,
+            result="failed",
+            summary=summary,
+            next_action=next_action,
+            files=[],
+            checks=[check],
+            blocker="Runner did not complete a valid worker report.",
+        )
+    )
+
+
+def run_configured_runner(
+    config: dict[str, Any],
+    agent: dict[str, Any],
+    item: dict[str, Any],
+    assignment_path: Path,
+) -> tuple[int, Path]:
+    command, timeout = render_runner_command(agent, item, assignment_path)
+    started = time.monotonic()
+    stdout = ""
+    stderr = ""
+    returncode = 127
+    try:
+        result = subprocess.run(
+            command,
+            cwd=ROOT,
+            shell=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+            check=False,
+        )
+        returncode = result.returncode
+        stdout = result.stdout
+        stderr = result.stderr
+    except FileNotFoundError as exc:
+        stderr = f"runner executable was not found: {exc}"
+    except subprocess.TimeoutExpired as exc:
+        returncode = 124
+        stdout = str(exc.stdout or "")
+        stderr = f"runner timed out after {timeout}s\n{exc.stderr or ''}"
+    except OSError as exc:
+        stderr = f"runner could not start: {exc}"
+
+    evidence_path = write_runner_evidence(
+        config,
+        item,
+        agent,
+        command,
+        returncode,
+        time.monotonic() - started,
+        stdout,
+        stderr,
+    )
+    record_task_evidence(item["id"], "runner", f"{rel(evidence_path)} (returncode={returncode})")
+    status, last_result = runner_task_status(item["id"])
+    if status == "in_progress":
+        if returncode == 0:
+            reason = "runner exited successfully without submitting task report"
+        else:
+            reason = f"runner exited with returncode {returncode}"
+        auto_report_runner_failure(
+            item["id"],
+            agent["id"],
+            f"Configured runner failed validation: {reason}.",
+            "Inspect the runner command/output, fix the integration and retry through a new bounded run.",
+            f"runner evidence: {rel(evidence_path)}",
+        )
+        status, last_result = runner_task_status(item["id"])
+    elif returncode != 0:
+        stderr = stderr or f"runner exited with returncode {returncode} after reporting"
+    if status == "blocked":
+        return 2, evidence_path
+    if returncode != 0 or last_result == "failed":
+        return 1, evidence_path
+    if status != "reported":
+        return 1, evidence_path
+    return 0, evidence_path
+
+
+def cmd_worker_run(args: argparse.Namespace) -> int:
+    config = load_config()
+    agent = claim_agent(config, args.agent)
+    if runner_settings(agent) is None:
+        raise UseAgentError(
+            f"agent {args.agent} has no configured runner; use worker pull for a manual runtime"
+        )
+    if args.max_tasks < 1:
+        raise UseAgentError("--max-tasks must be at least 1")
+    if not 0 <= args.wait_seconds <= MAX_RUNNER_WAIT_SECONDS:
+        raise UseAgentError(f"--wait-seconds must be between 0 and {MAX_RUNNER_WAIT_SECONDS}")
+    if not 0.1 <= args.poll_seconds <= 60:
+        raise UseAgentError("--poll-seconds must be between 0.1 and 60")
+
+    completed = 0
+    deadline = time.monotonic() + args.wait_seconds
+    while completed < args.max_tasks:
+        assignment = pull_next_assignment(args.agent)
+        if assignment is None:
+            remaining = deadline - time.monotonic()
+            if args.wait_seconds <= 0 or remaining <= 0:
+                if completed == 0:
+                    print("NO_TASK")
+                break
+            time.sleep(min(args.poll_seconds, remaining))
+            continue
+        item, assignment_path, _ = assignment
+        result, evidence_path = run_configured_runner(config, agent, item, assignment_path)
+        status, last_result = runner_task_status(item["id"])
+        print(
+            f"{item['id']} runner_status={status} result={last_result or 'none'} "
+            f"evidence={rel(evidence_path)}"
+        )
+        if result != 0:
+            return result
+        completed += 1
     return 0
 
 
@@ -1616,6 +1872,11 @@ def validate_config(config: dict[str, Any], errors: list[str]) -> None:
             not isinstance(capability, str) or not capability.strip() for capability in capabilities
         ):
             errors.append(f"capabilities must be an array of non-empty strings for agent {agent_id}")
+        if "runner" in agent:
+            try:
+                runner_settings(agent)
+            except UseAgentError as exc:
+                errors.append(str(exc))
         try:
             paths = agent_paths(config, agent)
         except (TypeError, ValueError, UseAgentError) as exc:
@@ -1807,6 +2068,18 @@ def build_parser() -> argparse.ArgumentParser:
     register.add_argument("--scope", action="append")
     register.add_argument("--capability", action="append")
     register.add_argument("--max-active", type=int, default=1)
+    register.add_argument(
+        "--runner-arg",
+        dest="runner_command",
+        action="append",
+        help="optional argv element for automatic worker execution; repeat and include {assignment_path}",
+    )
+    register.add_argument(
+        "--runner-timeout",
+        type=int,
+        default=DEFAULT_RUNNER_TIMEOUT_SECONDS,
+        help=f"optional runner timeout in seconds (1-{MAX_RUNNER_TIMEOUT_SECONDS})",
+    )
     register.set_defaults(func=cmd_agent_register)
     agent_status_parser = agent_sub.add_parser("status", help="set worker availability")
     agent_status_parser.add_argument("agent_id")
@@ -1820,6 +2093,12 @@ def build_parser() -> argparse.ArgumentParser:
     pull = worker_sub.add_parser("pull", help="pull oldest assigned task")
     pull.add_argument("--agent", required=True)
     pull.set_defaults(func=cmd_worker_pull)
+    run = worker_sub.add_parser("run", help="pull and invoke one or more opt-in runner tasks")
+    run.add_argument("--agent", required=True)
+    run.add_argument("--max-tasks", type=int, default=1)
+    run.add_argument("--wait-seconds", type=float, default=0)
+    run.add_argument("--poll-seconds", type=float, default=2)
+    run.set_defaults(func=cmd_worker_run)
 
     supervisor = sub.add_parser("supervisor", help="supervisor dispatch/report/QA cycle")
     supervisor_sub = supervisor.add_subparsers(dest="supervisor_command", required=True)

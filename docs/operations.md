@@ -54,16 +54,55 @@ python tools/useagent.py agent register --id qaagent --directory work/qaagent `
   --completed-file work/mail/qa-completed.md
 ```
 
+### Automatic worker intake (opt-in)
+
+For a runtime that has a local CLI or adapter, register an argv-only runner once:
+
+```powershell
+python tools/useagent.py agent register --id codex-api --role worker `
+  --scope src/backend --scope tests/backend `
+  --runner-arg=python `
+  --runner-arg=tools/codex_worker_adapter.py `
+  --runner-arg=--assignment `
+  --runner-arg={assignment_path} `
+  --runner-timeout 3600
+```
+
+Then run a bounded intake window:
+
+```powershell
+python tools/useagent.py worker run --agent codex-api --max-tasks 3 --wait-seconds 300
+```
+
+The runner receives the generated assignment path and runs with the project
+root as its working directory. It must use `task report`; UseAgent records
+runner stdout/stderr under `work/evidence/` and automatically writes a failed
+worker report if the process exits without reporting. `worker pull` remains the
+manual path. No command is executed unless a runner is explicitly configured;
+the command is an argv list and is never passed through a shell.
+
+The adapter is the provider-specific boundary. Codex can wrap its installed
+CLI, Claude Code can wrap `claude` from a local checkout, and Antigravity can
+wrap an SDK/local Project runner. UseAgent intentionally does not guess vendor
+flags or call vendor APIs. Test the adapter with one task before increasing
+`--max-tasks`; `worker run` defaults to one task and never runs forever.
+
 ## Claim và thực thi
 
 ```powershell
 python tools/useagent.py worker pull --agent backend
 python tools/useagent.py context --task UA-0001
 python tools/useagent.py task report UA-0001 --agent backend --result completed --summary "Implementation complete" --next-action "Review and QA" --file src/backend/x.py --check "python -m unittest: pass"
+python tools/useagent.py worker run --agent backend --max-tasks 1
 python tools/useagent.py supervisor cycle --run-qa
 ```
 
 Worker report tự ghi vào `work/agents/backend/REPORT.md`, `work/reports/inbox/`, `work/reports/REPORTS.md` và `work/completed/COMPLETED.md`. Reviewer kiểm tra diff và evidence, sau đó cập nhật `needs_review`/`done`. Chỉ identity có role `supervisor`, `reviewer` hoặc `release_gate` được làm review; worker không thể tự approve hoặc tự close task.
+
+Nếu đã cấu hình `runner` cho worker, dùng `worker run --agent <id>` để tự pull
+assignment, gọi adapter trong một cửa sổ hữu hạn và kiểm tra report. Runner
+không có report sẽ được ghi failed tự động để supervisor không bị kẹt ở
+`in_progress`. Runner mặc định không tồn tại; đây là opt-in rõ ràng.
 
 Worker phải dùng `task report` để chuyển task sang `reported`; không dùng
 `task update --status reported`, vì CLI cố ý từ chối trạng thái reported không có

@@ -613,6 +613,172 @@ class UseAgentCliTests(unittest.TestCase):
         registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
         self.assertEqual(registry["items"][task_id]["status"], "assigned")
 
+    def reporting_runner(self, exit_code: int = 0) -> list[str]:
+        runner_code = (
+            "import pathlib, subprocess, sys\n"
+            "if int(sys.argv[6]): raise SystemExit(int(sys.argv[6]))\n"
+            "cli = sys.argv[3]\n"
+            "cmd = [sys.executable, cli, '--root', str(pathlib.Path.cwd()), 'task', 'report', sys.argv[1], '--agent', sys.argv[2], '--result', 'completed', '--summary', 'automatic runner report', '--next-action', 'review', '--file', sys.argv[4], '--check', 'automatic runner report: pass']\n"
+            "raise SystemExit(subprocess.run(cmd, check=False).returncode)\n"
+        )
+        return [
+            sys.executable,
+            "-c",
+            runner_code,
+            "{task_id}",
+            "{agent_id}",
+            str(Path(useagent.__file__).resolve()),
+            "src/runner.py",
+            "{assignment_path}",
+            str(exit_code),
+        ]
+
+    def configure_runner(self, command: list[str], timeout_seconds: int = 30) -> None:
+        config = useagent.load_config()
+        config["agents"][0]["runner"] = {
+            "command": command,
+            "timeout_seconds": timeout_seconds,
+        }
+        useagent.save_config(config)
+
+    def test_worker_run_invokes_runner_and_accepts_automatic_report(self) -> None:
+        self.register_worker("worker-1", "src")
+        self.configure_runner(self.reporting_runner())
+        task_id = self.new_task("Automatic worker run", "src/runner.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+
+        code, output, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+        self.assertIn(f"{task_id} runner_status=reported result=completed", output)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        item = registry["items"][task_id]
+        self.assertEqual(item["status"], "reported")
+        self.assertEqual(item["last_result"], "completed")
+        self.assertTrue(item["reports"])
+        self.assertTrue(any(entry["kind"] == "runner" for entry in item["evidence"]))
+
+    def test_worker_run_requires_configured_runner_without_claiming(self) -> None:
+        self.register_worker("worker-1", "src")
+        task_id = self.new_task("Runner is opt in", "src/manual.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+
+        code, output, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual(code, 2)
+        self.assertEqual(output, "")
+        self.assertIn("no configured runner", error)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "assigned")
+
+    def test_worker_run_records_failure_when_runner_omits_report(self) -> None:
+        self.register_worker("worker-1", "src")
+        self.configure_runner(
+            [
+                sys.executable,
+                "-c",
+                "import sys; raise SystemExit(9)",
+                "{assignment_path}",
+            ]
+        )
+        task_id = self.new_task("Runner failure", "src/failure.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+
+        code, output, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual(code, 1)
+        self.assertEqual(error, "")
+        self.assertIn(f"{task_id} runner_status=reported result=failed", output)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        item = registry["items"][task_id]
+        self.assertEqual(item["status"], "reported")
+        self.assertEqual(item["last_result"], "failed")
+        self.assertEqual(len(item["reports"]), 1)
+        self.assertTrue(any(entry["kind"] == "runner" for entry in item["evidence"]))
+
+    def test_worker_run_times_out_and_records_failure_evidence(self) -> None:
+        self.register_worker("worker-1", "src")
+        self.configure_runner(
+            [
+                sys.executable,
+                "-c",
+                "import time; time.sleep(2)",
+                "{assignment_path}",
+            ],
+            timeout_seconds=1,
+        )
+        task_id = self.new_task("Runner timeout", "src/timeout.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+
+        code, output, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual(code, 1)
+        self.assertEqual(error, "")
+        self.assertIn(f"{task_id} runner_status=reported result=failed", output)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        item = registry["items"][task_id]
+        self.assertEqual(item["last_result"], "failed")
+        runner_evidence = [entry for entry in item["evidence"] if entry["kind"] == "runner"]
+        self.assertEqual(len(runner_evidence), 1)
+        evidence_path = useagent.ROOT / runner_evidence[0]["value"].split(" ", 1)[0]
+        self.assertIn("returncode: `124`", evidence_path.read_text(encoding="utf-8"))
+
+    def test_worker_run_wait_is_bounded_and_returns_no_task(self) -> None:
+        self.register_worker("worker-1", "src")
+        self.configure_runner(self.reporting_runner())
+        code, output, error = self.invoke(
+            "worker",
+            "run",
+            "--agent",
+            "worker-1",
+            "--wait-seconds",
+            "0.1",
+            "--poll-seconds",
+            "0.1",
+        )
+        self.assertEqual((code, error), (0, ""))
+        self.assertEqual(output.strip(), "NO_TASK")
+
+    def test_agent_register_persists_argv_runner_contract(self) -> None:
+        code, output, error = self.invoke(
+            "agent",
+            "register",
+            "--id",
+            "runner-worker",
+            "--role",
+            "worker",
+            "--scope",
+            "src",
+            "--runner-arg",
+            sys.executable,
+            "--runner-arg=-c",
+            "--runner-arg",
+            "print('runner')",
+            "--runner-arg",
+            "{assignment_path}",
+        )
+        self.assertEqual((code, error), (0, ""))
+        self.assertIn("runner-worker", output)
+        config = useagent.load_config()
+        runner = config["agents"][0]["runner"]
+        self.assertEqual(runner["command"][-1], "{assignment_path}")
+        self.assertEqual(runner["timeout_seconds"], useagent.DEFAULT_RUNNER_TIMEOUT_SECONDS)
+
+    def test_validator_rejects_unsafe_runner_shape(self) -> None:
+        self.register_worker("worker-1", "src")
+        config = useagent.load_config()
+        config["agents"][0]["runner"] = {
+            "command": ["python", "adapter.py"],
+            "timeout_seconds": 0,
+        }
+        errors: list[str] = []
+        useagent.validate_config(config, errors)
+        self.assertTrue(any("must include {assignment_path}" in error for error in errors))
+        config["agents"][0]["runner"]["command"].append("{assignment_path}")
+        errors = []
+        useagent.validate_config(config, errors)
+        self.assertTrue(any("between 1 and" in error for error in errors))
+
     def test_validator_reports_malformed_config_without_traceback(self) -> None:
         config = useagent.load_config()
         config["supervisor"]["qa_timeout_seconds"] = 0

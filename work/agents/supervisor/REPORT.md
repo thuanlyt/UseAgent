@@ -244,3 +244,10 @@ Implemented and verified production SEO, accessibility, security and performance
 
 - Report: `work/reports/inbox/UA-0036-20260904T135126Z-ff2589.md`
 - Next: Run reviewer gate and then monitor indexing/Search Console and real-user performance.
+
+## 2026-09-04T14:31:45Z - UA-0038 (completed)
+
+Implemented and verified the provider-neutral bounded worker runner bridge, automatic report fallback, mixed-runtime conformance, bilingual docs and docs-site guidance.
+
+- Report: `work/reports/inbox/UA-0038-20260904T143145Z-4c7b27.md`
+- Next: Review evidence, run the release QA gate, then publish the feature and confirm docs deployment.

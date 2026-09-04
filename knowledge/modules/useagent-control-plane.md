@@ -16,6 +16,7 @@ Create and transition work items, serialize state changes, print bounded context
 - `python tools/useagent.py task new|claim|update|evidence|report|list|show`
 - `python tools/useagent.py agent register|status|list`
 - `python tools/useagent.py worker pull --agent <id>`
+- `python tools/useagent.py worker run --agent <id> [--max-tasks N]`
 - `python tools/useagent.py supervisor dispatch|ingest|report|qa|cycle`
 - `python tools/useagent.py checkpoint create`
 - `python tools/useagent.py validate`
@@ -55,8 +56,20 @@ workflow roles. It also documents the shared-folder default, the worktree
 ledger caveat, unique runtime ids, generated outbox prompts and the exact
 pull/report cycle.
 
+## Optional execution bridge
+
+`agent register --runner-arg ...` can persist an argv-only adapter for a real
+worker runtime. `worker run` pulls assigned work, substitutes the assignment,
+task and agent placeholders, invokes the adapter with a timeout and records
+runner evidence. It never uses a shell, has a one-task default and generates a
+failed worker report when the adapter omits `task report`. The adapter remains
+provider-specific and trusted; UseAgent does not promise to sandbox an external
+model process.
+
 ## Known gaps
 
 Scopes use explicit repository-relative path/subtree semantics; arbitrary glob
 patterns are intentionally not interpreted. Git worktree orchestration remains
-a Codex/product operation rather than a hidden action of this CLI.
+a Codex/product operation rather than a hidden action of this CLI. Vendor
+launch flags and hosted-runtime authentication remain outside the portable core
+and belong in a project-owned adapter.

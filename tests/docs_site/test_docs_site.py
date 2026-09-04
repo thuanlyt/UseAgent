@@ -242,6 +242,17 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("User-agent: *", robots)
         self.assertIn(f"Sitemap: {PRIMARY_ORIGIN}/sitemap.xml", robots)
 
+    def test_automatic_worker_runner_guidance_is_published(self) -> None:
+        getting_started = (SITE / "getting-started.html").read_text(encoding="utf-8")
+        operations = (SITE / "operations.html").read_text(encoding="utf-8")
+        vietnamese = (SITE / "vi.html").read_text(encoding="utf-8")
+        self.assertIn('id="automatic-runner"', getting_started)
+        self.assertIn("{assignment_path}", getting_started)
+        self.assertIn('id="automatic-runner"', operations)
+        self.assertIn("worker run", operations)
+        self.assertIn('id="runner"', vietnamese)
+        self.assertIn("Tự động nhận task", vietnamese)
+
     def test_mobile_layout_prevents_content_overflow(self) -> None:
         styles = (SITE / "styles.css").read_text(encoding="utf-8")
         self.assertRegex(styles, r"\.hero-copy, \.hero-visual\s*\{[^}]*min-width:\s*0")

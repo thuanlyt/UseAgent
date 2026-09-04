@@ -67,6 +67,27 @@ def require(path: Path, label: str) -> None:
         raise AssertionError(f"missing {label}: {path}")
 
 
+def simulated_runner_args(runtime: dict[str, str]) -> list[str]:
+    """Return an argv-only runner that reports through the real CLI."""
+
+    runner_code = (
+        "import pathlib, subprocess, sys\n"
+        "cli = sys.argv[3]\n"
+        "cmd = [sys.executable, cli, '--root', str(pathlib.Path.cwd()), 'task', 'report', sys.argv[1], '--agent', sys.argv[2], '--result', 'completed', '--summary', sys.argv[2] + ' automatic runner completed its isolated scope.', '--next-action', 'Supervisor ingest, review and QA.', '--file', sys.argv[4], '--check', 'automatic runner report: pass']\n"
+        "raise SystemExit(subprocess.run(cmd, check=False).returncode)\n"
+    )
+    return [
+        sys.executable,
+        "-c",
+        runner_code,
+        "{task_id}",
+        "{agent_id}",
+        str(CLI),
+        runtime["file"],
+        "{assignment_path}",
+    ]
+
+
 def main() -> int:
     if not CLI.is_file():
         raise RuntimeError(f"cannot find UseAgent CLI: {CLI}")
@@ -90,8 +111,7 @@ def main() -> int:
 
         task_ids: dict[str, str] = {}
         for runtime in RUNTIMES:
-            run_cli(
-                project_root,
+            register_args = [
                 "agent",
                 "register",
                 "--id",
@@ -104,7 +124,10 @@ def main() -> int:
                 runtime["capability"],
                 "--max-active",
                 "1",
-            )
+            ]
+            for runner_arg in simulated_runner_args(runtime):
+                register_args.append(f"--runner-arg={runner_arg}")
+            run_cli(project_root, *register_args)
             task_ids[runtime["id"]] = run_cli(
                 project_root,
                 "task",
@@ -145,28 +168,9 @@ def main() -> int:
 
         for runtime in RUNTIMES:
             task_id = task_ids[runtime["id"]]
-            pulled = run_cli(project_root, "worker", "pull", "--agent", runtime["id"])
-            if f"Assignment {task_id}" not in pulled:
-                raise AssertionError(f"{runtime['label']} did not pull {task_id}")
-            report_path = run_cli(
-                project_root,
-                "task",
-                "report",
-                task_id,
-                "--agent",
-                runtime["id"],
-                "--result",
-                "completed",
-                "--summary",
-                f"{runtime['label']} simulated worker completed its isolated scope.",
-                "--next-action",
-                "Supervisor ingest, review and QA.",
-                "--file",
-                runtime["file"],
-                "--check",
-                f"{runtime['label']} protocol report: pass",
-            )
-            require(project_root / report_path, f"{runtime['label']} report")
+            run_output = run_cli(project_root, "worker", "run", "--agent", runtime["id"])
+            if f"{task_id} runner_status=reported result=completed" not in run_output:
+                raise AssertionError(f"{runtime['label']} runner did not complete {task_id}: {run_output}")
 
         cycle_output = run_cli(project_root, "supervisor", "cycle", "--run-qa")
         registry = json.loads((project_root / "work" / "registry.json").read_text(encoding="utf-8"))
@@ -190,7 +194,7 @@ def main() -> int:
         if "next=" not in cycle_output:
             raise AssertionError("supervisor cycle did not expose its next action")
 
-        print("PASS: Codex + Claude Code + Antigravity identities assignment -> pull -> report -> ingest -> QA -> checkpoint")
+        print("PASS: Codex + Claude Code + Antigravity identities assignment -> automatic runner -> report -> ingest -> QA -> checkpoint")
         print(f"tasks={','.join(task_ids.values())}")
         print(f"checkpoint={checkpoint}")
     return 0

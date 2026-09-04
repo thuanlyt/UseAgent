@@ -1,13 +1,14 @@
 # UseAgent supervisor report
 
-- **Cycle:** `manual-20260904T135327Z`
-- **Generated:** 2026-09-04T13:53:27Z
+- **Cycle:** `cycle-20260904T143158Z-b5ae86`
+- **Generated:** 2026-09-04T14:32:14Z
 - **Next action:** Run the production release gate and obtain explicit deploy approval.
 - **Production snapshot:** `ready`
 
 ## Status counts
 
-- `done`: 36
+- `cancelled`: 1
+- `done`: 37
 
 ## Reports ingested this cycle
 
@@ -59,6 +60,7 @@
 - `UA-0034` — Fix docs-site mobile overflow — evidence: 9
 - `UA-0035` — Deploy docs website and connect production domain — evidence: 12
 - `UA-0036` — Close production SEO metadata and discoverability gaps — evidence: 13
+- `UA-0038` — Add bounded opt-in worker runner bridge — evidence: 7
 - none
 
 ## Blocked work
@@ -68,7 +70,7 @@
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T135206Z-ef7960-qa.md`
+- evidence: `work/evidence/cycle-20260904T143158Z-b5ae86-qa.md`
 
 ## Production gates
 

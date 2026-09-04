@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T13:51:55Z",
+  "updated_at": "2026-09-04T14:31:58Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -2770,6 +2770,156 @@
       "assignment_path": "work/agents/supervisor/inbox/UA-0036.md",
       "dispatched_at": "2026-09-04T13:20:59Z",
       "started_at": "2026-09-04T13:24:24Z",
+      "last_result": "completed"
+    },
+    "UA-0037": {
+      "id": "UA-0037",
+      "title": "Add bounded opt-in worker runner bridge",
+      "objective": "Automate worker intake and execution through a provider-neutral, explicitly enabled runner contract while preserving scope locks, report gates, finite cycle limits and no implicit external side effects.",
+      "level": "L3",
+      "status": "cancelled",
+      "owner": "supervisor",
+      "assigned_to": null,
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "tests/demo/test_multi_runtime_conformance.py",
+        "examples/multi-runtime-conformance/run_conformance.py",
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "docs/autopilot.md",
+        "knowledge/contracts/supervisor-protocol.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [
+        "python"
+      ],
+      "acceptance": [
+        "A registered worker may opt into a configured runner command with explicit assignment/task placeholders; the default behavior remains no external execution.",
+        "A bounded worker run claims the oldest eligible assignment, invokes the configured runner without shell interpolation, and returns a clear result when the runner is absent, fails or omits its report.",
+        "The runner bridge cannot escape the repository scope, bypass claim/report/review gates or run unbounded by default; tests cover success, failure, missing runner and scope safety.",
+        "The mixed-runtime conformance harness exercises automatic intake with simulated Codex, Claude Code and Antigravity-style runners without vendor credentials.",
+        "English/Vietnamese onboarding and autopilot docs explain one-time runner setup, provider limitations, safe defaults and how the supervisor consumes reports."
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python examples/multi-runtime-conformance/run_conformance.py",
+        "python tools/useagent.py validate"
+      ],
+      "files": [],
+      "evidence": [],
+      "reports": [],
+      "attempts": 0,
+      "created_at": "2026-09-04T14:11:18Z",
+      "updated_at": "2026-09-04T14:11:57Z"
+    },
+    "UA-0038": {
+      "id": "UA-0038",
+      "title": "Add bounded opt-in worker runner bridge",
+      "objective": "Automate worker intake and execution through a provider-neutral, explicitly enabled runner contract while preserving scope locks, report gates, finite cycle limits and no implicit external side effects.",
+      "level": "L3",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "README.md",
+        "docs-site/getting-started.html",
+        "docs-site/operations.html",
+        "docs-site/vi.html",
+        "docs/autopilot.md",
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "examples/multi-runtime-conformance/run_conformance.py",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/decisions/0006-optional-runner-bridge.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "knowledge/project-map.md",
+        "tests/demo/test_multi_runtime_conformance.py",
+        "tests/docs_site/test_docs_site.py",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "A registered worker may opt into a configured runner command with explicit assignment/task placeholders; the default behavior remains no external execution.",
+        "A bounded worker run claims the oldest eligible assignment, invokes the configured runner without shell interpolation, and returns a clear result when the runner is absent, fails or omits its report.",
+        "The runner bridge cannot escape the repository scope, bypass claim/report/review gates or run unbounded by default; tests cover success, failure, missing runner and scope safety.",
+        "The mixed-runtime conformance harness exercises automatic intake with simulated Codex, Claude Code and Antigravity-style runners without vendor credentials.",
+        "English/Vietnamese onboarding and autopilot docs explain one-time runner setup, provider limitations, safe defaults and how the supervisor consumes reports."
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v",
+        "python examples/multi-runtime-conformance/run_conformance.py",
+        "python tools/useagent.py validate"
+      ],
+      "files": [
+        "README.md",
+        "docs-site/getting-started.html",
+        "docs-site/operations.html",
+        "docs-site/vi.html",
+        "docs/autopilot.md",
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "examples/multi-runtime-conformance/run_conformance.py",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/decisions/0006-optional-runner-bridge.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "knowledge/project-map.md",
+        "tests/demo/test_multi_runtime_conformance.py",
+        "tests/docs_site/test_docs_site.py",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 58 tests passed",
+          "recorded_at": "2026-09-04T14:31:45Z"
+        },
+        {
+          "kind": "check",
+          "value": "python examples/multi-runtime-conformance/run_conformance.py: PASS automatic runner for Codex + Claude Code + Antigravity identities",
+          "recorded_at": "2026-09-04T14:31:45Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 11 static files",
+          "recorded_at": "2026-09-04T14:31:45Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T14:31:45Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: no content errors",
+          "recorded_at": "2026-09-04T14:31:45Z"
+        },
+        {
+          "kind": "check",
+          "value": "timeout regression: returncode 124 evidence and failed report verified",
+          "recorded_at": "2026-09-04T14:31:45Z"
+        },
+        {
+          "kind": "review",
+          "value": "Reviewed implementation and docs diff: runner is opt-in, argv-only and shell=False; assignment path is repository-relative and pull reuses claim/scope checks; missing/nonzero/timeout/no-report paths create bounded evidence plus failed report; no provider-specific API or hidden daemon was added. Verified files remain within UA-0038 scope. Residual limitation: vendor CLIs/SDKs are trusted adapters and require owner configuration/testing.",
+          "recorded_at": "2026-09-04T14:31:58Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0038-20260904T143145Z-4c7b27.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T14:11:58Z",
+      "updated_at": "2026-09-04T14:31:58Z",
       "last_result": "completed"
     }
   }

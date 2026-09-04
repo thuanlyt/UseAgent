@@ -22,7 +22,7 @@ class MultiRuntimeConformanceTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Codex + Claude Code + Antigravity", result.stdout)
-        self.assertIn("assignment -> pull -> report -> ingest -> QA -> checkpoint", result.stdout)
+        self.assertIn("assignment -> automatic runner -> report -> ingest -> QA -> checkpoint", result.stdout)
 
 
 if __name__ == "__main__":

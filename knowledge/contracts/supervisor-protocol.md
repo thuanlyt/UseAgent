@@ -8,6 +8,21 @@ Mỗi agent đăng ký có `INBOX.md`, `REPORT.md`, `COMPLETED.md` và `inbox/`.
 
 Assignment phải có task id, objective, scope, acceptance, dependency, files/context cần đọc, command cần chạy, output bắt buộc và stop conditions. Assignment file là prompt đầy đủ để gửi cho worker.
 
+## Optional runner contract
+
+An agent may declare a `runner` object with an argv `command` array and a
+positive `timeout_seconds`. The command must contain `{assignment_path}`. The
+CLI substitutes that path plus `{task_id}` and `{agent_id}`, runs from the
+selected project root with `shell=False`, captures bounded stdout/stderr under
+`work/evidence/` and invokes no runner when the object is absent.
+
+`worker run` is finite by default (`--max-tasks 1`, no idle wait). It pulls an
+assigned task through the same claim checks as `worker pull`. The adapter must
+submit `task report`; if it exits without a report, the CLI writes a failed
+worker report so the task cannot remain silently active. The runner is an
+explicit trusted integration boundary: the core protocol does not claim to
+sandbox a vendor process or invent provider-specific flags.
+
 ## Report contract
 
 Report phải có task id, agent, result (`completed|blocked|failed`), summary, files, checks/evidence, blockers và next action. Worker chỉ report sau khi task đã được claim/pull sang `in_progress`; `completed` chỉ là worker report; supervisor/reviewer mới quyết định `done`. `task report` tự append vào `work/agents/<agent>/REPORT.md`, `work/reports/REPORTS.md` và `work/completed/COMPLETED.md` khi phù hợp. Không dùng `task update --status reported`; CLI từ chối transition này để mọi trạng thái `reported` đều có report path xác thực.
@@ -47,7 +62,7 @@ task `reported` qua `needs_review` đến `done`. Reviewer có thể khác với
 
 ## Supervisor cycle contract
 
-Một cycle: ingest reports -> review trạng thái -> chạy QA được cấu hình -> dispatch task ready -> viết supervisor report -> checkpoint. Cycle không tự deploy và không tự chạy vô hạn.
+Một cycle: ingest reports -> review trạng thái -> chạy QA được cấu hình -> dispatch task ready -> viết supervisor report -> checkpoint. Cycle không tự deploy và không tự chạy vô hạn. Worker runner nếu được bật cũng phải có timeout, max-tasks và idle wait hữu hạn.
 
 ## Stack decision contract
 

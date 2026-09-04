@@ -40,7 +40,12 @@ UseAgent is intentionally small and transparent:
 - JSON is the machine-readable source of state, while Markdown is the human- and model-readable handoff surface;
 - one writer owns a scope at a time, so agents can share a folder without silently overwriting one another.
 
-UseAgent does not pretend that a filesystem can start an arbitrary external model by itself. The CLI creates durable assignments and prompts. A Codex subagent runtime, another compatible agent runner, a scheduler, or a human must invoke the worker. The supervisor then consumes the worker's report automatically on the next cycle.
+UseAgent does not guess how to start an arbitrary external model. The CLI
+creates durable assignments and prompts. In manual mode, a Codex subagent,
+Claude Code session, Antigravity agent, another compatible runner or a human
+invokes the worker. For a project-owned adapter, an explicitly configured,
+argv-only runner can be invoked by bounded `worker run`; the supervisor then
+consumes the report on the next cycle.
 
 ### Why it exists
 
@@ -66,6 +71,8 @@ Multi-agent projects commonly lose time because context is reread from scratch, 
 - Atomic JSON writes and a short-lived cross-process state lock.
 - Safe repository-relative paths; configured paths cannot escape the repository root.
 - Configurable QA commands with timeout and persisted evidence.
+- Optional bounded worker runner bridge with explicit assignment placeholders,
+  timeout and automatic failed-report fallback.
 - Cycle stop conditions for ambiguity, missing access, scope conflict, repeated failure and unsafe side effects.
 - Custom Markdown paths for teams that already have an established folder layout.
 - No third-party Python dependencies.
@@ -302,6 +309,32 @@ python tools/useagent.py task report UA-0001 `
 
 The report is written to the configured report inbox, the worker's `REPORT.md`, the global reports index, and `work/completed/COMPLETED.md`. The task remains reviewable until the supervisor accepts it.
 
+### Optional automatic worker execution
+
+If a runtime has a local CLI or project-owned adapter, register its command as
+an argv list. Include `{assignment_path}` so the adapter receives the generated
+Markdown assignment:
+
+```powershell
+python tools/useagent.py agent register --id backend --role worker `
+  --scope src/backend --scope tests `
+  --runner-arg=python `
+  --runner-arg=tools/backend_adapter.py `
+  --runner-arg=--assignment `
+  --runner-arg={assignment_path} `
+  --runner-timeout 3600
+
+python tools/useagent.py worker run --agent backend --max-tasks 1 --wait-seconds 300
+```
+
+UseAgent never passes this command through a shell. It runs from the selected
+project root, captures bounded runner evidence, and creates a failed worker
+report if the adapter exits without calling `task report`. No runner is
+configured by default; `worker pull` remains the portable manual path. Vendor
+flags and permissions belong in the adapter, so Codex, Claude Code and
+Antigravity can each use their own supported integration without changing the
+core protocol.
+
 Useful commands:
 
 ```powershell
@@ -427,7 +460,11 @@ UseAgent supervisor
 Người dùng nhận trạng thái, quyết định, blocker và next action
 ```
 
-UseAgent không tuyên bố filesystem có thể tự khởi chạy một model bên ngoài. CLI tạo assignment và prompt bền vững; Codex subagent runtime, agent runner tương thích, scheduler hoặc con người phải thực sự gọi worker. Ở cycle tiếp theo supervisor sẽ tự ingest report của worker.
+UseAgent không tự đoán cách khởi chạy model bên ngoài. CLI tạo assignment và
+prompt bền vững; ở manual mode Codex, Claude Code, Antigravity, runner tương
+thích hoặc con người sẽ gọi worker. Nếu người dùng cấu hình rõ một adapter argv,
+`worker run` hữu hạn có thể tự pull và gọi adapter; cycle sau supervisor sẽ
+ingest report.
 
 ### Mục tiêu vận hành
 
@@ -509,10 +546,10 @@ cùng repository.
 - Antigravity: mở đúng repository dưới dạng Project/local mode, đọc skill trong
   `.agents/skills/` và dùng cùng `worker pull`/`task report`.
 
-UseAgent không tự gọi API của nhà cung cấp và không tự khởi chạy model bên
-ngoài. Supervisor tạo prompt bền vững tại `work/outbox/`; runtime tương ứng
-phải thực thi prompt đó. Xem [hướng dẫn thực chiến](docs/getting-started.md)
-để có câu lệnh và prompt copy được.
+UseAgent không tự đoán API/flags của nhà cung cấp. Supervisor tạo prompt bền
+vững tại `work/outbox/`; manual runtime có thể thực thi prompt đó, hoặc adapter
+argv đã cấu hình có thể được gọi bằng bounded `worker run`. Xem [hướng dẫn
+thực chiến](docs/getting-started.md) để biết cả hai cách.
 
 ### Cấu trúc thư mục
 
@@ -545,9 +582,21 @@ python tools/useagent.py task report UA-0001 `
 
 Report được ghi vào report inbox, `REPORT.md` của agent, report index và `work/completed/COMPLETED.md`. Supervisor đọc các file này ở cycle tiếp theo, chạy QA, tạo debug task nếu fail, cập nhật knowledge và checkpoint.
 
+Muốn worker tự nhận task, đăng ký adapter một lần với `--runner-arg` (bắt buộc
+có `{assignment_path}`), rồi chạy:
+
+```powershell
+python tools/useagent.py worker run --agent backend --max-tasks 1 --wait-seconds 300
+```
+
+Runner dùng argv với `shell=False`, có timeout và output được lưu vào
+`work/evidence/`; nếu adapter không gọi `task report`, CLI tự tạo failed report
+để supervisor tiếp tục xử lý. Không cấu hình runner thì không có process ngoài
+nào được tự chạy.
+
 ### An toàn và production
 
-Không deploy, xóa dữ liệu, migration destructive, đổi secret/quyền hoặc gọi dịch vụ ngoài nếu prompt cấp trên chưa cho phép. Worker chỉ sửa trong scope đã claim; task cùng file phải tuần tự hoặc chạy trong Git worktree riêng. Một cycle luôn có điểm dừng `complete`, `blocked` hoặc `needs_input`.
+Không deploy, xóa dữ liệu, migration destructive, đổi secret/quyền hoặc gọi dịch vụ ngoài nếu prompt cấp trên chưa cho phép. Worker chỉ sửa trong scope đã claim; task cùng file phải tuần tự hoặc chạy trong Git worktree riêng. Runner tự động là opt-in, dùng argv không qua shell, có timeout và `max-tasks` hữu hạn. Một cycle luôn có điểm dừng `complete`, `blocked` hoặc `needs_input`.
 
 Production gate cần có acceptance/evidence, test và QA, review không còn finding nghiêm trọng, operational/rollback notes và quyền deploy rõ ràng. UseAgent chuẩn bị bằng chứng phát hành chứ không tự deploy.
 

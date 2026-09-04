@@ -12,6 +12,30 @@ Autopilot không phải một agent tự chạy mãi. Mỗi cycle có ngân sác
 6. tạo checkpoint bằng CLI;
 7. dừng với `complete`, `blocked` hoặc `needs_input`.
 
+## Bounded worker execution
+
+Supervisor dispatches durable assignments; it does not assume that Codex,
+Claude Code or Antigravity exposes the same launch API. If a project has a
+local runner/adapter, configure it on the worker and let a bounded command
+consume the mailbox:
+
+```powershell
+python tools/useagent.py worker run --agent claude-web --max-tasks 2 --wait-seconds 600
+```
+
+The configured runner is an argv list containing `{assignment_path}`. The CLI
+uses `shell=False`, runs from the selected project root, enforces a timeout and
+stores stdout/stderr as runner evidence. The adapter must make the model read
+the assignment and call `task report`; if it exits without a report, UseAgent
+creates a failed report rather than leaving an invisible active task. The
+default configuration has no runner, so manual `worker pull` remains available
+and no external process starts implicitly.
+
+Use one adapter per runtime identity. A Codex adapter may invoke the installed
+Codex CLI, a Claude adapter may invoke `claude`, and an Antigravity adapter may
+invoke a local SDK/Project runner. Vendor commands and permissions are outside
+the core contract and must be tested by the project owner.
+
 ## Prompt bền vững cho scheduled task
 
 Trước khi tạo scheduled task, chạy prompt này thủ công và xem vài lần đầu:
@@ -36,6 +60,8 @@ Scheduled local work cần máy và app hoạt động. Với Git repository, ch
 ## Safety gates
 
 - Mỗi run hữu hạn task/cycle; không tự tăng concurrency.
+- Worker execution is opt-in and bounded by `--max-tasks`, idle wait and the
+  configured runner timeout; never use an unbounded daemon as the release gate.
 - Không đánh dấu production-ready khi chưa có acceptance, regression, operational note và rollback plan.
 - Không tự deploy hoặc thay đổi external system.
 - Sau lỗi lặp lại, tạo blocker có giả thuyết đã thử thay vì tiếp tục lặp command.
