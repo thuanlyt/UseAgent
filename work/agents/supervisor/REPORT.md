@@ -104,3 +104,10 @@ Added Open Graph metadata and summary Twitter cards to all indexable docs pages,
 
 - Report: `work/reports/inbox/UA-0016-20260904T063425Z-75f525.md`
 - Next: Supervisor review metadata evidence, run the full QA cycle and preserve the hosting gate for the real domain.
+
+## 2026-09-04T06:37:21Z - UA-0017 (completed)
+
+Added a deterministic hosting dry-run test that parses vercel.json, verifies build/output/clean URL settings and baseline security headers, and checks DEPLOYMENT.md for preview-first QA, exact hostname Cloudflare gate, rollback and no-secret handling.
+
+- Report: `work/reports/inbox/UA-0017-20260904T063721Z-d12b4d.md`
+- Next: Supervisor review the hosting dry-run evidence, run the configured QA cycle and keep UA-0012 open until browser/hostname gates are real.

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T06:34:48Z",
+  "updated_at": "2026-09-04T06:37:44Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -1065,6 +1065,67 @@
       "attempts": 1,
       "created_at": "2026-09-04T06:32:57Z",
       "updated_at": "2026-09-04T06:34:48Z",
+      "last_result": "completed"
+    },
+    "UA-0017": {
+      "id": "UA-0017",
+      "title": "Automate hosting dry-run contract",
+      "objective": "Make the docs release gate verify Vercel configuration and the reversible hosting runbook without performing deployment or DNS changes.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "docs-site",
+        "tests/docs_site"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "vercel.json has the documented build/output/static routing contract and baseline security headers",
+        "The hosting runbook documents preview-first QA, exact-hostname DNS gating, no-secret handling and rollback",
+        "Dry-run checks remain green with the full test, validator and docs build suite"
+      ],
+      "verification": [
+        "python -m unittest discover -s tests -v; python tools/useagent.py validate; python docs-site/build.py --check-only"
+      ],
+      "files": [
+        "tests/docs_site/test_docs_site.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 20 tests passed",
+          "recorded_at": "2026-09-04T06:37:21Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-04T06:37:21Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 10 static files",
+          "recorded_at": "2026-09-04T06:37:21Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-04T06:37:21Z"
+        },
+        {
+          "kind": "review",
+          "value": "Reviewed hosting test against checked-in vercel.json and DEPLOYMENT.md: build/output/static routing and baseline security headers are asserted; runbook covers preview-first QA, exact hostname and Cloudflare gate, no-secret policy and rollback. Cycle QA cycle-20260904T063725Z-98b1e9 passed 20 tests, validate and docs build.",
+          "recorded_at": "2026-09-04T06:37:44Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0017-20260904T063721Z-d12b4d.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-04T06:36:40Z",
+      "updated_at": "2026-09-04T06:37:44Z",
       "last_result": "completed"
     }
   }

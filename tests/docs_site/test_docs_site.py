@@ -171,6 +171,33 @@ class DocsSiteTests(unittest.TestCase):
         self.assertIn("@media (max-width: 800px)", styles)
         self.assertIn("@media (prefers-reduced-motion: reduce)", styles)
 
+    def test_hosting_dry_run_contract(self) -> None:
+        vercel = json.loads((SITE / "vercel.json").read_text(encoding="utf-8"))
+        self.assertEqual(vercel["buildCommand"], "python3 build.py --output dist")
+        self.assertEqual(vercel["outputDirectory"], "dist")
+        self.assertTrue(vercel["cleanUrls"])
+        self.assertFalse(vercel["trailingSlash"])
+        headers = {
+            header["key"]: header["value"]
+            for rule in vercel["headers"]
+            for header in rule["headers"]
+        }
+        self.assertEqual(headers["X-Content-Type-Options"], "nosniff")
+        self.assertEqual(headers["X-Frame-Options"], "DENY")
+        self.assertIn("frame-ancestors 'none'", headers["Content-Security-Policy"])
+
+        runbook = (SITE / "DEPLOYMENT.md").read_text(encoding="utf-8").lower()
+        for required_phrase in (
+            "preview deployment",
+            "exact hostname",
+            "cloudflare",
+            "rollback",
+            "no environment secret",
+        ):
+            self.assertIn(required_phrase, runbook)
+        self.assertNotIn("vercel_token=", runbook)
+        self.assertNotIn("cloudflare_api_token=", runbook)
+
 
 if __name__ == "__main__":
     unittest.main()

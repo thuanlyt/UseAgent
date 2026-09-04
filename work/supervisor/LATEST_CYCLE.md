@@ -1,13 +1,13 @@
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T063502Z-95b5af`
-- **Generated:** 2026-09-04T06:35:07Z
+- **Cycle:** `cycle-20260904T063751Z-5ae233`
+- **Generated:** 2026-09-04T06:37:57Z
 - **Next action:** Complete the review gate for UA-0012; accept evidence or create a scoped debug task.
 - **Production snapshot:** `not_ready`
 
 ## Status counts
 
-- `done`: 15
+- `done`: 16
 - `needs_review`: 1
 
 ## Reports ingested this cycle
@@ -40,6 +40,7 @@
 - `UA-0014` — Harden public repository discoverability metadata — evidence: 4
 - `UA-0015` — Strengthen static docs accessibility gate — evidence: 5
 - `UA-0016` — Harden docs SEO metadata without a guessed domain — evidence: 5
+- `UA-0017` — Automate hosting dry-run contract — evidence: 5
 - none
 
 ## Blocked work
@@ -49,7 +50,7 @@
 ## QA
 
 - status: `pass`
-- evidence: `work/evidence/cycle-20260904T063502Z-95b5af-qa.md`
+- evidence: `work/evidence/cycle-20260904T063751Z-5ae233-qa.md`
 
 ## Production gates
 
