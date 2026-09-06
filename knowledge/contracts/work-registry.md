@@ -30,6 +30,16 @@ remains readable and valid for backward compatibility; malformed new fields
 are validation errors. Existing tracked evidence is historical data and is not
 rewritten or deleted by this contract.
 
+Runtime readiness events may be recorded against an `assigned` task before a
+worker takes ownership. They contain only normalized state/classification,
+bounded reason metadata and a `work/.runtime-output/` reference; they do not
+change the task to `in_progress` and do not count as a worker report. A
+configured runner's static readiness states are `ready`, `unavailable`,
+`misconfigured`, `no_target` and `unknown`. A preflight adapter must use the
+explicit JSON envelope defined by the supervisor protocol. Failure classes are
+provider-neutral; `quota_limited` and `auth_error` require authoritative
+machine-readable adapter evidence, while ambiguous text is not trusted.
+
 A successful QA record must also carry the release-source fingerprint, source
 VCS/HEAD and dirty-state provenance, QA/release configuration fingerprint and
 executed checks; a missing or mismatched source fingerprint is `QA_STALE` and
@@ -86,4 +96,12 @@ output and is not part of the durable release-source identity.
 - Direct `task claim` and `worker pull` must use an available claim-capable agent
   below `max_active` whose scope and capabilities satisfy the task; rejection
   occurs before registry mutation.
+- Automatic dispatch skips a configured runner that is malformed or whose
+  executable is unavailable. An agent without a runner remains a valid manual
+  runtime, and an existing runner without preflight retains an explicit
+  `unknown` compatibility path.
+- A readiness failure before pull preserves `assigned` ownership and records a
+  bounded runtime event with a retry/reassign/takeover/needs-input disposition;
+  it must not create an unowned `in_progress` task, an automatic successor or
+  an implicit infinite retry.
 - Updates are serialized by `tools/useagent.py`; consumers must tolerate `updated_at` changing after every transition.

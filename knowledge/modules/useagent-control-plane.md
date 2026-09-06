@@ -2,7 +2,7 @@
 
 - `freshness`: verified (2026-09-06)
 - `owner`: orchestrator
-- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:validate_relative_scope`, `tools/useagent.py:scope_overlaps`, `tools/useagent.py:scope_within`, `tools/useagent.py:append_markdown`, `tools/useagent.py:agent_claim_blocker`, `tools/useagent.py:cmd_task_new`, `tools/useagent.py:cmd_task_claim`, `tools/useagent.py:cmd_task_update`, `tools/useagent.py:cmd_task_report`, `tools/useagent.py:cmd_worker_pull`, `tools/useagent.py:ingest_reports_locked`, `tools/useagent.py:choose_next_action`, `tools/useagent.py:normalize_evidence_provenance`, `tools/useagent.py:normalize_evidence_source`, `tools/useagent.py:parse_evidence`, `tools/useagent.py:registry_revision`, `tools/useagent.py:release_source_fingerprint`, `tools/useagent.py:git_upstream_snapshot`, `tools/useagent.py:release_durability_snapshot`, `tools/useagent.py:validate_qa_source`, `tools/useagent.py:supervisor_report_freshness`, `tools/useagent.py:build_supervisor_report`, `tools/useagent.py:cmd_supervisor_report`, `tools/useagent.py:cmd_context`, `tools/useagent.py:validate_registry`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot_details`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`
+- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:validate_relative_scope`, `tools/useagent.py:scope_overlaps`, `tools/useagent.py:scope_within`, `tools/useagent.py:append_markdown`, `tools/useagent.py:agent_claim_blocker`, `tools/useagent.py:cmd_task_new`, `tools/useagent.py:cmd_task_claim`, `tools/useagent.py:cmd_task_update`, `tools/useagent.py:cmd_task_report`, `tools/useagent.py:cmd_worker_pull`, `tools/useagent.py:ingest_reports_locked`, `tools/useagent.py:choose_next_action`, `tools/useagent.py:normalize_evidence_provenance`, `tools/useagent.py:normalize_evidence_source`, `tools/useagent.py:parse_evidence`, `tools/useagent.py:registry_revision`, `tools/useagent.py:release_source_fingerprint`, `tools/useagent.py:git_upstream_snapshot`, `tools/useagent.py:release_durability_snapshot`, `tools/useagent.py:validate_qa_source`, `tools/useagent.py:supervisor_report_freshness`, `tools/useagent.py:build_supervisor_report`, `tools/useagent.py:cmd_supervisor_report`, `tools/useagent.py:cmd_context`, `tools/useagent.py:validate_registry`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot_details`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`, `tools/useagent.py:runner_settings`, `tools/useagent.py:runner_preflight_settings`, `tools/useagent.py:static_runner_readiness`, `tools/useagent.py:probe_runtime_readiness`, `tools/useagent.py:classify_runner_failure`, `tools/useagent.py:record_runtime_event`
 
 ## Responsibility
 
@@ -74,6 +74,13 @@ Consumes `AGENTS.md`, `knowledge/`, `work/` and `useagent.config.json`; is used 
 
 Lock only the short state transition. Do not hold the lock while doing exploration, implementation or tests. Reject claim bypasses from `assigned` to `in_progress`, unavailable or over-capacity direct claims/pulls, scope/capability-ineligible claims, claims or lifecycle reopening of superseded predecessors, unactivated worker reports, unauthorized administrative transitions, report-less `reported` transitions, review of active unreported work, lifecycle updates to terminal states, invalid roster roles, review-only agents claiming/reporting implementation work, overlapping active writer scopes, unsafe/out-of-scope recorded files, review actions from non-review roles and `done` without non-empty review evidence. Keep the selected project root explicit, validate malformed config/registry shapes without traceback, ignore unreadable/escaping reports safely and reject configured paths outside it.
 
+Automatic dispatch must not assign a malformed or statically unavailable
+configured runner. A pre-start readiness failure preserves `assigned` state,
+records only bounded sanitized runtime metadata and a local spool reference,
+and supplies a finite retry/reassign/takeover/needs-input disposition. No
+provider prose is trusted as quota or auth proof, and no automatic successor
+or infinite retry is created.
+
 ## Verification
 
 `python -m unittest discover -s tests -v`, `python tools/useagent.py validate`, `python examples/multi-runtime-conformance/run_conformance.py`, explicit-root CLI tests, package metadata/wheel smoke test, configured supervisor QA and a temp-roster supervisor cycle.
@@ -90,12 +97,21 @@ pull/report cycle.
 ## Optional execution bridge
 
 `agent register --runner-arg ...` can persist an argv-only adapter for a real
-worker runtime. `worker run` pulls assigned work, substitutes the assignment,
-task and agent placeholders, invokes the adapter with a timeout and records
-runner evidence. It never uses a shell, has a one-task default and generates a
-failed worker report when the adapter omits `task report`. The adapter remains
-provider-specific and trusted; UseAgent does not promise to sandbox an external
-model process.
+worker runtime. Automatic dispatch performs static runner and executable
+checks; malformed or unavailable configured runners are skipped, while an
+agent without a runner remains the manual path. A runner may add an argv-only
+`preflight` command with a bounded timeout. `worker run` probes it before
+`assigned` becomes `in_progress` and accepts only the machine-readable states
+`ready`, `unavailable`, `misconfigured`, `no_target` and `unknown`. No
+preflight keeps the legacy compatibility path as `unknown`.
+
+The runner can return a complete `useagent_runtime_result` JSON envelope for
+normalized failure classes. Quota and auth are accepted only when the adapter
+marks them authoritative; prose is not parsed as proof. Readiness failure
+history stays attached to the assigned task with a bounded disposition and
+local spool reference. Started-runner failures still use the no-report
+auto-failure safeguard. The adapter remains provider-specific and trusted;
+UseAgent does not promise to sandbox an external model process.
 
 ## Known gaps
 

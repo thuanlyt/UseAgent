@@ -97,6 +97,58 @@ wrap an SDK/local Project runner. UseAgent intentionally does not guess vendor
 flags or call vendor APIs. Test the adapter with one task before increasing
 `--max-tasks`; `worker run` defaults to one task and never runs forever.
 
+#### Runtime readiness and failure classification
+
+Automatic dispatch checks the configured runner shape and executable before
+assigning work. If the runner or its optional preflight executable is clearly
+unavailable, the task stays `planned`; a malformed runner is not dispatched.
+Agents without a runner remain valid manual workers. A configured runner with
+no preflight uses an explicit `unknown` compatibility path so existing adapters
+do not break.
+
+An adapter can add a bounded argv-only preflight to its runner configuration:
+
+```json
+{
+  "runner": {
+    "command": ["python", "adapter.py", "{assignment_path}"],
+    "timeout_seconds": 3600,
+    "preflight": {
+      "command": ["python", "adapter.py", "--preflight", "{agent_id}"],
+      "timeout_seconds": 30
+    }
+  }
+}
+```
+
+The preflight must print one complete JSON object, for example:
+
+```json
+{"useagent_preflight":1,"state":"ready","reason":"local prerequisites available"}
+```
+
+Valid states are `ready`, `unavailable`, `misconfigured`, `no_target` and
+`unknown`. `ready` confirms only adapter prerequisites; it cannot prove model
+quota. UseAgent runs the probe with `shell=False` and a bounded timeout before
+pulling the task into `in_progress`. A failed probe keeps the task `assigned`,
+records sanitized metadata plus a local diagnostic spool reference, and prints
+a finite disposition such as `retry`, `reassign` or `needs_input`.
+
+After a runner starts, an adapter may provide authoritative machine-readable
+failure metadata:
+
+```json
+{"useagent_runtime_result":1,"failure_class":"quota_limited","authoritative":true,"disposition":"needs_input"}
+```
+
+Supported classes include `unavailable`, `no_target`, `misconfigured`,
+`auth_error`, `quota_limited`, `timeout`, `runtime_error` and `unknown`.
+`quota_limited` and `auth_error` require `authoritative: true`; human-readable
+provider text is never parsed as proof. UseAgent records the classification and
+recommended disposition but does not retry forever or create a takeover task
+automatically. Raw stdout/stderr remains bounded and redacted in the ignored
+`work/.runtime-output/` spool; repository evidence contains only safe summaries.
+
 ## Claim và thực thi
 
 ```powershell

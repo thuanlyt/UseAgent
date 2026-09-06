@@ -20,6 +20,7 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -66,9 +67,25 @@ VALID_EVIDENCE_PROVENANCES = {"local", "live", "simulation", "blocked", "operato
 DEFAULT_RUNNER_TIMEOUT_SECONDS = 3600
 MAX_RUNNER_TIMEOUT_SECONDS = 86400
 MAX_RUNNER_WAIT_SECONDS = 86400
+DEFAULT_PREFLIGHT_TIMEOUT_SECONDS = 30
+MAX_PREFLIGHT_TIMEOUT_SECONDS = 300
 MAX_DURABLE_OUTPUT_CHARS = 4000
 MAX_LOCAL_OUTPUT_CHARS = 100000
 QA_EXECUTION_MODES = {"argv", "shell"}
+RUNTIME_READINESS_STATES = {"ready", "unavailable", "misconfigured", "no_target", "unknown"}
+RUNTIME_FAILURE_CLASSES = {
+    "unavailable",
+    "no_target",
+    "misconfigured",
+    "auth_error",
+    "quota_limited",
+    "timeout",
+    "runtime_error",
+    "unknown",
+}
+RUNTIME_DISPOSITIONS = {"retry", "reassign", "takeover", "needs_input"}
+PREFLIGHT_RESULT_MARKER = "useagent_preflight"
+RUNTIME_RESULT_MARKER = "useagent_runtime_result"
 
 RUNTIME_REDACTION_PATTERNS = (
     (
@@ -828,7 +845,60 @@ def runner_settings(agent: dict[str, Any]) -> tuple[list[str], int] | None:
         raise UseAgentError(
             f"runner.timeout_seconds for agent {agent.get('id')} must be between 1 and {MAX_RUNNER_TIMEOUT_SECONDS}"
         )
+    runner_preflight_settings(agent)
     return command, timeout
+
+
+def runner_preflight_settings(agent: dict[str, Any]) -> tuple[list[str], int] | None:
+    """Return an optional bounded argv-only readiness probe definition."""
+
+    raw_runner = agent.get("runner")
+    if raw_runner is None:
+        return None
+    if not isinstance(raw_runner, dict):
+        raise UseAgentError(f"runner must be an object for agent {agent.get('id')}")
+    raw_preflight = raw_runner.get("preflight")
+    if raw_preflight is None:
+        return None
+    if not isinstance(raw_preflight, dict):
+        raise UseAgentError(f"runner.preflight must be an object for agent {agent.get('id')}")
+    unknown = [key for key in raw_preflight if key not in {"command", "timeout_seconds"}]
+    if unknown:
+        raise UseAgentError(
+            f"runner.preflight has unsupported fields for agent {agent.get('id')}: {', '.join(map(str, unknown))}"
+        )
+    command = raw_preflight.get("command")
+    if not isinstance(command, list) or not command or any(
+        not isinstance(argument, str) or not argument.strip() or "\x00" in argument for argument in command
+    ):
+        raise UseAgentError(
+            f"runner.preflight.command must be a non-empty array of strings without NUL for agent {agent.get('id')}"
+        )
+    timeout = raw_preflight.get("timeout_seconds", DEFAULT_PREFLIGHT_TIMEOUT_SECONDS)
+    if isinstance(timeout, bool) or not isinstance(timeout, int) or not 1 <= timeout <= MAX_PREFLIGHT_TIMEOUT_SECONDS:
+        raise UseAgentError(
+            f"runner.preflight.timeout_seconds for agent {agent.get('id')} must be between 1 and {MAX_PREFLIGHT_TIMEOUT_SECONDS}"
+        )
+    return list(command), timeout
+
+
+def render_command(
+    command: list[str],
+    agent: dict[str, Any],
+    item: dict[str, Any],
+    assignment_path: Path,
+) -> list[str]:
+    values = {
+        "{assignment_path}": rel(assignment_path),
+        "{task_id}": str(item["id"]),
+        "{agent_id}": str(agent["id"]),
+    }
+    return [
+        argument.replace("{assignment_path}", values["{assignment_path}"])
+        .replace("{task_id}", values["{task_id}"])
+        .replace("{agent_id}", values["{agent_id}"])
+        for argument in command
+    ]
 
 
 def render_runner_command(agent: dict[str, Any], item: dict[str, Any], assignment_path: Path) -> tuple[list[str], int]:
@@ -838,18 +908,93 @@ def render_runner_command(agent: dict[str, Any], item: dict[str, Any], assignmen
             f"agent {agent.get('id')} has no configured runner; use worker pull for a manual runtime"
         )
     command, timeout = settings
-    values = {
-        "{assignment_path}": rel(assignment_path),
-        "{task_id}": str(item["id"]),
-        "{agent_id}": str(agent["id"]),
+    return render_command(command, agent, item, assignment_path), timeout
+
+
+def render_preflight_command(
+    agent: dict[str, Any], item: dict[str, Any], assignment_path: Path
+) -> tuple[list[str], int] | None:
+    settings = runner_preflight_settings(agent)
+    if settings is None:
+        return None
+    command, timeout = settings
+    return render_command(command, agent, item, assignment_path), timeout
+
+
+def runner_executable_available(command: list[str]) -> bool:
+    """Check only the executable named by argv; never execute a readiness probe here."""
+
+    executable = command[0]
+    candidate = Path(executable)
+    if candidate.is_absolute():
+        return candidate.is_file()
+    if candidate.parent != Path("."):
+        return (ROOT / candidate).is_file()
+    return shutil.which(executable) is not None
+
+
+def static_runner_readiness(agent: dict[str, Any]) -> dict[str, Any]:
+    """Return dispatch-safe readiness without invoking external runtime code."""
+
+    if agent.get("runner") is None:
+        return {
+            "state": "unknown",
+            "reason": "runner_not_configured_manual_runtime",
+            "dispatchable": True,
+            "execution": "manual",
+        }
+    try:
+        settings = runner_settings(agent)
+    except UseAgentError:
+        return {
+            "state": "misconfigured",
+            "failure_class": "misconfigured",
+            "disposition": "needs_input",
+            "reason": "runner_configuration_invalid",
+            "dispatchable": False,
+            "execution": "runner",
+        }
+    if settings is None:
+        return {
+            "state": "no_target",
+            "reason": "runner_target_missing",
+            "dispatchable": False,
+            "execution": "runner",
+        }
+    command, _ = settings
+    if not runner_executable_available(command):
+        return {
+            "state": "unavailable",
+            "failure_class": "unavailable",
+            "disposition": "reassign",
+            "reason": "runner_executable_unavailable",
+            "dispatchable": False,
+            "execution": "runner",
+        }
+    preflight = runner_preflight_settings(agent)
+    if preflight is None:
+        return {
+            "state": "unknown",
+            "reason": "preflight_not_configured_legacy_compatibility",
+            "dispatchable": True,
+            "execution": "runner",
+        }
+    preflight_command, _ = preflight
+    if not runner_executable_available(preflight_command):
+        return {
+            "state": "unavailable",
+            "failure_class": "unavailable",
+            "disposition": "reassign",
+            "reason": "preflight_executable_unavailable",
+            "dispatchable": False,
+            "execution": "runner",
+        }
+    return {
+        "state": "unknown",
+        "reason": "preflight_not_run",
+        "dispatchable": True,
+        "execution": "runner",
     }
-    rendered = [
-        argument.replace("{assignment_path}", values["{assignment_path}"])
-        .replace("{task_id}", values["{task_id}"])
-        .replace("{agent_id}", values["{agent_id}"])
-        for argument in command
-    ]
-    return rendered, timeout
 
 
 def append_markdown(path: Path, content: str) -> None:
@@ -1539,7 +1684,7 @@ def choose_agent(config: dict[str, Any], data: dict[str, Any], item: dict[str, A
     ordered = [agent for agent_id in preferred for agent in agents if agent.get("id") == agent_id]
     ordered += [agent for agent in agents if agent.get("id") not in preferred]
     for agent in ordered:
-        if agent_can_take(config, data, item, agent):
+        if agent_can_take(config, data, item, agent) and static_runner_readiness(agent)["dispatchable"]:
             return agent
     return None
 
@@ -1605,22 +1750,50 @@ def cmd_supervisor_dispatch(args: argparse.Namespace) -> int:
     return 0
 
 
-def pull_next_assignment(agent_id: str) -> tuple[dict[str, Any], Path, str] | None:
+def assigned_item_for_agent(data: dict[str, Any], agent_id: str) -> dict[str, Any] | None:
+    assigned = [
+        item
+        for item in data["items"].values()
+        if isinstance(item, dict)
+        and item.get("assigned_to") == agent_id
+        and item.get("status") == "assigned"
+    ]
+    assigned.sort(key=lambda item: item.get("dispatched_at", item.get("id", "")))
+    return assigned[0] if assigned else None
+
+
+def peek_next_assignment(agent_id: str) -> tuple[dict[str, Any], Path] | None:
+    """Read the next assignment without taking ownership of it."""
+
     config = load_config()
     with state_lock():
         data = load_registry()
         agent = claim_agent(config, agent_id)
-        assigned = [
-            item
-            for item in data["items"].values()
-            if isinstance(item, dict)
-            and item.get("assigned_to") == agent_id
-            and item.get("status") == "assigned"
-        ]
-        if not assigned:
+        item = assigned_item_for_agent(data, agent_id)
+        if item is None:
             return None
-        assigned.sort(key=lambda item: item.get("dispatched_at", item.get("id", "")))
-        item = assigned[0]
+        blocker = agent_claim_blocker(config, data, item, agent, ignore_id=item["id"])
+        if blocker:
+            raise UseAgentError(f"{item['id']} cannot be pulled by {agent_id}: {blocker}")
+        try:
+            path = safe_repo_path(item.get("assignment_path", ""))
+        except (TypeError, ValueError, UseAgentError) as exc:
+            raise UseAgentError(
+                f"invalid assignment path for {item.get('id', agent_id)}: {exc}"
+            ) from exc
+        return copy.deepcopy(item), path
+
+
+def pull_next_assignment(
+    agent_id: str, expected_task_id: str | None = None
+) -> tuple[dict[str, Any], Path, str] | None:
+    config = load_config()
+    with state_lock():
+        data = load_registry()
+        agent = claim_agent(config, agent_id)
+        item = assigned_item_for_agent(data, agent_id)
+        if item is None or (expected_task_id is not None and item.get("id") != expected_task_id):
+            return None
         blocker = agent_claim_blocker(config, data, item, agent, ignore_id=item["id"])
         if blocker:
             raise UseAgentError(f"{item['id']} cannot be pulled by {agent_id}: {blocker}")
@@ -1696,6 +1869,123 @@ def bound_runtime_output(value: Any, budget: int = MAX_DURABLE_OUTPUT_CHARS) -> 
         "redactions": redactions,
         "truncated": truncated,
         "preview": preview,
+    }
+
+
+def parse_machine_runtime_result(value: Any, marker: str) -> dict[str, Any] | None:
+    """Accept only a complete, explicit JSON envelope from a trusted adapter."""
+
+    text = runtime_text(value).strip()
+    if not text or len(text) > MAX_LOCAL_OUTPUT_CHARS:
+        return None
+    try:
+        payload = json.loads(text)
+    except (TypeError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict) or payload.get(marker) != 1:
+        return None
+    return payload
+
+
+def safe_runtime_reason(value: Any, default: str) -> str:
+    summary = bound_runtime_output(value, 240)["preview"]
+    summary = re.sub(r"\s+", " ", summary).strip()
+    return summary or default
+
+
+def default_runtime_disposition(failure_class: str) -> str:
+    if failure_class in {"unavailable", "no_target"}:
+        return "reassign"
+    if failure_class in {"misconfigured", "auth_error"}:
+        return "needs_input"
+    if failure_class in {"timeout", "runtime_error"}:
+        return "retry"
+    if failure_class == "quota_limited":
+        return "retry"
+    return "needs_input"
+
+
+def normalize_runtime_failure_result(payload: dict[str, Any]) -> dict[str, Any] | None:
+    """Normalize an adapter result; text alone never proves quota or auth failure."""
+
+    failure_class = payload.get("failure_class")
+    if not isinstance(failure_class, str) or failure_class not in RUNTIME_FAILURE_CLASSES:
+        return None
+    authoritative = payload.get("authoritative") is True
+    if failure_class in {"quota_limited", "auth_error"} and not authoritative:
+        return None
+    disposition = payload.get("disposition")
+    if not isinstance(disposition, str) or disposition not in RUNTIME_DISPOSITIONS:
+        disposition = default_runtime_disposition(failure_class)
+    return {
+        "failure_class": failure_class,
+        "disposition": disposition,
+        "authoritative": authoritative,
+        "classification_source": "adapter_result",
+        "reason": safe_runtime_reason(payload.get("reason"), "adapter reported a runtime failure"),
+    }
+
+
+def classify_runner_failure(
+    returncode: int,
+    stdout: Any = "",
+    stderr: Any = "",
+    *,
+    timed_out: bool = False,
+    start_error: str | None = None,
+) -> dict[str, Any]:
+    """Classify a runner failure without interpreting provider-specific prose."""
+
+    if timed_out:
+        failure_class = "timeout"
+        return {
+            "failure_class": failure_class,
+            "disposition": default_runtime_disposition(failure_class),
+            "authoritative": True,
+            "classification_source": "process_timeout",
+            "reason": "runner exceeded its configured timeout",
+        }
+    if start_error == "not_found":
+        failure_class = "unavailable"
+        return {
+            "failure_class": failure_class,
+            "disposition": default_runtime_disposition(failure_class),
+            "authoritative": True,
+            "classification_source": "process_start",
+            "reason": "runner executable was not found",
+        }
+    if start_error:
+        failure_class = "unavailable"
+        return {
+            "failure_class": failure_class,
+            "disposition": default_runtime_disposition(failure_class),
+            "authoritative": True,
+            "classification_source": "process_start",
+            "reason": "runner process could not start",
+        }
+    for stream in (stdout, stderr):
+        payload = parse_machine_runtime_result(stream, RUNTIME_RESULT_MARKER)
+        if payload is None:
+            continue
+        normalized = normalize_runtime_failure_result(payload)
+        if normalized is not None:
+            return normalized
+        return {
+            "failure_class": "unknown",
+            "disposition": default_runtime_disposition("unknown"),
+            "authoritative": False,
+            "classification_source": "invalid_adapter_result",
+            "reason": "adapter result was missing required authoritative fields",
+        }
+    failure_class = "runtime_error" if returncode != 0 else "unknown"
+    return {
+        "failure_class": failure_class,
+        "disposition": default_runtime_disposition(failure_class),
+        "authoritative": False,
+        "classification_source": "exit_code" if returncode != 0 else "missing_report",
+        "reason": "runner exited without an authoritative failure envelope"
+        if returncode != 0
+        else "runner did not submit a worker report",
     }
 
 
@@ -1810,8 +2100,158 @@ def write_runtime_spool(
                 "",
             ]
         )
+        if record.get("failure_class"):
+            lines[lines.index(f"## command {index}") + 1:lines.index(f"## command {index}") + 1] = [
+                f"- failure_class: `{safe_markdown_code(record['failure_class'])}`",
+                f"- disposition: `{safe_markdown_code(record.get('disposition', 'needs_input'))}`",
+                "",
+            ]
     atomic_write(spool_path, "\n".join(lines))
     return spool_path
+
+
+def probe_runtime_readiness(
+    config: dict[str, Any],
+    agent: dict[str, Any],
+    item: dict[str, Any],
+    assignment_path: Path,
+) -> dict[str, Any]:
+    """Run the optional adapter preflight and return a sanitized readiness result."""
+
+    static = static_runner_readiness(agent)
+    if static["state"] in {"unavailable", "misconfigured", "no_target"}:
+        return static
+    rendered = render_preflight_command(agent, item, assignment_path)
+    if rendered is None:
+        return static
+    command, timeout = rendered
+    stdout = ""
+    stderr = ""
+    returncode = 127
+    timed_out = False
+    start_error: str | None = None
+    try:
+        result = subprocess.run(
+            command,
+            cwd=ROOT,
+            shell=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+            check=False,
+        )
+        returncode = result.returncode
+        stdout = result.stdout
+        stderr = result.stderr
+    except FileNotFoundError:
+        start_error = "not_found"
+        stderr = "preflight executable was not found"
+    except subprocess.TimeoutExpired as exc:
+        timed_out = True
+        returncode = 124
+        stdout = runtime_text(exc.stdout or "")
+        stderr = f"preflight timed out after {timeout}s"
+    except OSError:
+        start_error = "os_error"
+        stderr = "preflight process could not start"
+
+    local_spool = write_runtime_spool(
+        config,
+        "preflight",
+        f"{agent['id']}-{item['id']}",
+        [
+            {
+                "command": command,
+                "returncode": returncode,
+                "stdout": stdout,
+                "stderr": stderr,
+                "execution_mode": "argv",
+            }
+        ],
+    )
+    base = {
+        "execution": "runner",
+        "preflight": True,
+        "local_spool": rel(local_spool),
+        "returncode": returncode,
+    }
+    if start_error or timed_out:
+        failure = classify_runner_failure(
+            returncode,
+            stdout,
+            stderr,
+            timed_out=timed_out,
+            start_error=start_error,
+        )
+        return {
+            **base,
+            "state": "unknown" if timed_out else "unavailable",
+            "reason": failure["reason"],
+            "failure_class": failure["failure_class"],
+            "disposition": failure["disposition"],
+            "dispatchable": False,
+        }
+    payload = parse_machine_runtime_result(stdout, PREFLIGHT_RESULT_MARKER)
+    if payload is None:
+        payload = parse_machine_runtime_result(stderr, PREFLIGHT_RESULT_MARKER)
+    state = payload.get("state") if payload is not None else None
+    if not isinstance(state, str) or state not in RUNTIME_READINESS_STATES:
+        return {
+            **base,
+            "state": "unknown",
+            "reason": "preflight returned no valid machine-readable readiness state",
+            "failure_class": "unknown",
+            "disposition": "needs_input",
+            "dispatchable": False,
+        }
+    if returncode != 0 and state == "ready":
+        return {
+            **base,
+            "state": "unknown",
+            "reason": "preflight exit status contradicted ready state",
+            "failure_class": "unknown",
+            "disposition": "needs_input",
+            "dispatchable": False,
+        }
+    disposition = payload.get("disposition") if payload is not None else None
+    if not isinstance(disposition, str) or disposition not in RUNTIME_DISPOSITIONS:
+        disposition = default_runtime_disposition(
+            state if state in RUNTIME_FAILURE_CLASSES else "unknown"
+        )
+    return {
+        **base,
+        "state": state,
+        "reason": safe_runtime_reason(payload.get("reason"), f"preflight state={state}"),
+        "failure_class": state if state in RUNTIME_FAILURE_CLASSES else None,
+        "disposition": disposition,
+        "dispatchable": state == "ready",
+    }
+
+
+def record_runtime_event(task_id: str, result: dict[str, Any], *, kind: str) -> None:
+    """Record bounded runtime metadata while leaving task ownership unchanged."""
+
+    fields = [f"state={result.get('state', 'unknown')}"]
+    failure_class = result.get("failure_class")
+    if isinstance(failure_class, str) and failure_class:
+        fields.append(f"failure_class={failure_class}")
+    disposition = result.get("disposition")
+    if isinstance(disposition, str) and disposition:
+        fields.append(f"disposition={disposition}")
+    reason = safe_runtime_reason(result.get("reason"), "no runtime reason supplied")
+    fields.append(f"reason={reason}")
+    local_spool = result.get("local_spool")
+    if isinstance(local_spool, str) and local_spool:
+        fields.append(f"local_spool={local_spool}")
+    record_task_evidence(
+        task_id,
+        kind,
+        "; ".join(fields),
+        provenance="local",
+        source="worker runtime readiness",
+    )
 
 
 def output_summary_lines(lines: list[str], name: str, summary: dict[str, Any]) -> None:
@@ -1844,6 +2284,7 @@ def write_runner_evidence(
     stdout: str,
     stderr: str,
     local_spool: Path,
+    failure: dict[str, Any] | None = None,
 ) -> Path:
     evidence_path = path_for(config, "evidence") / (
         f"runner-{item['id']}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}.md"
@@ -1864,6 +2305,17 @@ def write_runner_evidence(
         f"- local_spool: `{rel(local_spool)}`",
         "",
     ]
+    if failure is not None:
+        lines.extend(
+            [
+                f"- failure_class: `{failure['failure_class']}`",
+                f"- disposition: `{failure['disposition']}`",
+                f"- authoritative: `{str(failure['authoritative']).lower()}`",
+                f"- classification_source: `{failure['classification_source']}`",
+                f"- failure_reason: `{safe_markdown_code(failure['reason'])}`",
+                "",
+            ]
+        )
     output_summary_lines(lines, "stdout summary", stdout_summary)
     output_summary_lines(lines, "stderr summary", stderr_summary)
     atomic_write(evidence_path, "\n".join(lines))
@@ -1926,6 +2378,8 @@ def run_configured_runner(
     stdout = ""
     stderr = ""
     returncode = 127
+    start_error: str | None = None
+    timed_out = False
     try:
         result = subprocess.run(
             command,
@@ -1942,19 +2396,41 @@ def run_configured_runner(
         stdout = result.stdout
         stderr = result.stderr
     except FileNotFoundError as exc:
+        start_error = "not_found"
         stderr = f"runner executable was not found: {exc}"
     except subprocess.TimeoutExpired as exc:
+        timed_out = True
         returncode = 124
         stdout = str(exc.stdout or "")
         stderr = f"runner timed out after {timeout}s\n{exc.stderr or ''}"
     except OSError as exc:
+        start_error = "os_error"
         stderr = f"runner could not start: {exc}"
 
+    failure = classify_runner_failure(
+        returncode,
+        stdout,
+        stderr,
+        timed_out=timed_out,
+        start_error=start_error,
+    )
+    status_before_evidence, _ = runner_task_status(item["id"])
+    failure_metadata = failure if returncode != 0 or status_before_evidence == "in_progress" else None
     local_spool = write_runtime_spool(
         config,
         "runner",
         item["id"],
-        [{"command": command, "returncode": returncode, "stdout": stdout, "stderr": stderr}],
+        [
+            {
+                "command": command,
+                "returncode": returncode,
+                "stdout": stdout,
+                "stderr": stderr,
+                "execution_mode": "argv",
+                "failure_class": failure["failure_class"] if failure_metadata is not None else None,
+                "disposition": failure["disposition"] if failure_metadata is not None else None,
+            }
+        ],
     )
     evidence_path = write_runner_evidence(
         config,
@@ -1966,25 +2442,37 @@ def run_configured_runner(
         stdout,
         stderr,
         local_spool,
+        failure_metadata,
+    )
+    evidence_suffix = (
+        f" failure_class={failure['failure_class']} disposition={failure['disposition']}"
+        if failure_metadata is not None
+        else ""
     )
     record_task_evidence(
         item["id"],
         "runner",
-        f"{rel(evidence_path)} (returncode={returncode})",
+        f"{rel(evidence_path)} (returncode={returncode}{evidence_suffix})",
         provenance="local",
         source=rel(evidence_path),
     )
     status, last_result = runner_task_status(item["id"])
     if status == "in_progress":
         if returncode == 0:
-            reason = "runner exited successfully without submitting task report"
+            reason = (
+                "runner exited successfully without submitting task report; "
+                f"failure_class={failure['failure_class']}; disposition={failure['disposition']}"
+            )
         else:
-            reason = f"runner exited with returncode {returncode}"
+            reason = (
+                f"runner exited with returncode {returncode}; "
+                f"failure_class={failure['failure_class']}; disposition={failure['disposition']}"
+            )
         auto_report_runner_failure(
             item["id"],
             agent["id"],
             f"Configured runner failed validation: {reason}.",
-            "Inspect the runner command/output, fix the integration and retry through a new bounded run.",
+            f"Apply the bounded disposition `{failure['disposition']}` after inspecting the sanitized evidence.",
             f"runner evidence: {rel(evidence_path)}",
         )
         status, last_result = runner_task_status(item["id"])
@@ -2002,7 +2490,7 @@ def run_configured_runner(
 def cmd_worker_run(args: argparse.Namespace) -> int:
     config = load_config()
     agent = claim_agent(config, args.agent)
-    if runner_settings(agent) is None:
+    if agent.get("runner") is None:
         raise UseAgentError(
             f"agent {args.agent} has no configured runner; use worker pull for a manual runtime"
         )
@@ -2016,14 +2504,30 @@ def cmd_worker_run(args: argparse.Namespace) -> int:
     completed = 0
     deadline = time.monotonic() + args.wait_seconds
     while completed < args.max_tasks:
-        assignment = pull_next_assignment(args.agent)
-        if assignment is None:
+        candidate = peek_next_assignment(args.agent)
+        if candidate is None:
             remaining = deadline - time.monotonic()
             if args.wait_seconds <= 0 or remaining <= 0:
                 if completed == 0:
                     print("NO_TASK")
                 break
             time.sleep(min(args.poll_seconds, remaining))
+            continue
+        candidate_item, candidate_path = candidate
+        readiness = probe_runtime_readiness(config, agent, candidate_item, candidate_path)
+        if not readiness["dispatchable"]:
+            record_runtime_event(candidate_item["id"], readiness, kind="runtime-readiness")
+            print(
+                f"{candidate_item['id']} runtime_state={readiness['state']} "
+                f"failure_class={readiness.get('failure_class') or 'none'} "
+                f"disposition={readiness.get('disposition') or 'needs_input'} "
+                f"spool={readiness.get('local_spool') or 'none'}"
+            )
+            return 2
+        if readiness.get("preflight"):
+            record_runtime_event(candidate_item["id"], readiness, kind="runtime-readiness")
+        assignment = pull_next_assignment(args.agent, expected_task_id=candidate_item["id"])
+        if assignment is None:
             continue
         item, assignment_path, _ = assignment
         result, evidence_path = run_configured_runner(config, agent, item, assignment_path)

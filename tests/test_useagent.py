@@ -913,13 +913,28 @@ class UseAgentCliTests(unittest.TestCase):
             str(exit_code),
         ]
 
-    def configure_runner(self, command: list[str], timeout_seconds: int = 30) -> None:
+    def configure_runner(
+        self,
+        command: list[str],
+        timeout_seconds: int = 30,
+        preflight_command: list[str] | None = None,
+        preflight_timeout_seconds: int = 30,
+    ) -> None:
         config = useagent.load_config()
         config["agents"][0]["runner"] = {
             "command": command,
             "timeout_seconds": timeout_seconds,
         }
+        if preflight_command is not None:
+            config["agents"][0]["runner"]["preflight"] = {
+                "command": preflight_command,
+                "timeout_seconds": preflight_timeout_seconds,
+            }
         useagent.save_config(config)
+
+    def preflight_command(self, payload: object, exit_code: int = 0) -> list[str]:
+        code = f"import json; print(json.dumps({payload!r})); raise SystemExit({exit_code})"
+        return [sys.executable, "-c", code, "{task_id}", "{agent_id}", "{assignment_path}"]
 
     def qa_python(self, code: str, *arguments: str) -> dict:
         return {"mode": "argv", "argv": [sys.executable, "-c", code, *arguments]}
@@ -989,6 +1004,198 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual(item["last_result"], "completed")
         self.assertTrue(item["reports"])
         self.assertTrue(any(entry["kind"] == "runner" for entry in item["evidence"]))
+
+    def test_dispatch_skips_configured_runner_with_unavailable_executable(self) -> None:
+        self.register_worker("worker-1", "src")
+        self.configure_runner(["useagent-runtime-that-does-not-exist", "{assignment_path}"])
+        task_id = self.new_task("Unavailable runtime", "src/unavailable.py")
+
+        code, output, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+        self.assertEqual(output.strip(), "no task dispatched")
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry["items"][task_id]["status"], "planned")
+        self.assertEqual(useagent.static_runner_readiness(useagent.load_config()["agents"][0])["state"], "unavailable")
+
+    def test_preflight_ready_is_bounded_and_preserves_existing_runner_flow(self) -> None:
+        self.register_worker("worker-1", "src")
+        self.configure_runner(
+            self.reporting_runner(),
+            preflight_command=self.preflight_command({"useagent_preflight": 1, "state": "ready", "reason": "local adapter ready"}),
+        )
+        task_id = self.new_task("Ready runtime", "src/runner.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+
+        code, output, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual((code, error), (0, ""))
+        self.assertIn(f"{task_id} runner_status=reported result=completed", output)
+        preflight_spools = list((useagent.ROOT / "work" / ".runtime-output").glob(f"preflight-worker-1-{task_id}-*.md"))
+        self.assertEqual(len(preflight_spools), 1)
+        self.assertIn("execution_mode: `argv`", preflight_spools[0].read_text(encoding="utf-8"))
+
+    def test_preflight_unavailable_preserves_assignment_and_records_disposition(self) -> None:
+        self.register_worker("worker-1", "src")
+        self.configure_runner(
+            self.reporting_runner(),
+            preflight_command=self.preflight_command(
+                {"useagent_preflight": 1, "state": "unavailable", "reason": "runtime is offline", "disposition": "reassign"}
+            ),
+        )
+        task_id = self.new_task("Unavailable after preflight", "src/preflight.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+
+        code, output, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual(code, 2)
+        self.assertEqual(error, "")
+        self.assertIn(f"{task_id} runtime_state=unavailable failure_class=unavailable disposition=reassign", output)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        item = registry["items"][task_id]
+        self.assertEqual(item["status"], "assigned")
+        self.assertEqual(item["reports"], [])
+        readiness = [entry for entry in item["evidence"] if entry["kind"] == "runtime-readiness"]
+        self.assertEqual(len(readiness), 1)
+        self.assertIn("local_spool=work/.runtime-output/", readiness[0]["value"])
+
+    def test_preflight_no_target_and_malformed_state_are_safe(self) -> None:
+        self.register_worker("worker-1", "src")
+        self.configure_runner(
+            self.reporting_runner(),
+            preflight_command=self.preflight_command(
+                {"useagent_preflight": 1, "state": "no_target", "reason": "no selected runtime", "disposition": "needs_input"}
+            ),
+        )
+        task_id = self.new_task("No runtime target", "src/no-target.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+        code, output, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual((code, error), (2, ""))
+        self.assertIn("runtime_state=no_target", output)
+        self.assertEqual(json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))["items"][task_id]["status"], "assigned")
+
+    def test_preflight_output_is_redacted_in_local_spool_and_task_evidence(self) -> None:
+        self.register_worker("worker-1", "src")
+        secret = "preflight-secret-123456789"
+        self.configure_runner(
+            self.reporting_runner(),
+            preflight_command=self.preflight_command(
+                {"useagent_preflight": 1, "state": "unavailable", "reason": f"API_KEY={secret}", "disposition": "reassign"}
+            ),
+        )
+        task_id = self.new_task("Secret-safe preflight", "src/runner.py")
+        self.invoke("supervisor", "dispatch")
+        code, _, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual((code, error), (2, ""))
+        registry_text = useagent.REGISTRY.read_text(encoding="utf-8")
+        self.assertNotIn(secret, registry_text)
+        spool = next((useagent.ROOT / "work" / ".runtime-output").glob(f"preflight-worker-1-{task_id}-*.md"))
+        self.assertNotIn(secret, spool.read_text(encoding="utf-8"))
+
+    def test_preflight_timeout_is_unknown_and_does_not_claim_ownership(self) -> None:
+        self.register_worker("worker-1", "src")
+        slow_preflight = [sys.executable, "-c", "import time; time.sleep(2)"]
+        self.configure_runner(self.reporting_runner(), preflight_command=slow_preflight, preflight_timeout_seconds=1)
+        task_id = self.new_task("Timed out preflight", "src/runner.py")
+        self.invoke("supervisor", "dispatch")
+        code, output, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual((code, error), (2, ""))
+        self.assertIn(f"{task_id} runtime_state=unknown failure_class=timeout disposition=retry", output)
+        item = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))["items"][task_id]
+        self.assertEqual(item["status"], "assigned")
+        self.assertEqual(item["reports"], [])
+
+    def test_ambiguous_preflight_is_unknown_and_does_not_pull(self) -> None:
+        self.register_worker("worker-1", "src")
+        ambiguous_preflight = [sys.executable, "-c", "print('runtime maybe available')"]
+        self.configure_runner(self.reporting_runner(), preflight_command=ambiguous_preflight)
+        task_id = self.new_task("Ambiguous preflight", "src/runner.py")
+        self.invoke("supervisor", "dispatch")
+        code, output, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual((code, error), (2, ""))
+        self.assertIn(f"{task_id} runtime_state=unknown failure_class=unknown disposition=needs_input", output)
+        item = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))["items"][task_id]
+        self.assertEqual(item["status"], "assigned")
+        self.assertEqual(item["reports"], [])
+
+    def test_runtime_readiness_writes_do_not_stale_source_bound_qa(self) -> None:
+        self.register_worker("worker-1", "src")
+        self.configure_runner(
+            self.reporting_runner(),
+            preflight_command=self.preflight_command(
+                {"useagent_preflight": 1, "state": "unavailable", "reason": "offline", "disposition": "reassign"}
+            ),
+        )
+        task_id = self.new_task("Volatile readiness event", "src/runner.py")
+        self.invoke("supervisor", "dispatch")
+        config = self.configure_qa()
+        qa_result = useagent.run_qa(config, "readiness-qa-test")
+        before = useagent.release_source_fingerprint(config)["fingerprint"]
+        code, _, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual((code, error), (2, ""))
+        after = useagent.release_source_fingerprint(config)["fingerprint"]
+        self.assertEqual(before, after)
+        self.assertEqual(useagent.validate_qa_source(config, {"last_qa": qa_result})["status"], "valid")
+        self.assertEqual(json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))["items"][task_id]["status"], "assigned")
+
+    def test_ambiguous_runtime_text_never_proves_quota_or_auth(self) -> None:
+        failure = useagent.classify_runner_failure(9, stderr="quota exhausted; authentication failed")
+        self.assertEqual(failure["failure_class"], "runtime_error")
+        self.assertNotEqual(failure["failure_class"], "quota_limited")
+        self.assertNotEqual(failure["failure_class"], "auth_error")
+        self.assertFalse(failure["authoritative"])
+
+    def test_authoritative_auth_failure_requires_contract_evidence(self) -> None:
+        failure = useagent.classify_runner_failure(
+            7,
+            stderr=json.dumps(
+                {
+                    "useagent_runtime_result": 1,
+                    "failure_class": "auth_error",
+                    "authoritative": True,
+                    "disposition": "needs_input",
+                }
+            ),
+        )
+        self.assertEqual(failure["failure_class"], "auth_error")
+        self.assertEqual(failure["disposition"], "needs_input")
+        self.assertTrue(failure["authoritative"])
+
+    def test_authoritative_quota_failure_is_classified_and_reported(self) -> None:
+        self.register_worker("worker-1", "src")
+        runner_code = (
+            "import json; print(json.dumps({'useagent_runtime_result': 1, 'failure_class': 'quota_limited', "
+            "'authoritative': True, 'disposition': 'needs_input', 'reason': 'provider contract quota'})); raise SystemExit(9)"
+        )
+        self.configure_runner([sys.executable, "-c", runner_code, "{assignment_path}"])
+        task_id = self.new_task("Authoritative quota", "src/quota.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+        code, output, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual((code, error), (1, ""))
+        self.assertIn(f"{task_id} runner_status=reported result=failed", output)
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        item = registry["items"][task_id]
+        evidence = next(entry for entry in item["evidence"] if entry["kind"] == "runner")
+        self.assertIn("failure_class=quota_limited", evidence["value"])
+        evidence_path = useagent.ROOT / evidence["value"].split(" ", 1)[0]
+        evidence_text = evidence_path.read_text(encoding="utf-8")
+        self.assertIn("failure_class: `quota_limited`", evidence_text)
+        self.assertIn("authoritative: `true`", evidence_text)
+
+    def test_non_authoritative_quota_envelope_is_downgraded_to_unknown(self) -> None:
+        failure = useagent.classify_runner_failure(
+            9,
+            stdout=json.dumps(
+                {
+                    "useagent_runtime_result": 1,
+                    "failure_class": "quota_limited",
+                    "authoritative": False,
+                }
+            ),
+        )
+        self.assertEqual(failure["failure_class"], "unknown")
+        self.assertFalse(failure["authoritative"])
 
     def test_worker_run_requires_configured_runner_without_claiming(self) -> None:
         self.register_worker("worker-1", "src")
@@ -1183,6 +1390,14 @@ class UseAgentCliTests(unittest.TestCase):
         errors = []
         useagent.validate_config(config, errors)
         self.assertTrue(any("between 1 and" in error for error in errors))
+        config["agents"][0]["runner"]["preflight"] = {
+            "command": "python",
+            "timeout_seconds": 1,
+        }
+        config["agents"][0]["runner"]["timeout_seconds"] = 1
+        errors = []
+        useagent.validate_config(config, errors)
+        self.assertTrue(any("preflight.command must be" in error for error in errors))
 
     def test_validator_reports_malformed_config_without_traceback(self) -> None:
         config = useagent.load_config()

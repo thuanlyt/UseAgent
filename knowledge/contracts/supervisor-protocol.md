@@ -8,7 +8,7 @@ Mỗi agent đăng ký có `INBOX.md`, `REPORT.md`, `COMPLETED.md` và `inbox/`.
 
 Assignment phải có task id, objective, scope, acceptance, dependency, files/context cần đọc, command cần chạy, output bắt buộc và stop conditions. Assignment file là prompt đầy đủ để gửi cho worker.
 
-## Optional runner contract
+## Optional runner and runtime-readiness contract
 
 An agent may declare a `runner` object with an argv `command` array and a
 positive `timeout_seconds`. The command must contain `{assignment_path}`. The
@@ -20,12 +20,67 @@ summary carries its relative reference, stream sizes, preview budget,
 truncation flags and typed local provenance. It invokes no runner when the
 object is absent.
 
+An optional preflight is an argv-only adapter probe:
+
+```json
+{
+  "preflight": {
+    "command": ["python", "adapter.py", "--preflight", "{agent_id}"],
+    "timeout_seconds": 30
+  }
+}
+```
+
+UseAgent performs static validation and executable checks before dispatch. A
+configured but clearly unavailable or malformed runner is not assigned work.
+When a task is already assigned, `worker run` executes the bounded preflight
+before changing `assigned` to `in_progress`. The probe must print one complete
+JSON object such as `{"useagent_preflight":1,"state":"ready"}`. `state` is
+one of `ready`, `unavailable`, `misconfigured`, `no_target` or `unknown`.
+`ready` means only that the declared local adapter prerequisites passed; it
+does not predict provider quota or model availability. Invalid, ambiguous or
+timed-out probes are recorded as bounded local diagnostics and do not silently
+claim runtime ownership. A missing preflight means `unknown` with the legacy
+runner compatibility path, so existing adapters continue to work.
+
+Adapters may classify a started-runner failure with one complete JSON object:
+
+```json
+{
+  "useagent_runtime_result": 1,
+  "failure_class": "quota_limited",
+  "authoritative": true,
+  "disposition": "needs_input",
+  "reason": "provider contract quota"
+}
+```
+
+Supported classes are `unavailable`, `no_target`, `misconfigured`,
+`auth_error`, `quota_limited`, `timeout`, `runtime_error` and `unknown`.
+`quota_limited` and `auth_error` are accepted only with an explicit
+`authoritative: true` machine-readable adapter result. Human-readable stderr
+or provider-shaped text is never enough and is downgraded to a generic/unknown
+failure. Recommended bounded dispositions are `retry`, `reassign`,
+`takeover` or `needs_input`; the CLI records the recommendation but never
+creates an infinite retry loop or a successor automatically.
+
+The ownership sequence is `planned -> assigned -> readiness -> in_progress ->
+reported`. A pre-start readiness failure leaves the task `assigned`, appends
+sanitized runtime evidence and a local-spool reference, and gives the
+supervisor a disposition. A process start failure after pull is classified and
+the existing no-report safeguard writes a failed worker report, so there is no
+unowned `in_progress` task or report-wait dead end. The adapter remains the
+provider-specific boundary: UseAgent does not invent Codex/Claude/Antigravity
+flags, call vendor APIs or claim to sandbox a vendor process.
+
 `worker run` is finite by default (`--max-tasks 1`, no idle wait). It pulls an
 assigned task through the same claim checks as `worker pull`. The adapter must
 submit `task report`; if it exits without a report, the CLI writes a failed
-worker report so the task cannot remain silently active. The runner is an
-explicit trusted integration boundary: the core protocol does not claim to
-sandbox a vendor process or invent provider-specific flags.
+worker report so the task cannot remain silently active. Readiness and runner
+diagnostics use the UA-0051 bounded/sanitized output contract and are volatile
+control-plane writes, so they do not change the UA-0052 release-source
+fingerprint. The configured runner/preflight shape remains part of source/config
+identity and is validated before use.
 
 ## Report contract
 

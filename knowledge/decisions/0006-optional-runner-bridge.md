@@ -24,7 +24,18 @@ than leaving a task silently stuck in `in_progress`.
 
 The adapter owns provider-specific flags, authentication and process sandboxing.
 UseAgent does not invent Codex/Claude/Antigravity commands or launch a runner
-unless the project owner explicitly configured one.
+unless the project owner explicitly configured one. A runner may optionally
+declare an argv-only, bounded `preflight` command. The core recognizes only
+the machine-readable readiness states `ready`, `unavailable`,
+`misconfigured`, `no_target` and `unknown`; `ready` is prerequisite evidence,
+not a quota prediction.
+
+Started adapters may emit a complete `useagent_runtime_result` JSON envelope.
+UseAgent normalizes its failure class and recommended finite disposition. The
+`quota_limited` and `auth_error` classes require `authoritative: true`; prose
+in stdout/stderr cannot establish either condition. A pre-start failure keeps
+the task assigned and records bounded runtime evidence, while a failure after
+pull uses the existing automatic failed-report safeguard.
 
 ## Alternatives rejected
 
@@ -40,6 +51,11 @@ unless the project owner explicitly configured one.
 - A configured local adapter can make worker intake hands-off for a finite run.
 - Mixed runtimes share one contract while keeping their launch details isolated.
 - Manual sessions and runtimes without a CLI remain fully supported.
+- Static dispatch checks prevent clearly malformed or unavailable configured
+  runners from receiving new work; missing preflight remains an explicit
+  unknown compatibility mode for existing adapters.
+- Readiness output is local/runtime data first; only normalized metadata and a
+  local spool reference are attached to the task, preserving source-bound QA.
 - The configured adapter is trusted code; the core guarantees process
   invocation semantics and state/report gates, not model sandboxing.
 
