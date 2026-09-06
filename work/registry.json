@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-06T00:57:52Z",
+  "updated_at": "2026-09-06T02:52:54Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -3816,6 +3816,136 @@
       "attempts": 1,
       "created_at": "2026-09-06T00:45:57Z",
       "updated_at": "2026-09-06T00:57:52Z",
+      "last_result": "completed"
+    },
+    "UA-0051": {
+      "id": "UA-0051",
+      "title": "Make runner and QA output evidence-safe",
+      "objective": "Prevent raw command, runner and supervisor QA output from becoming committable evidence by default while preserving bounded debugging references, typed provenance and existing lifecycle behavior.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        ".gitignore",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py",
+        "useagent.config.json"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "Runner and QA durable evidence stores only bounded safe summaries and metadata; raw runtime output is written to a separate local spool under work/.runtime-output.",
+        "stdout and stderr use deterministic per-stream budgets and explicit truncation metadata; oversized output never expands committable evidence beyond the configured contract.",
+        "Secret-like command/output values are redacted in durable summaries as defense-in-depth, and durable runner/QA evidence contains no raw token, password, API key, cookie, authorization, private key or credentialed URL.",
+        "Local spool references remain useful for debugging, are repository-relative, are ignored by default, and existing tracked historical evidence is not deleted or rewritten.",
+        "Runner, QA, report freshness and typed provenance behavior remain compatible and are covered by regression tests."
+      ],
+      "verification": [
+        "python -m unittest tests.test_useagent -v",
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate",
+        "python -m py_compile tools/useagent.py tests/test_useagent.py",
+        "git diff --check"
+      ],
+      "files": [
+        ".gitignore",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py",
+        "useagent.config.json"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "Focused 60/60; full unit 69/69; validator VALID; py_compile pass; diff check pass; runtime spool ignore contract pass",
+          "provenance": "local",
+          "source": "UA-0051 verification sequence",
+          "recorded_at": "2026-09-06T02:42:03Z"
+        },
+        {
+          "kind": "worker-report",
+          "value": "work/reports/inbox/UA-0051-20260906T024252Z-475cab.md",
+          "provenance": "local",
+          "source": "UA-0051 verification sequence",
+          "recorded_at": "2026-09-06T02:42:52Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.test_useagent -v: 60 passed",
+          "provenance": "local",
+          "source": "UA-0051 verification sequence",
+          "recorded_at": "2026-09-06T02:42:52Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 69 passed",
+          "provenance": "local",
+          "source": "UA-0051 verification sequence",
+          "recorded_at": "2026-09-06T02:42:52Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "provenance": "local",
+          "source": "UA-0051 verification sequence",
+          "recorded_at": "2026-09-06T02:42:52Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py: pass",
+          "provenance": "local",
+          "source": "UA-0051 verification sequence",
+          "recorded_at": "2026-09-06T02:42:52Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "provenance": "local",
+          "source": "UA-0051 verification sequence",
+          "recorded_at": "2026-09-06T02:42:52Z"
+        },
+        {
+          "kind": "check",
+          "value": "Post-correction focused evidence hygiene tests: 3 passed; full unit 60 passed; full discovery 69 passed; validator VALID; py_compile pass; diff check pass; JSON command-argument and PEM redaction regression pass",
+          "provenance": "local",
+          "source": "UA-0051 final verification sequence",
+          "recorded_at": "2026-09-06T02:47:53Z"
+        },
+        {
+          "kind": "check",
+          "value": "Final verification after review correction: focused hygiene 3 passed; UseAgent unit 60 passed; full discovery 69 passed; validator VALID; py_compile pass; diff check pass; durable preview hard cap and escaped-command/private-key cases pass",
+          "provenance": "local",
+          "source": "UA-0051 final verification sequence",
+          "recorded_at": "2026-09-06T02:52:49Z"
+        },
+        {
+          "kind": "review",
+          "value": "Independent supervisor review: PASS. Durable runner/QA writes are bounded sanitized summaries with typed local provenance and repo-relative ignored spool references; historical tracked evidence remains untouched; no actionable regression in lifecycle, freshness or QA result shape. Non-blocking follow-ups remain separate: source-bound QA evidence and safe QA execution contract.",
+          "provenance": "local",
+          "source": "UA-0051 review gate: diff inspection plus final verification sequence",
+          "recorded_at": "2026-09-06T02:52:49Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0051-20260906T024252Z-475cab.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-06T02:30:27Z",
+      "updated_at": "2026-09-06T02:52:54Z",
+      "supersedes": null,
+      "superseded_by": null,
+      "takeover_reason": null,
       "last_result": "completed"
     }
   }

@@ -1,6 +1,7 @@
 # Runtime coordination state
 work/.state.lock
 work/.tmp-*
+/work/.runtime-output/
 *.pyc
 __pycache__/
 .pytest_cache/

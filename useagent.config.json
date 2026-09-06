@@ -11,7 +11,8 @@
     "supervisor_cycle": "work/supervisor/LATEST_CYCLE.md",
     "supervisor_state": "work/supervisor/state.json",
     "checkpoints": "work/checkpoints",
-    "evidence": "work/evidence"
+    "evidence": "work/evidence",
+    "runtime_spool": "work/.runtime-output"
   },
   "supervisor": {
     "max_assignments_per_cycle": 4,

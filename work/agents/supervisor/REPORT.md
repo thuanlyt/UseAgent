@@ -321,3 +321,10 @@ Implemented CLI-managed takeover lineage with reciprocal supersedes metadata, at
 
 - Report: `work/reports/inbox/UA-0050-20260906T005742Z-f8cadf.md`
 - Next: Run supervisor review evidence and close UA-0050; keep OSBlog frozen and use the lineage contract in the next dogfood-derived improvement.
+
+## 2026-09-06T02:42:52Z - UA-0051 (completed)
+
+Implemented a future-write evidence boundary: runner and QA now persist bounded sanitized summaries with typed local provenance, while bounded redacted diagnostics use a Git-ignored work/.runtime-output spool. Existing historical work/evidence files were not rewritten or deleted.
+
+- Report: `work/reports/inbox/UA-0051-20260906T024252Z-475cab.md`
+- Next: Run an independent review of the evidence boundary, redaction coverage, budget metadata, ignore contract and runner/QA regressions; do not edit source during review.

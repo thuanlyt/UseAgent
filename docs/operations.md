@@ -80,11 +80,16 @@ python tools/useagent.py worker run --agent codex-api --max-tasks 3 --wait-secon
 ```
 
 The runner receives the generated assignment path and runs with the project
-root as its working directory. It must use `task report`; UseAgent records
-runner stdout/stderr under `work/evidence/` and automatically writes a failed
-worker report if the process exits without reporting. `worker pull` remains the
-manual path. No command is executed unless a runner is explicitly configured;
-the command is an argv list and is never passed through a shell.
+root as its working directory. It must use `task report`; UseAgent writes a
+bounded, sanitized summary to `work/evidence/`, while a separate bounded,
+redacted local diagnostic spool is stored under `work/.runtime-output/`. The
+durable summary records `local_spool`, `provenance`, stream sizes, redaction
+counts and an explicit truncation flag. The spool is ignored by Git and is the
+place to inspect bounded diagnostic output; raw runtime output is never
+treated as committable evidence by default. UseAgent automatically writes a
+failed worker report if the process exits without reporting. `worker pull`
+remains the manual path. No command is executed unless a runner is explicitly
+configured; the command is an argv list and is never passed through a shell.
 
 The adapter is the provider-specific boundary. Codex can wrap its installed
 CLI, Claude Code can wrap `claude` from a local checkout, and Antigravity can
@@ -226,7 +231,15 @@ Khai báo `supervisor.qa_commands` dạng mảng command string trong `useagent.
 }
 ```
 
-Output dài được lưu thành evidence; cycle sẽ chỉ ra task report, task blocked, worker đang active và next action.
+QA output follows the same evidence boundary as runner output. Each stdout and
+stderr stream has a deterministic 4,000-character durable preview budget;
+oversized streams are marked `truncated: true` and keep a `local_spool`
+reference for debugging. The durable preview and command metadata are
+sanitized as defense-in-depth, but sanitization is not a sandbox or an
+authentication boundary. Raw or generated output must not be copied into
+tracked `work/evidence/`; historical tracked evidence is preserved and needs
+an explicit migration policy before any cleanup. The cycle still reports task
+status, blockers, active workers and the next action.
 
 ### Report freshness / Tính mới của report
 

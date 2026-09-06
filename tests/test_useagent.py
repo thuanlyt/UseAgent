@@ -975,6 +975,79 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual(len(item["reports"]), 1)
         self.assertTrue(any(entry["kind"] == "runner" for entry in item["evidence"]))
 
+    def test_runner_output_is_sanitized_bounded_and_spooled_locally(self) -> None:
+        self.register_worker("worker-1", "src")
+        runner_code = (
+            "import sys\n"
+            "print('API_KEY=runner-secret-123456789')\n"
+            "print('Authorization: Bearer runner-token-123456789')\n"
+            "print('postgresql://runner:runner-password@db.example.test/app')\n"
+            "print('{\"password\":\"json-password-123456789\",\"token\":\"json-token-123456789\"}')\n"
+            "print('-----BEGIN RSA PRIVATE KEY-----')\n"
+            "print('MII_RUNNER_PRIVATE_KEY_MATERIAL_123456789')\n"
+            "print('-----END RSA PRIVATE KEY-----')\n"
+            f"print('O' * {useagent.MAX_DURABLE_OUTPUT_CHARS + 500})\n"
+            "print('Cookie: session=runner-cookie-123456789', file=sys.stderr)\n"
+            f"print('E' * {useagent.MAX_DURABLE_OUTPUT_CHARS + 500}, file=sys.stderr)\n"
+            "raise SystemExit(9)\n"
+        )
+        self.configure_runner([sys.executable, "-c", runner_code, "{assignment_path}"])
+        task_id = self.new_task("Sanitized runner output", "src/safe-runner.py")
+        code, _, error = self.invoke("supervisor", "dispatch")
+        self.assertEqual((code, error), (0, ""))
+
+        code, _, error = self.invoke("worker", "run", "--agent", "worker-1")
+        self.assertEqual((code, error), (1, ""))
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        runner_entry = next(entry for entry in registry["items"][task_id]["evidence"] if entry["kind"] == "runner")
+        evidence_path = useagent.ROOT / runner_entry["value"].split(" ", 1)[0]
+        evidence = evidence_path.read_text(encoding="utf-8")
+        for secret in (
+            "runner-secret-123456789",
+            "runner-token-123456789",
+            "runner-password",
+            "runner-cookie-123456789",
+            "json-password-123456789",
+            "json-token-123456789",
+            "MII_RUNNER_PRIVATE_KEY_MATERIAL_123456789",
+        ):
+            self.assertNotIn(secret, evidence)
+        self.assertIn("provenance: `local`", evidence)
+        self.assertIn(f"budget_chars: `{useagent.MAX_DURABLE_OUTPUT_CHARS}`", evidence)
+        self.assertIn("truncated: `true`", evidence)
+        preview_chars = int(
+            next(line.split("`", 2)[1] for line in evidence.splitlines() if line.startswith("- preview_chars:"))
+        )
+        self.assertLessEqual(preview_chars, useagent.MAX_DURABLE_OUTPUT_CHARS)
+        spool_rel = next(line.split("`", 2)[1] for line in evidence.splitlines() if line.startswith("- local_spool:"))
+        self.assertTrue(spool_rel.startswith("work/.runtime-output/"))
+        spool = (useagent.ROOT / spool_rel).read_text(encoding="utf-8")
+        for secret in (
+            "runner-secret-123456789",
+            "runner-token-123456789",
+            "runner-password",
+            "runner-cookie-123456789",
+            "json-password-123456789",
+            "json-token-123456789",
+            "MII_RUNNER_PRIVATE_KEY_MATERIAL_123456789",
+        ):
+            self.assertNotIn(secret, spool)
+        ignore_check = subprocess.run(
+            ["git", "check-ignore", "--no-index", "work/.runtime-output/example.md"],
+            cwd=self.original_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(ignore_check.returncode, 0, ignore_check.stderr)
+
+    def test_runtime_spool_cannot_overlap_committable_evidence(self) -> None:
+        config = useagent.load_config()
+        config["paths"]["runtime_spool"] = config["paths"]["evidence"]
+        errors: list[str] = []
+        useagent.validate_config(config, errors)
+        self.assertIn("config.paths.runtime_spool must not overlap config.paths.evidence", errors)
+
     def test_worker_run_times_out_and_records_failure_evidence(self) -> None:
         self.register_worker("worker-1", "src")
         self.configure_runner(
@@ -1692,6 +1765,47 @@ class UseAgentCliTests(unittest.TestCase):
         code, output, error = self.invoke("supervisor", "cycle", "--run-qa")
         self.assertEqual((code, error), (0, ""))
         self.assertIn("create a scoped debug task", output)
+
+    def test_qa_output_is_sanitized_bounded_and_spooled_locally(self) -> None:
+        qa_script = useagent.ROOT / "qa-output.py"
+        qa_script.write_text(
+            "import sys\n"
+            "print('API_KEY=qa-secret-123456789')\n"
+            f"print('Q' * {useagent.MAX_DURABLE_OUTPUT_CHARS + 500})\n"
+            "print('Cookie: session=qa-cookie-123456789', file=sys.stderr)\n"
+            f"print('W' * {useagent.MAX_DURABLE_OUTPUT_CHARS + 500}, file=sys.stderr)\n",
+            encoding="utf-8",
+        )
+        config = useagent.load_config()
+        config["supervisor"]["qa_commands"] = [f'"{sys.executable}" "{qa_script}"']
+        useagent.save_config(config)
+
+        code, output, error = self.invoke("supervisor", "qa")
+        self.assertEqual((code, error), (0, ""))
+        result = json.loads(output)
+        self.assertEqual(result["status"], "pass")
+        self.assertEqual(result["provenance"], "local")
+        self.assertEqual(result["source"], "configured supervisor.qa_commands")
+        command_result = result["commands"][0]
+        self.assertGreater(command_result["stdout"]["captured_chars"], useagent.MAX_DURABLE_OUTPUT_CHARS)
+        self.assertTrue(command_result["stdout"]["truncated"])
+        self.assertLessEqual(command_result["stdout"]["preview_chars"], useagent.MAX_DURABLE_OUTPUT_CHARS)
+        self.assertGreater(command_result["stderr"]["captured_chars"], useagent.MAX_DURABLE_OUTPUT_CHARS)
+        self.assertTrue(command_result["stderr"]["truncated"])
+        self.assertLessEqual(command_result["stderr"]["preview_chars"], useagent.MAX_DURABLE_OUTPUT_CHARS)
+        for secret in ("qa-secret-123456789", "qa-cookie-123456789"):
+            self.assertNotIn(secret, output)
+
+        evidence_path = useagent.ROOT / result["evidence"]
+        evidence = evidence_path.read_text(encoding="utf-8")
+        self.assertIn("provenance: `local`", evidence)
+        self.assertIn("output_budget_chars", evidence)
+        for secret in ("qa-secret-123456789", "qa-cookie-123456789"):
+            self.assertNotIn(secret, evidence)
+        spool_rel = result["local_spool"]
+        self.assertTrue(spool_rel.startswith("work/.runtime-output/"))
+        self.assertTrue((useagent.ROOT / spool_rel).is_file())
+        self.assertNotIn("qa-secret-123456789", (useagent.ROOT / spool_rel).read_text(encoding="utf-8"))
 
     def test_production_snapshot_checks_operational_readiness_files(self) -> None:
         (useagent.ROOT / "docs").mkdir(parents=True, exist_ok=True)

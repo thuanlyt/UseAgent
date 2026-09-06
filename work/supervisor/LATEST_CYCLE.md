@@ -1,16 +1,16 @@
-<!-- useagent-report: registry_sha256=68c38d44f360657451f96f0f160c15fee0a3661ac8494f456f2f747e6f153731 -->
+<!-- useagent-report: registry_sha256=545c0b2e055d3f6273378628ec76932ffadc81c025d7d0b05767dce109e190bd -->
 # UseAgent supervisor report
 
-- **Cycle:** `manual-20260906T005757Z`
-- **Generated:** 2026-09-06T00:57:57Z
-- **Registry revision:** sha256:68c38d44f360657451f96f0f160c15fee0a3661ac8494f456f2f747e6f153731
+- **Cycle:** `manual-20260906T025302Z`
+- **Generated:** 2026-09-06T02:53:02Z
+- **Registry revision:** sha256:545c0b2e055d3f6273378628ec76932ffadc81c025d7d0b05767dce109e190bd
 - **Next action:** Run the production release gate and obtain explicit deploy approval.
 - **Production snapshot:** `ready`
 
 ## Status counts
 
 - `cancelled`: 3
-- `done`: 47
+- `done`: 48
 
 ## Reports ingested this cycle
 
@@ -73,6 +73,7 @@
 - `UA-0048` — Make supervisor report freshness explicit — evidence: 6
 - `UA-0049` — Add typed evidence provenance to handovers — evidence: 7
 - `UA-0050` — Make takeover lineage first-class — evidence: 7
+- `UA-0051` — Make runner and QA output evidence-safe — evidence: 10
 - none
 
 ## Blocked work

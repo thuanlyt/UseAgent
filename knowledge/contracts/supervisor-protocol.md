@@ -13,8 +13,12 @@ Assignment phải có task id, objective, scope, acceptance, dependency, files/c
 An agent may declare a `runner` object with an argv `command` array and a
 positive `timeout_seconds`. The command must contain `{assignment_path}`. The
 CLI substitutes that path plus `{task_id}` and `{agent_id}`, runs from the
-selected project root with `shell=False`, captures bounded stdout/stderr under
-`work/evidence/` and invokes no runner when the object is absent.
+selected project root with `shell=False`, writes a bounded sanitized summary
+under `work/evidence/` and a separate bounded redacted diagnostic spool under
+`work/.runtime-output/`. The spool is local-only and ignored by Git; the
+summary carries its relative reference, stream sizes, preview budget,
+truncation flags and typed local provenance. It invokes no runner when the
+object is absent.
 
 `worker run` is finite by default (`--max-tasks 1`, no idle wait). It pulls an
 assigned task through the same claim checks as `worker pull`. The adapter must
@@ -76,7 +80,14 @@ trạng thái hiện tại. `context` hiển thị nhãn và cảnh báo freshne
 
 ## QA contract
 
-`supervisor.qa_commands` is an array of shell command strings. Each command runs from the repository root with the configured timeout; stdout/stderr are saved under `work/evidence/` and the cycle records `pass`, `fail` or `not_configured`.
+`supervisor.qa_commands` is an array of shell command strings. Each command
+runs from the repository root with the configured timeout. QA writes only
+bounded sanitized stream summaries and metadata under `work/evidence/`; a
+separate bounded redacted diagnostic spool under `work/.runtime-output/`
+retains local debugging output. Each stream reports its captured size, preview
+budget, redaction count and truncation flag. The cycle records `pass`, `fail`
+or `not_configured`. This output boundary does not change the separate
+trusted-local execution boundary of configured shell commands.
 
 `supervisor.operational_readiness_files` is an array of non-empty repository-relative Markdown paths. The production snapshot marks the operational/rollback gate as `pass` only when every configured file exists and contains content; missing or unsafe paths remain `manual`.
 

@@ -87,3 +87,5 @@ Các task worker báo hoàn tất được append tại đây. `completed` nghĩ
 - 2026-09-06T00:44:33Z - `UA-0049` - Add typed evidence provenance to handovers - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0049-20260906T004433Z-d727eb.md`
 
 - 2026-09-06T00:57:42Z - `UA-0050` - Make takeover lineage first-class - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0050-20260906T005742Z-f8cadf.md`
+
+- 2026-09-06T02:42:52Z - `UA-0051` - Make runner and QA output evidence-safe - worker completed, pending supervisor/reviewer - `work/reports/inbox/UA-0051-20260906T024252Z-475cab.md`

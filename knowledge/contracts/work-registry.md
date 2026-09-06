@@ -22,9 +22,13 @@ external fact). `legacy` is reserved for older Markdown reports that predate
 the field and is never a claim that the evidence is verified.
 
 Provenance is a typed label, not authentication or review approval. A `live`
-label still needs a repeatable source and review evidence. Existing evidence
-without the optional fields remains readable and valid for backward
-compatibility; malformed new fields are validation errors.
+label still needs a repeatable source and review evidence. Runner and QA
+evidence must contain bounded sanitized summaries plus a repository-relative
+local spool reference; raw process output belongs in the ignored runtime spool,
+not in committable evidence. Existing evidence without the optional fields
+remains readable and valid for backward compatibility; malformed new fields
+are validation errors. Existing tracked evidence is historical data and is not
+rewritten or deleted by this contract.
 
 ## Invariants
 

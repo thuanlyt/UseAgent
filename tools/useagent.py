@@ -66,6 +66,37 @@ VALID_EVIDENCE_PROVENANCES = {"local", "live", "simulation", "blocked", "operato
 DEFAULT_RUNNER_TIMEOUT_SECONDS = 3600
 MAX_RUNNER_TIMEOUT_SECONDS = 86400
 MAX_RUNNER_WAIT_SECONDS = 86400
+MAX_DURABLE_OUTPUT_CHARS = 4000
+MAX_LOCAL_OUTPUT_CHARS = 100000
+
+RUNTIME_REDACTION_PATTERNS = (
+    (
+        re.compile(
+            r"(?i)((?:https?|postgres(?:ql)?)://)[^/\s:@]+:[^@\s]+@"
+        ),
+        r"\1[REDACTED]@",
+    ),
+    (re.compile(r"(?i)\bbearer\s+[A-Za-z0-9._~+/=-]{8,}"), "Bearer [REDACTED]"),
+    (
+        re.compile(
+            r"(?i)((?:\\)?[\"']?\b(?:api[_-]?key|access[_-]?token|auth[_-]?secret|client[_-]?secret|token|"
+            r"database[_-]?url|password|passwd|session[_-]?token|cookie|authorization|"
+            r"private[_-]?key)\b(?:\\)?[\"']?\s*[:=]\s*(?:\\)?[\"']?)([^\\\"'\s,;)}\]]+)"
+        ),
+        r"\1[REDACTED]",
+    ),
+    (
+        re.compile(r"(?i)\b(?:ghp_|github_pat_|sk-|xoxb-|xoxp-|vercel_|npm_)[A-Za-z0-9_-]{10,}"),
+        "[REDACTED_TOKEN]",
+    ),
+    (
+        re.compile(
+            r"(?is)-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----.*?"
+            r"(?:-----END (?:[A-Z0-9]+ )*PRIVATE KEY-----|\Z)"
+        ),
+        "-----BEGIN PRIVATE KEY [REDACTED]-----",
+    ),
+)
 
 
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -82,6 +113,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "supervisor_state": "work/supervisor/state.json",
         "checkpoints": "work/checkpoints",
         "evidence": "work/evidence",
+        "runtime_spool": "work/.runtime-output",
     },
     "supervisor": {
         "max_assignments_per_cycle": 4,
@@ -1277,6 +1309,128 @@ def runner_task_status(task_id: str) -> tuple[str, str | None]:
     return str(item.get("status")), item.get("last_result") if isinstance(item.get("last_result"), str) else None
 
 
+def runtime_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
+def redact_runtime_text(value: Any) -> tuple[str, int]:
+    text = runtime_text(value)
+    redactions = 0
+    for pattern, replacement in RUNTIME_REDACTION_PATTERNS:
+        text, count = pattern.subn(replacement, text)
+        redactions += count
+    return text, redactions
+
+
+def bound_runtime_output(value: Any, budget: int = MAX_DURABLE_OUTPUT_CHARS) -> dict[str, Any]:
+    original = runtime_text(value)
+    sanitized, redactions = redact_runtime_text(original)
+    truncated = len(sanitized) > budget
+    preview = sanitized
+    if truncated:
+        marker = f"\n...[output clipped; budget={budget} chars]"
+        preview = sanitized[: max(0, budget - len(marker))] + marker
+    return {
+        "captured_chars": len(original),
+        "sanitized_chars": len(sanitized),
+        "preview_chars": len(preview),
+        "budget_chars": budget,
+        "redactions": redactions,
+        "truncated": truncated,
+        "preview": preview,
+    }
+
+
+def safe_markdown_code(value: Any) -> str:
+    return runtime_text(value).replace("```", "` ` `")
+
+
+def safe_runtime_command(command: Any) -> tuple[str, int]:
+    if isinstance(command, (list, tuple)):
+        safe_parts: list[str] = []
+        redactions = 0
+        for part in command:
+            safe_part, count = redact_runtime_text(part)
+            safe_parts.append(safe_part)
+            redactions += count
+        return json.dumps(safe_parts, ensure_ascii=False), redactions
+    return redact_runtime_text(command)
+
+
+def write_runtime_spool(
+    config: dict[str, Any],
+    category: str,
+    identifier: str,
+    records: list[dict[str, Any]],
+) -> Path:
+    spool_path = path_for(config, "runtime_spool") / (
+        f"{category}-{identifier}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}.md"
+    )
+    lines = [
+        f"# Local runtime output {category} {identifier}",
+        "",
+        "- provenance: `local`",
+        "- storage: `ignored local diagnostic spool`",
+        "- note: output is redacted and bounded before local persistence",
+        "",
+    ]
+    for index, record in enumerate(records, start=1):
+        command, _ = safe_runtime_command(record.get("command", ""))
+        stdout = bound_runtime_output(record.get("stdout", ""), MAX_LOCAL_OUTPUT_CHARS)
+        stderr = bound_runtime_output(record.get("stderr", ""), MAX_LOCAL_OUTPUT_CHARS)
+        lines.extend(
+            [
+                f"## command {index}",
+                "",
+                f"- command: `{safe_markdown_code(command)}`",
+                f"- returncode: `{record.get('returncode', 127)}`",
+                f"- stdout_chars: `{stdout['captured_chars']}`",
+                f"- stderr_chars: `{stderr['captured_chars']}`",
+                f"- stdout_truncated: `{str(stdout['truncated']).lower()}`",
+                f"- stderr_truncated: `{str(stderr['truncated']).lower()}`",
+                "",
+                "### stdout",
+                "",
+                "```text",
+                safe_markdown_code(stdout["preview"]),
+                "```",
+                "",
+                "### stderr",
+                "",
+                "```text",
+                safe_markdown_code(stderr["preview"]),
+                "```",
+                "",
+            ]
+        )
+    atomic_write(spool_path, "\n".join(lines))
+    return spool_path
+
+
+def output_summary_lines(lines: list[str], name: str, summary: dict[str, Any]) -> None:
+    lines.extend(
+        [
+            f"### {name}",
+            "",
+            f"- captured_chars: `{summary['captured_chars']}`",
+            f"- sanitized_chars: `{summary['sanitized_chars']}`",
+            f"- preview_chars: `{summary['preview_chars']}`",
+            f"- budget_chars: `{summary['budget_chars']}`",
+            f"- redactions: `{summary['redactions']}`",
+            f"- truncated: `{str(summary['truncated']).lower()}`",
+            "",
+            "```text",
+            safe_markdown_code(summary["preview"]),
+            "```",
+            "",
+        ]
+    )
+
+
 def write_runner_evidence(
     config: dict[str, Any],
     item: dict[str, Any],
@@ -1286,31 +1440,29 @@ def write_runner_evidence(
     duration_seconds: float,
     stdout: str,
     stderr: str,
+    local_spool: Path,
 ) -> Path:
     evidence_path = path_for(config, "evidence") / (
         f"runner-{item['id']}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}.md"
     )
+    stdout_summary = bound_runtime_output(stdout)
+    stderr_summary = bound_runtime_output(stderr)
+    safe_command, command_redactions = safe_runtime_command(command)
     lines = [
         f"# Runner evidence {item['id']}",
         "",
+        "- provenance: `local`",
+        "- source: `configured agent runner`",
         f"- agent: `{agent['id']}`",
-        f"- command: `{json.dumps(command, ensure_ascii=False)}`",
+        f"- command: `{safe_markdown_code(safe_command)}`",
+        f"- command_redactions: `{command_redactions}`",
         f"- returncode: `{returncode}`",
         f"- duration_seconds: `{duration_seconds:.2f}`",
-        "",
-        "## stdout",
-        "",
-        "```text",
-        clip(stdout, 20000),
-        "```",
-        "",
-        "## stderr",
-        "",
-        "```text",
-        clip(stderr, 20000),
-        "```",
+        f"- local_spool: `{rel(local_spool)}`",
         "",
     ]
+    output_summary_lines(lines, "stdout summary", stdout_summary)
+    output_summary_lines(lines, "stderr summary", stderr_summary)
     atomic_write(evidence_path, "\n".join(lines))
     return evidence_path
 
@@ -1395,6 +1547,12 @@ def run_configured_runner(
     except OSError as exc:
         stderr = f"runner could not start: {exc}"
 
+    local_spool = write_runtime_spool(
+        config,
+        "runner",
+        item["id"],
+        [{"command": command, "returncode": returncode, "stdout": stdout, "stderr": stderr}],
+    )
     evidence_path = write_runner_evidence(
         config,
         item,
@@ -1404,6 +1562,7 @@ def run_configured_runner(
         time.monotonic() - started,
         stdout,
         stderr,
+        local_spool,
     )
     record_task_evidence(
         item["id"],
@@ -1633,7 +1792,7 @@ def run_qa(config: dict[str, Any], cycle_id: str) -> dict[str, Any]:
     if not commands:
         return {"status": "not_configured", "commands": [], "evidence": None}
     timeout = int(config["supervisor"].get("qa_timeout_seconds", 900))
-    results = []
+    raw_results = []
     for command in commands:
         started = time.monotonic()
         try:
@@ -1648,16 +1807,75 @@ def run_qa(config: dict[str, Any], cycle_id: str) -> dict[str, Any]:
                 timeout=timeout,
                 check=False,
             )
-            results.append({"command": str(command), "returncode": result.returncode, "duration_sec": round(time.monotonic() - started, 2), "stdout": result.stdout, "stderr": result.stderr})
+            raw_results.append(
+                {
+                    "command": str(command),
+                    "returncode": result.returncode,
+                    "duration_sec": round(time.monotonic() - started, 2),
+                    "stdout": result.stdout,
+                    "stderr": result.stderr,
+                }
+            )
         except subprocess.TimeoutExpired as exc:
-            results.append({"command": str(command), "returncode": 124, "duration_sec": round(time.monotonic() - started, 2), "stdout": str(exc.stdout or ""), "stderr": f"timeout after {timeout}s"})
+            raw_results.append(
+                {
+                    "command": str(command),
+                    "returncode": 124,
+                    "duration_sec": round(time.monotonic() - started, 2),
+                    "stdout": runtime_text(exc.stdout),
+                    "stderr": f"timeout after {timeout}s",
+                }
+            )
+    local_spool = write_runtime_spool(config, "qa", cycle_id, raw_results)
+    results = []
+    for result in raw_results:
+        safe_command, command_redactions = safe_runtime_command(result["command"])
+        results.append(
+            {
+                "command": safe_command,
+                "command_redactions": command_redactions,
+                "returncode": result["returncode"],
+                "duration_sec": result["duration_sec"],
+                "stdout": bound_runtime_output(result["stdout"]),
+                "stderr": bound_runtime_output(result["stderr"]),
+                "local_spool": rel(local_spool),
+            }
+        )
     status = "pass" if all(result["returncode"] == 0 for result in results) else "fail"
     evidence_path = path_for(config, "evidence") / f"{cycle_id}-qa.md"
-    lines = [f"# QA evidence {cycle_id}", ""]
+    lines = [
+        f"# QA evidence {cycle_id}",
+        "",
+        "- provenance: `local`",
+        "- source: `configured supervisor.qa_commands`",
+        f"- local_spool: `{rel(local_spool)}`",
+        f"- output_budget_chars: `{MAX_DURABLE_OUTPUT_CHARS}` per stream",
+        "",
+    ]
     for result in results:
-        lines.extend([f"## `{result['command']}`", "", f"- returncode: `{result['returncode']}`", f"- duration_sec: `{result['duration_sec']}`", "", "### stdout", "", "```text", result["stdout"], "```", "", "### stderr", "", "```text", result["stderr"], "```", ""])
+        lines.extend(
+            [
+                f"## `{safe_markdown_code(result['command'])}`",
+                "",
+                f"- command_redactions: `{result['command_redactions']}`",
+                f"- returncode: `{result['returncode']}`",
+                f"- duration_sec: `{result['duration_sec']}`",
+                f"- local_spool: `{result['local_spool']}`",
+                "",
+            ]
+        )
+        output_summary_lines(lines, "stdout summary", result["stdout"])
+        output_summary_lines(lines, "stderr summary", result["stderr"])
     atomic_write(evidence_path, "\n".join(lines))
-    return {"status": status, "commands": results, "evidence": rel(evidence_path)}
+    return {
+        "status": status,
+        "commands": results,
+        "evidence": rel(evidence_path),
+        "local_spool": rel(local_spool),
+        "provenance": "local",
+        "source": "configured supervisor.qa_commands",
+        "recorded_at": now_iso(),
+    }
 
 
 def production_snapshot(config: dict[str, Any], data: dict[str, Any], state: dict[str, Any]) -> tuple[list[tuple[str, str]], bool]:
@@ -2062,6 +2280,20 @@ def validate_config(config: dict[str, Any], errors: list[str]) -> None:
                 safe_repo_path(value)
             except (TypeError, UseAgentError) as exc:
                 errors.append(f"config.paths.{key}: {exc}")
+        evidence_value = paths_config.get("evidence")
+        spool_value = paths_config.get("runtime_spool")
+        if isinstance(evidence_value, str) and isinstance(spool_value, str):
+            try:
+                evidence_path = safe_repo_path(evidence_value)
+                spool_path = safe_repo_path(spool_value)
+                if (
+                    spool_path == evidence_path
+                    or spool_path.is_relative_to(evidence_path)
+                    or evidence_path.is_relative_to(spool_path)
+                ):
+                    errors.append("config.paths.runtime_spool must not overlap config.paths.evidence")
+            except (TypeError, UseAgentError):
+                pass
 
     supervisor = config.get("supervisor")
     if not isinstance(supervisor, dict):

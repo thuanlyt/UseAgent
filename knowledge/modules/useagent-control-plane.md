@@ -42,6 +42,11 @@ marker matches the current registry; missing or malformed markers are
 includes the report freshness label and warning. The registry and task evidence
 remain authoritative.
 
+Runner and QA output is runtime data first. Future writes keep only bounded
+sanitized summaries in `work/evidence/`; bounded redacted diagnostics go to
+the Git-ignored `work/.runtime-output/` spool. Historical tracked evidence is
+preserved and requires an explicit migration policy before cleanup.
+
 ## Dependency edges
 
 Consumes `AGENTS.md`, `knowledge/`, `work/` and `useagent.config.json`; is used by `$useagent` and all UseAgent skills/custom agents.
