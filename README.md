@@ -117,6 +117,12 @@ If you are new to multi-agent work, read the complete
 It uses one concrete Codex + Claude Code + Antigravity example and shows the
 exact prompts, commands, mailbox files and troubleshooting steps.
 
+For a real, evidence-frozen run rather than a replay fixture, read the
+[OSBlog dogfooding case study](docs/case-study-osblog.md) and its
+[capture manifest](docs/evidence/osblog-dogfood-capture-manifest.md). It keeps
+quota failures, takeovers, live Vercel evidence and blocked capture work
+visible, then turns the findings into a prioritized UseAgent improvement list.
+
 ### Quick start
 
 Prerequisites:
@@ -448,6 +454,11 @@ UseAgent is designed to work with repository-local skills and specialized subage
 The repository protocol remains useful outside Codex because its state and handovers are plain JSON and Markdown. For provider-specific setup, see the
 [hands-on onboarding guide](docs/getting-started.md#3-complete-example-codex--claude-code--antigravity).
 
+Xem thêm [case study dogfood OSBlog](docs/case-study-osblog.md) và
+[manifest screenshot/GIF/video](docs/evidence/osblog-dogfood-capture-manifest.md)
+để thấy evidence thật, quota failure, takeover, live Vercel và các finding dùng
+để cải tiến UseAgent.
+
 ### License
 
 Released under the [MIT License](LICENSE).
@@ -631,4 +642,4 @@ python -m unittest discover -s tests -v
 python tools/useagent.py validate
 ```
 
-Đọc [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [docs/operations.md](docs/operations.md), [docs/autopilot.md](docs/autopilot.md) và [docs/architecture.md](docs/architecture.md). Dự án phát hành theo [MIT License](LICENSE).
+Đọc [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [docs/operations.md](docs/operations.md), [docs/autopilot.md](docs/autopilot.md), [docs/architecture.md](docs/architecture.md) và [case study OSBlog](docs/case-study-osblog.md). Dự án phát hành theo [MIT License](LICENSE).

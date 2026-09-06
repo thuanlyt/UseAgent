@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-04T18:05:25Z",
+  "updated_at": "2026-09-06T00:57:52Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -3402,6 +3402,420 @@
       "attempts": 1,
       "created_at": "2026-09-04T17:54:43Z",
       "updated_at": "2026-09-04T18:05:25Z",
+      "last_result": "completed"
+    },
+    "UA-0046": {
+      "id": "UA-0046",
+      "title": "Extract OSBlog dogfood case study and evidence manifest",
+      "objective": "Turn the real OSBlog dogfooding run into a source-anchored bilingual case study, capture manifest, and product-improvement findings for UseAgent without resuming OSBlog feature work.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "README.md",
+        "docs-site/README.md",
+        "docs-site/architecture.html",
+        "docs-site/case-study.html",
+        "docs-site/getting-started.html",
+        "docs-site/index.html",
+        "docs-site/operations.html",
+        "docs-site/script.js",
+        "docs-site/sitemap.xml",
+        "docs-site/vi.html",
+        "docs/case-study-osblog.md",
+        "docs/evidence/osblog-dogfood-capture-manifest.md",
+        "knowledge/decisions/0008-osblog-dogfood-findings.md",
+        "knowledge/project-map.md",
+        "tests/docs_site/test_docs_site.py"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "Case study records a timestamped OSBlog timeline covering planning, multi-agent execution, reports/review/QA, quota failure, takeover/recovery, interruption/resume, and live Vercel outcome with exact source anchors.",
+        "Capture manifest distinguishes genuine live artifacts from simulation, lists screenshot/GIF/video status and privacy checks, and never exposes secret, token or credential material.",
+        "Findings identify UseAgent strengths, friction, missing capabilities and overhead, with evidence and concrete product changes prioritized for a later UseAgent task.",
+        "UseAgent README and docs-site expose the case study without weakening existing links, bilingual navigation, SEO or static-site validation."
+      ],
+      "verification": [
+        "python docs-site/build.py --check-only",
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate",
+        "git diff --check"
+      ],
+      "files": [
+        "README.md",
+        "docs-site/README.md",
+        "docs-site/case-study.html",
+        "docs-site/script.js",
+        "docs-site/sitemap.xml",
+        "docs/case-study-osblog.md",
+        "docs/evidence/osblog-dogfood-capture-manifest.md",
+        "knowledge/decisions/0008-osblog-dogfood-findings.md",
+        "knowledge/project-map.md",
+        "tests/docs_site/test_docs_site.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: PASS (17 static files)",
+          "recorded_at": "2026-09-05T23:47:57Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.docs_site.test_docs_site -v: PASS (7 tests)",
+          "recorded_at": "2026-09-05T23:47:57Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: PASS (59 tests)",
+          "recorded_at": "2026-09-05T23:47:57Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-05T23:47:57Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: PASS (only LF/CRLF normalization warnings)",
+          "recorded_at": "2026-09-05T23:47:57Z"
+        },
+        {
+          "kind": "review",
+          "value": "PASS — reviewed the case-study Markdown, capture manifest, ADR, docs-site HTML, search index, sitemap, README links and project map against the task acceptance. The case study preserves live/local/simulation/blocked distinctions and exact OSBlog source anchors; the manifest records hashes and privacy exclusions without copying media or secrets; the new page has one accessible H1, required SEO/canonical metadata, local lazy-loaded visual, bilingual summary and static-route coverage. docs-site build, 7 contract tests, 59 full unit tests, validator and diff check pass. No actionable P0/P1/P2 finding; OSBlog remains frozen and no deployment occurred.",
+          "recorded_at": "2026-09-05T23:48:46Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0046-20260905T234757Z-3c8698.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-05T23:34:16Z",
+      "updated_at": "2026-09-05T23:48:56Z",
+      "last_result": "completed"
+    },
+    "UA-0047": {
+      "id": "UA-0047",
+      "title": "Make supervisor report freshness explicit",
+      "objective": "Prevent work/SUPERVISOR_REPORT.md from silently becoming stale relative to the registry by adding an authoritative freshness marker, safe detection and documentation without weakening the file-first state machine.",
+      "level": "L2",
+      "status": "cancelled",
+      "owner": "supervisor",
+      "assigned_to": null,
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [
+        "python"
+      ],
+      "acceptance": [
+        "Supervisor report records the registry revision or latest registry update used to generate it, and the CLI can detect/report when the convenience report is stale without treating it as current.",
+        "Normal supervisor report/cycle behavior remains compatible, registry transitions remain atomic and review/claim rules are unchanged.",
+        "Focused regressions cover fresh and stale report states, malformed/missing marker behavior and safe repository-relative paths.",
+        "Operations and knowledge documentation explain the authority order: registry/task evidence first, supervisor report as a freshness-checked convenience view."
+      ],
+      "verification": [
+        "python -m unittest tests.test_useagent -v",
+        "python tools/useagent.py validate",
+        "python -m unittest discover -s tests -v",
+        "git diff --check"
+      ],
+      "files": [],
+      "evidence": [],
+      "reports": [],
+      "attempts": 0,
+      "created_at": "2026-09-05T23:49:33Z",
+      "updated_at": "2026-09-05T23:50:40Z"
+    },
+    "UA-0048": {
+      "id": "UA-0048",
+      "title": "Make supervisor report freshness explicit",
+      "objective": "Prevent work/SUPERVISOR_REPORT.md from silently becoming stale relative to the registry by adding an authoritative freshness marker, safe detection and documentation without weakening the file-first state machine.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md"
+      ],
+      "depends_on": [
+        "UA-0046"
+      ],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "Supervisor report records the registry revision or latest registry update used to generate it, and the CLI can detect/report when the convenience report is stale without treating it as current.",
+        "Normal supervisor report/cycle behavior remains compatible, registry transitions remain atomic and review/claim rules are unchanged.",
+        "Focused regressions cover fresh and stale report states, malformed/missing marker behavior and safe repository-relative paths.",
+        "Operations and knowledge documentation explain the authority order: registry/task evidence first, supervisor report as a freshness-checked convenience view."
+      ],
+      "verification": [
+        "python -m unittest tests.test_useagent -v",
+        "python tools/useagent.py validate",
+        "python -m unittest discover -s tests -v",
+        "git diff --check"
+      ],
+      "files": [
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.test_useagent -v: 52 passed",
+          "recorded_at": "2026-09-06T00:02:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 61 passed",
+          "recorded_at": "2026-09-06T00:02:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "recorded_at": "2026-09-06T00:02:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py: pass",
+          "recorded_at": "2026-09-06T00:02:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "recorded_at": "2026-09-06T00:02:41Z"
+        },
+        {
+          "kind": "review",
+          "value": "Scoped review pass: deterministic SHA-256 revision is derived from the loaded registry snapshot; report check returns nonzero for stale, missing or malformed markers; context labels non-fresh convenience views; configured report paths remain repository-safe; focused and full unit evidence pass. No claim/report/review transition rules or deploy behavior changed.",
+          "recorded_at": "2026-09-06T00:02:49Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0048-20260906T000241Z-e6e131.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-05T23:50:49Z",
+      "updated_at": "2026-09-06T00:02:49Z",
+      "last_result": "completed"
+    },
+    "UA-0049": {
+      "id": "UA-0049",
+      "title": "Add typed evidence provenance to handovers",
+      "objective": "Make UseAgent evidence distinguish verified local, live, simulation and blocked claims with controlled provenance while preserving backward readability and the existing review-gated state machine.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "depends_on": [
+        "UA-0048"
+      ],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "New task evidence and worker-report evidence carry a controlled provenance value and recorded source/time metadata.",
+        "Unknown or malformed provenance is rejected safely, while existing legacy evidence remains readable and review gating still works.",
+        "Focused regressions cover CLI evidence, worker reports, malformed provenance and backward-compatible review/done transitions.",
+        "Operations and registry/supervisor contracts explain provenance semantics and the authority distinction between verified, live, simulation and blocked evidence."
+      ],
+      "verification": [
+        "python -m unittest tests.test_useagent -v",
+        "python tools/useagent.py validate",
+        "git diff --check"
+      ],
+      "files": [
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "worker-report",
+          "value": "work/reports/inbox/UA-0049-20260906T004433Z-d727eb.md",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:44:33Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.test_useagent -v: 54 passed",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:44:33Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 63 passed",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:44:33Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:44:33Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py: pass",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:44:33Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:44:33Z"
+        },
+        {
+          "kind": "review",
+          "value": "Review pass: provenance values are controlled; CLI-created evidence cannot claim legacy; external malformed provenance is ignored before state transition; legacy report ingestion stays readable; source is single-line and recorded_at is preserved; all 63 unit tests and validator pass. State-machine claim/report/review rules remain unchanged.",
+          "provenance": "local",
+          "source": "cli",
+          "recorded_at": "2026-09-06T00:44:39Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0049-20260906T004433Z-d727eb.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-06T00:35:45Z",
+      "updated_at": "2026-09-06T00:44:46Z",
+      "last_result": "completed"
+    },
+    "UA-0050": {
+      "id": "UA-0050",
+      "title": "Make takeover lineage first-class",
+      "objective": "Record CLI-managed supersedes/superseded_by links and a takeover reason for bounded recovery tasks without reopening terminal work or weakening scope and review gates.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "docs/operations.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/modules/useagent-control-plane.md"
+      ],
+      "depends_on": [
+        "UA-0049"
+      ],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "A new task can explicitly supersede a blocked or cancelled predecessor and the registry plus Markdown items record both directions and a non-empty reason.",
+        "Missing predecessors, active/done predecessors, missing reasons and malformed lineage are rejected atomically without reopening or silently mutating the predecessor.",
+        "Focused regressions cover successful takeover linkage, terminal-state safety, scope preservation and validator behavior while existing legacy tasks remain valid.",
+        "Operations and knowledge contracts explain takeover lineage, preserved failure history and the rule that terminal tasks are never reopened."
+      ],
+      "verification": [
+        "python -m unittest tests.test_useagent -v",
+        "python tools/useagent.py validate",
+        "git diff --check"
+      ],
+      "files": [
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "worker-report",
+          "value": "work/reports/inbox/UA-0050-20260906T005742Z-f8cadf.md",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:57:42Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.test_useagent -v: 57 passed",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:57:42Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 66 passed",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:57:42Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:57:42Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py: pass",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:57:42Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:57:42Z"
+        },
+        {
+          "kind": "review",
+          "value": "Scoped review pass: task new validates blocked/cancelled predecessors and non-empty single-line reasons before mutation; registry and Markdown record reciprocal links; superseded predecessors cannot be claimed or moved to planned; validator enforces reciprocal lineage while legacy items remain valid. Focused/full tests, validator, compile and diff hygiene all pass.",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T00:57:51Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0050-20260906T005742Z-f8cadf.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-06T00:45:57Z",
+      "updated_at": "2026-09-06T00:57:52Z",
       "last_result": "completed"
     }
   }

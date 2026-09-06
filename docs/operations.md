@@ -117,8 +117,61 @@ report Markdown và evidence đi kèm. Task cũng phải được `worker pull` 
 Reviewer chỉ được chuyển `reported` sang `needs_review`; task còn
 `in_progress` phải chờ worker report trước khi review.
 
+### Evidence provenance / Nguồn gốc evidence
+
+Evidence mới nên gắn nhãn để supervisor không nhầm bản replay hoặc bản ghi cũ
+với quan sát production:
+
+```powershell
+python tools/useagent.py task evidence UA-0001 `
+  --kind smoke `
+  --value "Vercel primary returned 200" `
+  --provenance live `
+  --source "https://example.invalid/health"
+```
+
+```powershell
+python tools/useagent.py task report UA-0001 --agent backend `
+  --result completed `
+  --summary "Local implementation complete" `
+  --next-action "Review and QA" `
+  --provenance local `
+  --source "python -m unittest tests/test_backend.py"
+```
+
+Các giá trị hợp lệ là `local`, `live`, `simulation`, `blocked` và
+`operator-confirmed`. Report cũ không có field này được giữ nguyên và gắn
+`legacy` khi ingest; đây không phải bằng chứng đã được xác minh. Provenance là
+nhãn nguồn gốc, không phải chữ ký/authentication hay quyền tự duyệt. Mọi
+evidence mới cũng lưu `recorded_at` và một `source` một dòng (command, URL hoặc
+path) để reviewer có thể truy lại.
+
 Sau khi `done` hoặc `cancelled`, task là terminal và không được reopen bằng
 `task update`; hãy tạo task mới nếu phát hiện scope hoặc mục tiêu cần làm lại.
+
+### Takeover lineage / Dòng kế thừa khi recovery
+
+Khi một lần thử đã `blocked` hoặc `cancelled`, supervisor có thể tạo một task
+takeover mới mà không xóa failure history:
+
+```powershell
+python tools/useagent.py task new `
+  --title "Retry the blocked integration" `
+  --level L2 `
+  --owner supervisor `
+  --scope src/integration.py `
+  --acceptance "integration test passes" `
+  --supersedes UA-0042 `
+  --takeover-reason "Use a bounded fallback after the preserved blocker"
+```
+
+CLI sẽ ghi `supersedes` trên task mới, `superseded_by` trên predecessor và một
+`takeover_reason` không rỗng trong cả registry lẫn Markdown item. Predecessor
+vẫn giữ nguyên trạng thái và report/evidence cũ; nó không được claim hoặc đổi
+lại sang `planned` sau khi đã bị takeover. Chỉ `blocked` hoặc `cancelled` mới
+có thể làm predecessor; task đang active hoặc đã `done` bị từ chối trước khi
+registry thay đổi. Không dùng takeover để che giấu quota failure, review gap
+hoặc biến một task terminal thành task đang chạy.
 
 Role `reviewer` và `release_gate` chỉ claim review/release evidence; họ không
 được claim hoặc report implementation task. Các role hợp lệ được validator
@@ -174,6 +227,23 @@ Khai báo `supervisor.qa_commands` dạng mảng command string trong `useagent.
 ```
 
 Output dài được lưu thành evidence; cycle sẽ chỉ ra task report, task blocked, worker đang active và next action.
+
+### Report freshness / Tính mới của report
+
+`work/registry.json` và task evidence là nguồn sự thật. `work/SUPERVISOR_REPORT.md`
+chỉ là convenience view; mỗi report được sinh bởi CLI đều chứa revision SHA-256
+của registry snapshot đã dùng. Kiểm tra report hiện tại mà không ghi lại file:
+
+```powershell
+python tools/useagent.py supervisor report --check
+```
+
+Lệnh trả `freshness=fresh` và exit code `0` chỉ khi marker khớp registry hiện tại.
+`stale`, `unknown` (marker thiếu/hỏng) hoặc `missing` đều trả exit code `1`; khi đó
+không được dùng report như trạng thái hiện tại, hãy đọc registry/task evidence hoặc
+chạy lại `python tools/useagent.py supervisor report`.
+
+`context` cũng gắn nhãn freshness và cảnh báo khi report không còn hiện tại.
 
 ## Handover
 

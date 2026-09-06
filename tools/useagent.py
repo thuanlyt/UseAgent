@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import os
 import re
@@ -61,6 +62,7 @@ VALID_AGENT_STATUSES = {"available", "busy", "paused", "offline"}
 VALID_AGENT_ROLES = {"supervisor", "explorer", "planner", "worker", "reviewer", "release_gate"}
 CLAIM_ROLES = {"supervisor", "explorer", "planner", "worker"}
 REVIEW_ROLES = {"supervisor", "reviewer", "release_gate"}
+VALID_EVIDENCE_PROVENANCES = {"local", "live", "simulation", "blocked", "operator-confirmed", "legacy"}
 DEFAULT_RUNNER_TIMEOUT_SECONDS = 3600
 MAX_RUNNER_TIMEOUT_SECONDS = 86400
 MAX_RUNNER_WAIT_SECONDS = 86400
@@ -265,6 +267,13 @@ def load_registry() -> dict[str, Any]:
 def save_registry(data: dict[str, Any]) -> None:
     data["updated_at"] = now_iso()
     atomic_write(REGISTRY, json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+
+
+def registry_revision(data: dict[str, Any]) -> str:
+    """Return a deterministic revision for the registry snapshot in memory."""
+
+    payload = json.dumps(data, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def item_path(task_id: str) -> Path:
@@ -491,6 +500,9 @@ def sync_item_frontmatter(item: dict[str, Any]) -> None:
         "scope": json.dumps(item.get("scope", []), ensure_ascii=False),
         "depends_on": json.dumps(item.get("depends_on", []), ensure_ascii=False),
     }
+    for key in ("supersedes", "superseded_by", "takeover_reason"):
+        if key in item:
+            values[key] = json.dumps(item.get(key), ensure_ascii=False)
     lines = []
     seen: set[str] = set()
     for line in match.group(1).splitlines():
@@ -527,6 +539,11 @@ def render_item(item: dict[str, Any]) -> str:
         f"assigned_to: {item.get('assigned_to') or 'null'}",
         f"scope: {json.dumps(item.get('scope', []), ensure_ascii=False)}",
         f"depends_on: {json.dumps(item.get('depends_on', []), ensure_ascii=False)}",
+    ]
+    for key in ("supersedes", "superseded_by", "takeover_reason"):
+        if key in item:
+            lines.append(f"{key}: {json.dumps(item.get(key), ensure_ascii=False)}")
+    lines.extend([
         "---",
         "",
         f"# {item['title']}",
@@ -537,7 +554,7 @@ def render_item(item: dict[str, Any]) -> str:
         "",
         "## Acceptance criteria",
         "",
-    ]
+    ])
     lines.extend(f"- [ ] {criterion}" for criterion in item.get("acceptance", []))
     lines.extend(["", "## Context to read", "", "- `knowledge/INDEX.md`", "", "## Plan", "", "## Files and evidence", "", "## Blockers", "", "## Handover", "", "## Event log", f"- {item['created_at']} - created by {item['owner']}", ""])
     return "\n".join(lines)
@@ -610,7 +627,27 @@ def cmd_task_new(args: argparse.Namespace) -> int:
         for dependency in args.depends_on or []:
             if dependency not in data["items"]:
                 raise UseAgentError(f"unknown dependency: {dependency}")
+        supersedes = getattr(args, "supersedes", None)
+        takeover_reason = getattr(args, "takeover_reason", None)
+        if takeover_reason is not None and not supersedes:
+            raise UseAgentError("--takeover-reason requires --supersedes")
+        predecessor = None
+        if supersedes:
+            predecessor = data["items"].get(supersedes)
+            if not isinstance(predecessor, dict):
+                raise UseAgentError(f"unknown superseded task: {supersedes}")
+            if predecessor.get("status") not in {"blocked", "cancelled"}:
+                raise UseAgentError(
+                    f"{supersedes} is {predecessor.get('status')}; only blocked or cancelled tasks can be superseded"
+                )
+            if predecessor.get("superseded_by"):
+                raise UseAgentError(f"{supersedes} is already superseded by {predecessor['superseded_by']}")
+            if not isinstance(takeover_reason, str) or not takeover_reason.strip():
+                raise UseAgentError("--takeover-reason must be non-empty")
+            if "\n" in takeover_reason or "\r" in takeover_reason:
+                raise UseAgentError("--takeover-reason must be a single line")
         task_id = next_id(data["items"])
+        created_at = now_iso()
         item = {
             "id": task_id,
             "title": args.title,
@@ -629,11 +666,20 @@ def cmd_task_new(args: argparse.Namespace) -> int:
             "evidence": [],
             "reports": [],
             "attempts": 0,
-            "created_at": now_iso(),
-            "updated_at": now_iso(),
+            "created_at": created_at,
+            "updated_at": created_at,
+            "supersedes": supersedes,
+            "superseded_by": None,
+            "takeover_reason": takeover_reason,
         }
+        if predecessor is not None:
+            predecessor["superseded_by"] = task_id
+            predecessor["updated_at"] = created_at
         data["items"][task_id] = item
         save_registry(data)
+        if predecessor is not None:
+            sync_item_frontmatter(predecessor)
+            append_event(supersedes, f"superseded by {task_id}: {takeover_reason.strip()}")
         atomic_write(item_path(task_id), render_item(item))
     print(task_id)
     return 0
@@ -645,6 +691,8 @@ def cmd_task_claim(args: argparse.Namespace) -> int:
         data = load_registry()
         agent = claim_agent(config, args.agent)
         item = get_item(data, args.task_id)
+        if item.get("superseded_by"):
+            raise UseAgentError(f"{args.task_id} was superseded by {item['superseded_by']}")
         if item["status"] not in {"planned", "assigned", "blocked"}:
             raise UseAgentError(f"{args.task_id} is {item['status']}, not claimable")
         if item.get("assigned_to") and item["assigned_to"] != args.agent:
@@ -677,6 +725,8 @@ def cmd_task_update(args: argparse.Namespace) -> int:
         current = item["status"]
         if current in TERMINAL_STATUSES:
             raise UseAgentError(f"{current} tasks are terminal; lifecycle updates are not allowed")
+        if item.get("superseded_by"):
+            raise UseAgentError(f"{args.task_id} was superseded by {item['superseded_by']}")
         review_action = args.status in {"needs_review", "done"}
         administrative_action = args.status in {"planned", "blocked", "cancelled"}
         if review_action or administrative_action:
@@ -731,21 +781,62 @@ def cmd_task_update(args: argparse.Namespace) -> int:
     return 0
 
 
-def parse_evidence(value: str, kind: str | None = None) -> dict[str, str]:
+def normalize_evidence_provenance(
+    value: Any,
+    default: str = "legacy",
+    *,
+    allow_legacy: bool = True,
+) -> str:
+    if value is None:
+        value = default
+    if not isinstance(value, str) or not value.strip():
+        raise UseAgentError("evidence provenance cannot be empty")
+    provenance = value.strip().lower()
+    if provenance not in VALID_EVIDENCE_PROVENANCES or (provenance == "legacy" and not allow_legacy):
+        allowed = ", ".join(sorted(VALID_EVIDENCE_PROVENANCES - {"legacy"}))
+        raise UseAgentError(f"invalid evidence provenance {value!r}; choose one of: {allowed}")
+    return provenance
+
+
+def normalize_evidence_source(value: Any, default: str) -> str:
+    if value is None:
+        value = default
+    if not isinstance(value, str) or not value.strip():
+        raise UseAgentError("evidence source cannot be empty")
+    source = value.strip()
+    if "\r" in source or "\n" in source:
+        raise UseAgentError("evidence source must be a single line")
+    return source
+
+
+def parse_evidence(
+    value: str,
+    kind: str | None = None,
+    *,
+    provenance: str | None = None,
+    source: str | None = None,
+) -> dict[str, str]:
     if not isinstance(value, str):
         raise UseAgentError("evidence value must be a string")
+    entry: dict[str, str]
     if kind:
         if not isinstance(kind, str) or not kind.strip() or not value.strip():
             raise UseAgentError("evidence kind and value cannot be empty")
-        return {"kind": kind.strip(), "value": value.strip()}
-    if "=" not in value:
-        raise UseAgentError("evidence must use --kind <kind> --value <value>")
-    parsed_kind, parsed_value = value.split("=", 1)
-    parsed_kind = parsed_kind.strip()
-    parsed_value = parsed_value.strip()
-    if not parsed_kind or not parsed_value:
-        raise UseAgentError("evidence kind and value cannot be empty")
-    return {"kind": parsed_kind, "value": parsed_value}
+        entry = {"kind": kind.strip(), "value": value.strip()}
+    else:
+        if "=" not in value:
+            raise UseAgentError("evidence must use --kind <kind> --value <value>")
+        parsed_kind, parsed_value = value.split("=", 1)
+        parsed_kind = parsed_kind.strip()
+        parsed_value = parsed_value.strip()
+        if not parsed_kind or not parsed_value:
+            raise UseAgentError("evidence kind and value cannot be empty")
+        entry = {"kind": parsed_kind, "value": parsed_value}
+    if provenance is not None:
+        entry["provenance"] = normalize_evidence_provenance(provenance)
+    if source is not None:
+        entry["source"] = normalize_evidence_source(source, "cli")
+    return entry
 
 
 def has_review_evidence(item: dict[str, Any]) -> bool:
@@ -768,7 +859,12 @@ def cmd_task_evidence(args: argparse.Namespace) -> int:
             review_agent(config or {}, args.agent)
             if item.get("status") not in {"reported", "needs_review"}:
                 raise UseAgentError("review evidence requires a reported or needs_review task")
-        evidence = parse_evidence(args.value, args.kind)
+        evidence = parse_evidence(
+            args.value,
+            args.kind,
+            provenance=normalize_evidence_provenance(args.provenance, "local", allow_legacy=False),
+            source=normalize_evidence_source(args.source, "cli"),
+        )
         evidence["recorded_at"] = now_iso()
         item.setdefault("evidence", []).append(evidence)
         item["updated_at"] = now_iso()
@@ -811,6 +907,13 @@ def cmd_task_report(args: argparse.Namespace) -> int:
         paths = agent_paths(config, agent)
         report_id = f"{args.task_id}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}"
         report_path = path_for(config, "reports_inbox") / f"{report_id}.md"
+        default_provenance = "blocked" if args.result == "blocked" else "local"
+        provenance = normalize_evidence_provenance(
+            getattr(args, "provenance", None),
+            default_provenance,
+            allow_legacy=False,
+        )
+        source = normalize_evidence_source(getattr(args, "source", None), rel(report_path))
         files = [validate_relative_scope(path, "reported file") for path in args.files or []]
         out_of_scope = [
             path
@@ -829,6 +932,8 @@ def cmd_task_report(args: argparse.Namespace) -> int:
             f"agent: {args.agent}",
             f"result: {args.result}",
             f"created_at: {now_iso()}",
+            f"provenance: {provenance}",
+            f"source: {source}",
             f"files: {json.dumps(files, ensure_ascii=False)}",
             f"checks: {json.dumps(checks, ensure_ascii=False)}",
             "---",
@@ -858,8 +963,25 @@ def cmd_task_report(args: argparse.Namespace) -> int:
 
         item.setdefault("reports", []).append(rel(report_path))
         item["files"] = sorted(set(item.get("files", []) + files))
+        item.setdefault("evidence", []).append(
+            {
+                "kind": "worker-report",
+                "value": rel(report_path),
+                "provenance": provenance,
+                "source": source,
+                "recorded_at": now_iso(),
+            }
+        )
         for check in checks:
-            item.setdefault("evidence", []).append({"kind": "check", "value": check, "recorded_at": now_iso()})
+            item.setdefault("evidence", []).append(
+                {
+                    "kind": "check",
+                    "value": check,
+                    "provenance": provenance,
+                    "source": source,
+                    "recorded_at": now_iso(),
+                }
+            )
         item["status"] = "blocked" if args.result == "blocked" else "reported"
         item["last_result"] = args.result
         item["updated_at"] = now_iso()
@@ -1193,11 +1315,23 @@ def write_runner_evidence(
     return evidence_path
 
 
-def record_task_evidence(task_id: str, kind: str, value: str) -> None:
+def record_task_evidence(
+    task_id: str,
+    kind: str,
+    value: str,
+    *,
+    provenance: str = "local",
+    source: str = "runner",
+) -> None:
     with state_lock():
         data = load_registry()
         item = get_item(data, task_id)
-        evidence = parse_evidence(value, kind)
+        evidence = parse_evidence(
+            value,
+            kind,
+            provenance=normalize_evidence_provenance(provenance, "local", allow_legacy=False),
+            source=normalize_evidence_source(source, "runner"),
+        )
         evidence["recorded_at"] = now_iso()
         item.setdefault("evidence", []).append(evidence)
         item["updated_at"] = now_iso()
@@ -1271,7 +1405,13 @@ def run_configured_runner(
         stdout,
         stderr,
     )
-    record_task_evidence(item["id"], "runner", f"{rel(evidence_path)} (returncode={returncode})")
+    record_task_evidence(
+        item["id"],
+        "runner",
+        f"{rel(evidence_path)} (returncode={returncode})",
+        provenance="local",
+        source=rel(evidence_path),
+    )
     status, last_result = runner_task_status(item["id"])
     if status == "in_progress":
         if returncode == 0:
@@ -1408,6 +1548,11 @@ def ingest_reports_locked(config: dict[str, Any], data: dict[str, Any], state: d
             continue
         if item.get("assigned_to") != agent_id or item.get("status") != "in_progress":
             continue
+        try:
+            report_provenance = normalize_evidence_provenance(frontmatter.get("provenance"), "legacy")
+            report_source = normalize_evidence_source(frontmatter.get("source"), report_rel)
+        except UseAgentError:
+            continue
         reports = item.get("reports")
         files_on_item = item.get("files")
         evidence = item.get("evidence")
@@ -1422,6 +1567,15 @@ def ingest_reports_locked(config: dict[str, Any], data: dict[str, Any], state: d
             continue
         if report_rel not in reports:
             reports.append(report_rel)
+        item.setdefault("evidence", []).append(
+            {
+                "kind": "worker-report",
+                "value": report_rel,
+                "provenance": report_provenance,
+                "source": report_source,
+                "recorded_at": now_iso(),
+            }
+        )
         files = parse_frontmatter_json(frontmatter, "files", [])
         safe_files: list[str] = []
         unsafe_files: list[str] = []
@@ -1564,17 +1718,45 @@ def choose_next_action(data: dict[str, Any], assignments: list[dict[str, str]], 
     return "Create the next scoped work item from the project goal."
 
 
+SUPERVISOR_REPORT_MARKER = re.compile(
+    r"^<!-- useagent-report: registry_sha256=([0-9a-f]{64}) -->$", re.MULTILINE
+)
+
+
+def supervisor_report_freshness(config: dict[str, Any], data: dict[str, Any]) -> dict[str, str]:
+    """Check whether the convenience report represents the current registry."""
+
+    path = path_for(config, "supervisor_report")
+    result = {"path": rel(path)}
+    if not path.is_file():
+        return {**result, "status": "missing", "reason": "report file does not exist"}
+    expected = registry_revision(data)
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        return {**result, "status": "unknown", "reason": f"report cannot be read: {exc}"}
+    match = SUPERVISOR_REPORT_MARKER.match(text)
+    if not match:
+        return {**result, "status": "unknown", "reason": "report marker is missing or malformed"}
+    if match.group(1) != expected:
+        return {**result, "status": "stale", "reason": "registry revision differs from report marker"}
+    return {**result, "status": "fresh", "revision": expected}
+
+
 def build_supervisor_report(config: dict[str, Any], data: dict[str, Any], state: dict[str, Any], cycle_id: str, ingested: list[str], assignments: list[dict[str, str]], qa_result: dict[str, Any]) -> tuple[str, str]:
     counts: dict[str, int] = {}
     for item in data["items"].values():
         counts[item.get("status", "unknown")] = counts.get(item.get("status", "unknown"), 0) + 1
     next_action = choose_next_action(data, assignments, config, qa_result)
     gates, production_ready = production_snapshot(config, data, state)
+    revision = registry_revision(data)
     lines = [
+        f"<!-- useagent-report: registry_sha256={revision} -->",
         "# UseAgent supervisor report",
         "",
         f"- **Cycle:** `{cycle_id}`",
         f"- **Generated:** {now_iso()}",
+        f"- **Registry revision:** sha256:{revision}",
         f"- **Next action:** {next_action}",
         f"- **Production snapshot:** `{'ready' if production_ready else 'not_ready'}`",
         "",
@@ -1643,6 +1825,14 @@ def cmd_checkpoint_create(args: argparse.Namespace) -> int:
 
 def cmd_supervisor_report(args: argparse.Namespace) -> int:
     config = load_config()
+    if args.check:
+        data = load_registry()
+        freshness = supervisor_report_freshness(config, data)
+        print(freshness["path"])
+        print(f"freshness={freshness['status']}")
+        if freshness.get("reason"):
+            print(f"reason={freshness['reason']}")
+        return 0 if freshness["status"] == "fresh" else 1
     with state_lock():
         data = load_registry()
         state = load_supervisor_state(config)
@@ -1751,7 +1941,42 @@ def validate_registry(data: dict[str, Any], errors: list[str]) -> None:
         for field in ("files", "evidence", "reports"):
             if not isinstance(item.get(field), list):
                 errors.append(f"{task_id} {field} must be an array")
+        lineage_fields = ("supersedes", "superseded_by", "takeover_reason")
+        for field in lineage_fields:
+            if field not in item or item.get(field) is None:
+                continue
+            value = item.get(field)
+            if not isinstance(value, str) or not value.strip():
+                errors.append(f"{task_id} {field} must be a non-empty string or null")
+            elif "\n" in value or "\r" in value:
+                errors.append(f"{task_id} {field} must be a single line")
+        if item.get("takeover_reason") is not None and not item.get("supersedes"):
+            errors.append(f"{task_id} takeover_reason requires supersedes")
+        if item.get("supersedes") and item.get("takeover_reason") is None:
+            errors.append(f"{task_id} supersedes requires takeover_reason")
         evidence = item.get("evidence")
+        if isinstance(evidence, list):
+            for index, entry in enumerate(evidence):
+                if not isinstance(entry, dict):
+                    errors.append(f"{task_id} evidence[{index}] must be an object")
+                    continue
+                if "provenance" in entry:
+                    if entry.get("provenance") is None:
+                        errors.append(f"{task_id} evidence[{index}]: evidence provenance cannot be empty")
+                    else:
+                        try:
+                            normalize_evidence_provenance(entry.get("provenance"))
+                        except UseAgentError as exc:
+                            errors.append(f"{task_id} evidence[{index}]: {exc}")
+                    if "source" not in entry:
+                        errors.append(f"{task_id} evidence[{index}] with provenance needs source")
+                elif "source" in entry:
+                    errors.append(f"{task_id} evidence[{index}] with source needs provenance")
+                if "source" in entry:
+                    try:
+                        normalize_evidence_source(entry.get("source"), "")
+                    except UseAgentError as exc:
+                        errors.append(f"{task_id} evidence[{index}]: {exc}")
         if item.get("status") == "done" and not isinstance(evidence, list):
             errors.append(f"{task_id} evidence must be an array")
         elif item.get("status") == "done" and not evidence:
@@ -1764,6 +1989,32 @@ def validate_registry(data: dict[str, Any], errors: list[str]) -> None:
             errors.append(f"{task_id} is reported without a report path")
         if valid_task_id and not item_path(task_id).exists():
             errors.append(f"missing work item file: {rel(item_path(task_id))}")
+
+    for task_id, item in items.items():
+        if not isinstance(item, dict):
+            continue
+        supersedes = item.get("supersedes")
+        if isinstance(supersedes, str) and supersedes.strip():
+            if supersedes == task_id:
+                errors.append(f"{task_id} cannot supersede itself")
+            elif supersedes not in items:
+                errors.append(f"{task_id} references missing superseded task {supersedes}")
+            elif isinstance(items.get(supersedes), dict):
+                predecessor = items[supersedes]
+                if predecessor.get("status") not in {"blocked", "cancelled"}:
+                    errors.append(f"{task_id} supersedes non-recoverable task {supersedes}")
+                if predecessor.get("superseded_by") != task_id:
+                    errors.append(f"{task_id} supersedes {supersedes} without reciprocal superseded_by")
+        superseded_by = item.get("superseded_by")
+        if isinstance(superseded_by, str) and superseded_by.strip():
+            if superseded_by == task_id:
+                errors.append(f"{task_id} cannot supersede itself via superseded_by")
+            elif superseded_by not in items:
+                errors.append(f"{task_id} references missing successor {superseded_by}")
+            elif isinstance(items.get(superseded_by), dict):
+                successor = items[superseded_by]
+                if successor.get("supersedes") != task_id:
+                    errors.append(f"{task_id} superseded_by {superseded_by} without reciprocal supersedes")
 
     visiting: set[str] = set()
     visited: set[str] = set()
@@ -1960,9 +2211,17 @@ def cmd_context(args: argparse.Namespace) -> int:
     config = load_config()
     data = load_registry()
     sections = []
-    for path in (ROOT / "knowledge" / "INDEX.md", ROOT / "knowledge" / "project-brief.md", ROOT / "knowledge" / "project-map.md", path_for(config, "supervisor_report")):
+    report_path = path_for(config, "supervisor_report")
+    for path in (ROOT / "knowledge" / "INDEX.md", ROOT / "knowledge" / "project-brief.md", ROOT / "knowledge" / "project-map.md"):
         if path.exists():
             sections.append(f"## {rel(path)}\n{path.read_text(encoding='utf-8')}")
+    if report_path.exists():
+        freshness = supervisor_report_freshness(config, data)
+        report_context = [f"## {rel(report_path)}", "", f"- **Freshness:** {freshness['status']}"]
+        if freshness["status"] != "fresh":
+            report_context.append("- **Warning:** This convenience view is not current; use the registry and task evidence as authority.")
+        report_context.extend(["", report_path.read_text(encoding="utf-8")])
+        sections.append("\n".join(report_context))
     active = [item for item in data["items"].values() if item.get("status") not in {"done", "cancelled"}]
     summary = [f"- {item['id']} [{item['status']}] {item['level']}: {item['title']} | scope={','.join(item.get('scope', []))}" for item in sorted(active, key=lambda value: value["id"])]
     sections.append("## active work\n" + ("\n".join(summary) if summary else "(none)"))
@@ -2014,6 +2273,8 @@ def build_parser() -> argparse.ArgumentParser:
     task_new.add_argument("--preferred-agent", action="append")
     task_new.add_argument("--capability", action="append")
     task_new.add_argument("--depends-on", nargs="*", default=[])
+    task_new.add_argument("--supersedes", help="blocked or cancelled predecessor task id")
+    task_new.add_argument("--takeover-reason", help="single-line reason for taking over a predecessor")
     task_new.set_defaults(func=cmd_task_new)
 
     claim = task_sub.add_parser("claim", help="claim a task directly")
@@ -2034,6 +2295,8 @@ def build_parser() -> argparse.ArgumentParser:
     evidence.add_argument("task_id")
     evidence.add_argument("--kind", required=True)
     evidence.add_argument("--value", required=True)
+    evidence.add_argument("--provenance", help="evidence provenance label")
+    evidence.add_argument("--source", help="single-line command, URL or repository path anchor")
     evidence.add_argument("--agent", help="reviewer identity required for review evidence")
     evidence.set_defaults(func=cmd_task_evidence)
 
@@ -2045,6 +2308,8 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--next-action", required=True)
     report.add_argument("--file", dest="files", action="append")
     report.add_argument("--check", dest="checks", action="append")
+    report.add_argument("--provenance", help="worker report provenance label")
+    report.add_argument("--source", help="single-line command, URL or repository path anchor")
     report.add_argument("--blocker")
     report.set_defaults(func=cmd_task_report)
 
@@ -2109,6 +2374,11 @@ def build_parser() -> argparse.ArgumentParser:
     ingest = supervisor_sub.add_parser("ingest", help="ingest incoming worker reports")
     ingest.set_defaults(func=cmd_supervisor_ingest)
     supervisor_report = supervisor_sub.add_parser("report", help="regenerate user-facing report")
+    supervisor_report.add_argument(
+        "--check",
+        action="store_true",
+        help="check whether the existing convenience report matches the current registry",
+    )
     supervisor_report.set_defaults(func=cmd_supervisor_report)
     qa = supervisor_sub.add_parser("qa", help="run configured QA commands")
     qa.set_defaults(func=cmd_supervisor_qa)

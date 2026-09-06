@@ -1,14 +1,16 @@
+<!-- useagent-report: registry_sha256=68c38d44f360657451f96f0f160c15fee0a3661ac8494f456f2f747e6f153731 -->
 # UseAgent supervisor report
 
-- **Cycle:** `cycle-20260904T180551Z-7c3648`
-- **Generated:** 2026-09-04T18:06:07Z
+- **Cycle:** `manual-20260906T005757Z`
+- **Generated:** 2026-09-06T00:57:57Z
+- **Registry revision:** sha256:68c38d44f360657451f96f0f160c15fee0a3661ac8494f456f2f747e6f153731
 - **Next action:** Run the production release gate and obtain explicit deploy approval.
 - **Production snapshot:** `ready`
 
 ## Status counts
 
-- `cancelled`: 2
-- `done`: 43
+- `cancelled`: 3
+- `done`: 47
 
 ## Reports ingested this cycle
 
@@ -67,6 +69,10 @@
 - `UA-0042` — Fix social SVG export compatibility — evidence: 6
 - `UA-0044` — Draft Tech article about UseAgent — evidence: 5
 - `UA-0045` — Create animated UseAgent workflow demo — evidence: 5
+- `UA-0046` — Extract OSBlog dogfood case study and evidence manifest — evidence: 6
+- `UA-0048` — Make supervisor report freshness explicit — evidence: 6
+- `UA-0049` — Add typed evidence provenance to handovers — evidence: 7
+- `UA-0050` — Make takeover lineage first-class — evidence: 7
 - none
 
 ## Blocked work

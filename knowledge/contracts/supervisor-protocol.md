@@ -27,6 +27,12 @@ sandbox a vendor process or invent provider-specific flags.
 
 Report phải có task id, agent, result (`completed|blocked|failed`), summary, files, checks/evidence, blockers và next action. Worker chỉ report sau khi task đã được claim/pull sang `in_progress`; `completed` chỉ là worker report; supervisor/reviewer mới quyết định `done`. `task report` tự append vào `work/agents/<agent>/REPORT.md`, `work/reports/REPORTS.md` và `work/completed/COMPLETED.md` khi phù hợp. Không dùng `task update --status reported`; CLI từ chối transition này để mọi trạng thái `reported` đều có report path xác thực.
 
+`task report` accepts an optional controlled `--provenance` and single-line
+`--source`; the generated report frontmatter and registry evidence carry both
+fields plus `recorded_at`. Reports authored before this contract may omit the
+fields and are ingested as `legacy`, so they remain readable without being
+upgraded to a stronger claim.
+
 Supervisor chỉ ingest report có result hợp lệ, agent đã đăng ký, agent trùng
 `assigned_to` của task đang active và các file khai báo nằm trong task scope.
 File không an toàn hoặc ngoài scope bị bỏ qua và được ghi warning evidence để
@@ -41,6 +47,13 @@ Task phải ở trạng thái `reported` trước khi reviewer chuyển sang `ne
 không được bỏ qua worker report bằng transition trực tiếp từ `in_progress`.
 `done` và `cancelled` là trạng thái kết thúc; không được reopen bằng
 `task update`.
+Khi một attempt `blocked` hoặc `cancelled` cần recovery, supervisor tạo task
+mới bằng `task new --supersedes <id> --takeover-reason "..."`. CLI giữ nguyên
+failure history và ghi liên kết hai chiều (`supersedes`/`superseded_by`) cùng
+reason trong registry và Markdown items. Predecessor active hoặc `done` không
+thể bị takeover; predecessor đã có successor không được claim hoặc đưa lại về
+`planned`. Thiếu predecessor, reason, reciprocal link hoặc single-line shape
+là lỗi validation, không được làm đổi state.
 Roster chỉ chấp nhận các role `supervisor`, `explorer`, `planner`, `worker`,
 `reviewer` và `release_gate`; reviewer/release gate không được claim hoặc
 report task implementation.
@@ -53,6 +66,13 @@ Chỉ agent đã đăng ký có role `supervisor`,
 `reviewer` hoặc `release_gate` mới được ghi evidence `kind=review` và chuyển
 task `reported` qua `needs_review` đến `done`. Reviewer có thể khác với worker
 được giao task; worker chỉ được report kết quả và thêm evidence triển khai/test.
+
+`work/registry.json` và task evidence luôn có authority cao hơn
+`work/SUPERVISOR_REPORT.md`. Report là convenience view có marker
+`<!-- useagent-report: registry_sha256=<64-hex> -->` được tính từ registry snapshot
+đã dùng để sinh report. `supervisor report --check` phải trả `fresh` (exit code 0)
+mới được xem report là đồng bộ; `stale`, `unknown` hoặc `missing` không được coi là
+trạng thái hiện tại. `context` hiển thị nhãn và cảnh báo freshness tương ứng.
 
 ## QA contract
 

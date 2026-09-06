@@ -6,6 +6,26 @@
 
 `id`, `title`, `level`, `status`, `owner`, `assigned_to`, `scope`, `depends_on`, `acceptance`, `files`, `evidence`, `reports`, `attempts`, `created_at`, `updated_at`.
 
+New task items may also carry `supersedes`, `superseded_by` and
+`takeover_reason`. These optional fields are omitted by legacy items, but a
+CLI-created item always initializes them so a takeover is explicit.
+
+## Evidence provenance
+
+New evidence entries written by the CLI include `kind`, `value`, a controlled
+`provenance`, a single-line `source` anchor and `recorded_at`. The supported
+provenance values are `local` (verified against the selected checkout or a
+local command), `live` (observed on a named deployed endpoint),
+`simulation` (replay/mock/generated demonstration), `blocked` (an attempted
+check could not be completed) and `operator-confirmed` (a human-confirmed
+external fact). `legacy` is reserved for older Markdown reports that predate
+the field and is never a claim that the evidence is verified.
+
+Provenance is a typed label, not authentication or review approval. A `live`
+label still needs a repeatable source and review evidence. Existing evidence
+without the optional fields remains readable and valid for backward
+compatibility; malformed new fields are validation errors.
+
 ## Invariants
 
 - `id` matches `UA-####` and is unique.
@@ -26,6 +46,12 @@
   cannot be reviewed or closed before their report is recorded.
 - `done` and `cancelled` are terminal states; lifecycle updates cannot reopen or
   move them to another status.
+- A takeover may reference only a `blocked` or `cancelled` predecessor. The
+  successor's `supersedes` and predecessor's `superseded_by` must point to each
+  other, and `takeover_reason` must be non-empty and single-line.
+- A task with `superseded_by` is preserved as failure history and cannot be
+  claimed or moved back into the active lifecycle. Takeover creation never
+  reopens or silently mutates the predecessor's status, reports or evidence.
 - Review evidence and `needs_review`/`done` transitions require a registered
   `supervisor`, `reviewer` or `release_gate` identity; the assigned worker may
   not self-approve or self-close the task.

@@ -1,7 +1,7 @@
 # Project map
 
-`freshness: verified` — updated 2026-09-04 after adding the installable CLI,
-conformance demo and visual documentation assets.
+`freshness: verified` — updated 2026-09-06 after adding the OSBlog dogfood
+case study, capture manifest and docs-site case-study route.
 
 ## Topology
 
@@ -18,7 +18,7 @@ conformance demo and visual documentation assets.
 | `tools/useagent.py` | State CLI/validator | Tạo claim/update/checkpoint |
 | `pyproject.toml`, `tools/__init__.py` | Installable `useagent` console package | Cài CLI hoặc kiểm tra release |
 | `templates/` | Mẫu hồ sơ | Tạo artifact mới |
-| `docs/` | Tài liệu onboarding và vận hành | Setup, provider walkthrough, autopilot |
+| `docs/` | Tài liệu onboarding, vận hành và evidence case study | Setup, provider walkthrough, autopilot, dogfood findings and capture provenance |
 | `docs-site/` | Static bilingual documentation website | Build, content and hosting QA |
 | `docs-site/assets/` | Local hero illustration and explanatory SVG diagrams | Visual docs, social preview and image integrity QA |
 | `.github/` | CI, issue forms và pull-request template | Đóng góp hoặc release |
@@ -40,6 +40,8 @@ conformance demo and visual documentation assets.
 - `python -m pip install --no-deps .` / `useagent validate`: smoke test package entry point.
 - `.github/workflows/ci.yml`: lặp lại compile, unit test và protocol validation trên Python 3.11–3.13.
 - `docs/getting-started.md`: hands-on onboarding, provider/runtime matrix and Codex + Claude Code + Antigravity walkthrough.
+- `docs/case-study-osblog.md`: evidence-frozen OSBlog dogfood timeline, findings and UseAgent improvement priorities.
+- `docs/evidence/osblog-dogfood-capture-manifest.md`: curated/local/blocked media classification and privacy checklist.
 - `docs-site/assets/*.svg` / `useagent-control-plane-hero.{webp,png}`: source-owned diagrams and optimized/fallback hero visuals; keep alt text/dimensions in consuming HTML.
 
 ## Code ownership hiện tại

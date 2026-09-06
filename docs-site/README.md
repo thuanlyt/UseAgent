@@ -57,7 +57,8 @@ and responsive layouts at 375px, 768px, 1024px and 1440px. System fonts are
 intentional: they keep the critical path free of third-party font requests.
 
 The content foundation now includes English and Vietnamese journeys, runtime
-examples and operator guidance. Final browser visual QA, hosting and DNS remain
+examples, operator guidance and an evidence-frozen [OSBlog dogfooding case
+study](case-study.html). Final browser visual QA, hosting and DNS remain
 separate, explicitly gated operations.
 
 Read [DEPLOYMENT.md](DEPLOYMENT.md) for the Vercel preview, exact-domain

@@ -293,3 +293,31 @@ Created deterministic source-reproducible UseAgent workflow simulation with loca
 
 - Report: `work/reports/inbox/UA-0045-20260904T180441Z-8c15be.md`
 - Next: Run the review gate, close the task only after review evidence, then run supervisor QA and commit ledger metadata while leaving draft assets ignored.
+
+## 2026-09-05T23:47:57Z - UA-0046 (completed)
+
+Extracted a bilingual, source-anchored OSBlog dogfood case study, a privacy-aware capture manifest, and ADR-0008. Added a searchable static case-study page and sitemap entry. The record preserves quota failures, fallback attribution, takeover/resume evidence, stale-report friction, live Vercel boundaries and blocked Cap capture without resuming OSBlog implementation.
+
+- Report: `work/reports/inbox/UA-0046-20260905T234757Z-3c8698.md`
+- Next: Review the evidence extraction, then create the next bounded UseAgent task for report freshness and typed evidence provenance; keep OSBlog frozen unless an explicitly required capture or production defect reopens it.
+
+## 2026-09-06T00:02:41Z - UA-0048 (completed)
+
+Implemented deterministic registry revision markers for supervisor reports, a non-mutating freshness check, stale-report warnings in bounded context, safe configured-path coverage, and operator/knowledge contract updates. No state-machine or deploy behavior changed.
+
+- Report: `work/reports/inbox/UA-0048-20260906T000241Z-e6e131.md`
+- Next: Create the next bounded UseAgent improvement from dogfood findings; keep OSBlog frozen.
+
+## 2026-09-06T00:44:33Z - UA-0049 (completed)
+
+Implemented typed evidence provenance across CLI evidence, worker reports, runner evidence and external report ingestion. New entries carry controlled provenance, source and recorded_at metadata; legacy reports remain readable as legacy; malformed provenance is rejected or ignored safely; docs and contracts define the trust boundary. No OSBlog source, deploy, secret or lifecycle bypass changed.
+
+- Report: `work/reports/inbox/UA-0049-20260906T004433Z-d727eb.md`
+- Next: Use the typed provenance contract in the next dogfood capture or recovery run, then choose the next bounded lifecycle-lineage improvement; keep OSBlog frozen.
+
+## 2026-09-06T00:57:42Z - UA-0050 (completed)
+
+Implemented CLI-managed takeover lineage with reciprocal supersedes metadata, atomic predecessor validation, preserved failure history and lifecycle guards; updated operations/contracts/module card and added regression coverage.
+
+- Report: `work/reports/inbox/UA-0050-20260906T005742Z-f8cadf.md`
+- Next: Run supervisor review evidence and close UA-0050; keep OSBlog frozen and use the lineage contract in the next dogfood-derived improvement.

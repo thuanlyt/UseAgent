@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import copy
 import io
 import json
 import os
@@ -72,6 +73,281 @@ class UseAgentCliTests(unittest.TestCase):
     def register_reviewer(self, agent_id: str = "reviewer", scope: str = ".") -> None:
         code, _, error = self.invoke("agent", "register", "--id", agent_id, "--role", "reviewer", "--scope", scope)
         self.assertEqual((code, error), (0, ""))
+
+    def test_takeover_lineage_preserves_failure_and_scope(self) -> None:
+        self.register_worker("blocked-worker", "src")
+        predecessor = self.new_task("Preserve the failed task", "src/old.py")
+        code, _, error = self.invoke("task", "claim", predecessor, "--agent", "blocked-worker")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke(
+            "task",
+            "report",
+            predecessor,
+            "--agent",
+            "blocked-worker",
+            "--result",
+            "blocked",
+            "--summary",
+            "The first attempt hit a preserved blocker",
+            "--next-action",
+            "Create a bounded takeover after review",
+            "--file",
+            "src/old.py",
+            "--check",
+            "blocker recorded",
+        )
+        self.assertEqual((code, error), (0, ""))
+
+        code, output, error = self.invoke(
+            "task",
+            "new",
+            "--title",
+            "Take over the failed task",
+            "--level",
+            "L2",
+            "--owner",
+            "supervisor",
+            "--scope",
+            "src/recovery.py",
+            "--scope",
+            "tests/recovery.py",
+            "--acceptance",
+            "recovery behavior passes",
+            "--supersedes",
+            predecessor,
+            "--takeover-reason",
+            "Quota fallback after preserved failure",
+        )
+        self.assertEqual((code, error), (0, ""))
+        successor = output.strip()
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        predecessor_item = registry["items"][predecessor]
+        successor_item = registry["items"][successor]
+        self.assertEqual(predecessor_item["status"], "blocked")
+        self.assertEqual(predecessor_item["superseded_by"], successor)
+        self.assertEqual(successor_item["supersedes"], predecessor)
+        self.assertEqual(successor_item["takeover_reason"], "Quota fallback after preserved failure")
+        self.assertEqual(successor_item["scope"], ["src/recovery.py", "tests/recovery.py"])
+        self.assertIsNone(successor_item["superseded_by"])
+        predecessor_text = (useagent.ROOT / "work" / "items" / f"{predecessor}.md").read_text(encoding="utf-8")
+        successor_text = (useagent.ROOT / "work" / "items" / f"{successor}.md").read_text(encoding="utf-8")
+        self.assertIn(f"superseded_by: \"{successor}\"", predecessor_text)
+        self.assertIn(f"supersedes: \"{predecessor}\"", successor_text)
+        self.assertIn('takeover_reason: "Quota fallback after preserved failure"', successor_text)
+        self.assertIn(f"superseded by {successor}: Quota fallback after preserved failure", predecessor_text)
+
+        code, _, error = self.invoke("task", "claim", predecessor, "--agent", "blocked-worker")
+        self.assertEqual(code, 2)
+        self.assertIn(f"was superseded by {successor}", error)
+        code, _, error = self.invoke("task", "update", predecessor, "--status", "planned", "--agent", "supervisor")
+        self.assertEqual(code, 2)
+        self.assertIn(f"was superseded by {successor}", error)
+        unchanged = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))["items"][predecessor]
+        self.assertEqual(unchanged["status"], "blocked")
+        self.assertEqual(unchanged["superseded_by"], successor)
+
+    def test_takeover_lineage_rejects_unsafe_predecessors_atomically(self) -> None:
+        self.register_worker("lineage-worker", ".")
+        active = self.new_task("Active predecessor", "src/active.py")
+        code, _, error = self.invoke("task", "claim", active, "--agent", "lineage-worker")
+        self.assertEqual((code, error), (0, ""))
+        before = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        code, _, error = self.invoke(
+            "task",
+            "new",
+            "--title",
+            "Must reject active takeover",
+            "--level",
+            "L1",
+            "--owner",
+            "supervisor",
+            "--scope",
+            "src/active-recovery.py",
+            "--acceptance",
+            "active safety passes",
+            "--supersedes",
+            active,
+            "--takeover-reason",
+            "Do not fork active work",
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("only blocked or cancelled", error)
+        after = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(after["items"], before["items"])
+
+        self.register_worker("done-worker", ".")
+        self.register_reviewer("lineage-reviewer")
+        done = self.new_task("Done predecessor", "src/done.py")
+        code, _, error = self.invoke("task", "claim", done, "--agent", "done-worker")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke(
+            "task",
+            "report",
+            done,
+            "--agent",
+            "done-worker",
+            "--result",
+            "completed",
+            "--summary",
+            "Done predecessor implementation",
+            "--next-action",
+            "Review",
+            "--file",
+            "src/done.py",
+            "--check",
+            "unit test: pass",
+        )
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "update", done, "--status", "needs_review", "--agent", "lineage-reviewer")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke(
+            "task",
+            "evidence",
+            done,
+            "--kind",
+            "review",
+            "--agent",
+            "lineage-reviewer",
+            "--value",
+            "Done predecessor reviewed",
+        )
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke("task", "update", done, "--status", "done", "--agent", "lineage-reviewer")
+        self.assertEqual((code, error), (0, ""))
+        before = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        code, _, error = self.invoke(
+            "task",
+            "new",
+            "--title",
+            "Must reject done takeover",
+            "--level",
+            "L1",
+            "--owner",
+            "supervisor",
+            "--scope",
+            "src/done-recovery.py",
+            "--acceptance",
+            "done safety passes",
+            "--supersedes",
+            done,
+            "--takeover-reason",
+            "Do not reopen done work",
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("only blocked or cancelled", error)
+        after = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(after["items"], before["items"])
+
+        before = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        code, _, error = self.invoke(
+            "task",
+            "new",
+            "--title",
+            "Must reject missing predecessor",
+            "--level",
+            "L1",
+            "--owner",
+            "supervisor",
+            "--scope",
+            "src/missing-recovery.py",
+            "--acceptance",
+            "missing safety passes",
+            "--supersedes",
+            "UA-9999",
+            "--takeover-reason",
+            "No unknown predecessor",
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("unknown superseded task", error)
+        after = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(after["items"], before["items"])
+
+        blocked = self.new_task("Missing reason predecessor", "src/missing-reason.py")
+        data = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        data["items"][blocked]["status"] = "blocked"
+        useagent.save_registry(data)
+        before = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        code, _, error = self.invoke(
+            "task",
+            "new",
+            "--title",
+            "Must reject missing reason",
+            "--level",
+            "L1",
+            "--owner",
+            "supervisor",
+            "--scope",
+            "src/missing-reason-recovery.py",
+            "--acceptance",
+            "reason safety passes",
+            "--supersedes",
+            blocked,
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("--takeover-reason must be non-empty", error)
+        after = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(after["items"], before["items"])
+
+    def test_takeover_lineage_validator_and_legacy_compatibility(self) -> None:
+        legacy = self.new_task("Legacy task", "src/legacy.py")
+        data = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        for field in ("supersedes", "superseded_by", "takeover_reason"):
+            data["items"][legacy].pop(field, None)
+        legacy_errors: list[str] = []
+        useagent.validate_registry(data, legacy_errors)
+        self.assertFalse([error for error in legacy_errors if "supersed" in error or "takeover" in error])
+
+        data["items"][legacy]["takeover_reason"] = "orphan reason"
+        malformed_reason_errors: list[str] = []
+        useagent.validate_registry(data, malformed_reason_errors)
+        self.assertIn(f"{legacy} takeover_reason requires supersedes", malformed_reason_errors)
+
+        predecessor = self.new_task("Validator predecessor", "src/predecessor.py")
+        data = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        data["items"][predecessor]["status"] = "blocked"
+        useagent.save_registry(data)
+        code, output, error = self.invoke(
+            "task",
+            "new",
+            "--title",
+            "Validator successor",
+            "--level",
+            "L1",
+            "--owner",
+            "supervisor",
+            "--scope",
+            "src/successor.py",
+            "--acceptance",
+            "lineage validates",
+            "--supersedes",
+            predecessor,
+            "--takeover-reason",
+            "Recovery lineage is explicit",
+        )
+        self.assertEqual((code, error), (0, ""))
+        successor = output.strip()
+        valid = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        valid_errors: list[str] = []
+        useagent.validate_registry(valid, valid_errors)
+        self.assertFalse([error for error in valid_errors if "supersed" in error or "takeover" in error])
+
+        broken = copy.deepcopy(valid)
+        broken["items"][successor]["supersedes"] = "UA-9999"
+        errors: list[str] = []
+        useagent.validate_registry(broken, errors)
+        self.assertIn(f"{successor} references missing superseded task UA-9999", errors)
+
+        broken = copy.deepcopy(valid)
+        broken["items"][predecessor]["superseded_by"] = None
+        errors = []
+        useagent.validate_registry(broken, errors)
+        self.assertIn(f"{successor} supersedes {predecessor} without reciprocal superseded_by", errors)
+
+        broken = copy.deepcopy(valid)
+        broken["items"][successor]["takeover_reason"] = "line one\nline two"
+        errors = []
+        useagent.validate_registry(broken, errors)
+        self.assertIn(f"{successor} takeover_reason must be a single line", errors)
 
     def test_dependency_and_done_requirements(self) -> None:
         self.register_worker("worker-1", ".")
@@ -558,6 +834,9 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual(item["status"], "reported")
         self.assertEqual(item["files"], ["src/owned.py"])
         self.assertTrue(any(entry["kind"] == "warning" for entry in item["evidence"]))
+        legacy_report = next(entry for entry in item["evidence"] if entry["kind"] == "worker-report")
+        self.assertEqual(legacy_report["provenance"], "legacy")
+        self.assertEqual(legacy_report["source"], "work/reports/inbox/valid.md")
 
     def test_supervisor_ingest_ignores_unreadable_reports_without_state_change(self) -> None:
         self.register_worker("worker-1", "src")
@@ -1061,6 +1340,133 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual(registry["items"][task_id]["status"], "reported")
         self.assertEqual(len(registry["items"][task_id]["reports"]), 1)
 
+    def test_evidence_provenance_is_typed_and_worker_reports_preserve_it(self) -> None:
+        evidence_task = self.new_task("Typed evidence", "docs/evidence.md")
+        code, _, error = self.invoke(
+            "task",
+            "evidence",
+            evidence_task,
+            "--kind",
+            "smoke",
+            "--value",
+            "Named production endpoint returned 200",
+            "--provenance",
+            "live",
+            "--source",
+            "https://example.invalid/health",
+        )
+        self.assertEqual((code, error), (0, ""))
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        entry = registry["items"][evidence_task]["evidence"][-1]
+        self.assertEqual(entry["provenance"], "live")
+        self.assertEqual(entry["source"], "https://example.invalid/health")
+        self.assertTrue(entry["recorded_at"])
+
+        evidence_before = list(registry["items"][evidence_task]["evidence"])
+        code, _, error = self.invoke(
+            "task",
+            "evidence",
+            evidence_task,
+            "--kind",
+            "smoke",
+            "--value",
+            "Unknown provenance must fail",
+            "--provenance",
+            "invented",
+            "--source",
+            "test",
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("invalid evidence provenance", error)
+        registry_after = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        self.assertEqual(registry_after["items"][evidence_task]["evidence"], evidence_before)
+        code, _, error = self.invoke(
+            "task",
+            "evidence",
+            evidence_task,
+            "--kind",
+            "smoke",
+            "--value",
+            "Reserved legacy label must fail for new CLI evidence",
+            "--provenance",
+            "legacy",
+            "--source",
+            "test",
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("invalid evidence provenance", error)
+        malformed_registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        malformed_registry["items"][evidence_task]["evidence"].append(
+            {"kind": "bad", "value": "untrusted", "provenance": "invented", "source": "test"}
+        )
+        validation_errors: list[str] = []
+        useagent.validate_registry(malformed_registry, validation_errors)
+        self.assertTrue(any("invalid evidence provenance" in value for value in validation_errors))
+
+        self.register_worker("provenance-worker", "src")
+        report_task = self.new_task("Provenance report", "src/provenance.py")
+        code, _, error = self.invoke("task", "claim", report_task, "--agent", "provenance-worker")
+        self.assertEqual((code, error), (0, ""))
+        code, _, error = self.invoke(
+            "task",
+            "report",
+            report_task,
+            "--agent",
+            "provenance-worker",
+            "--result",
+            "completed",
+            "--summary",
+            "Replay completed without external provider execution",
+            "--next-action",
+            "Review the simulation evidence",
+            "--provenance",
+            "simulation",
+            "--source",
+            "examples/multi-runtime-conformance/run_conformance.py",
+            "--file",
+            "src/provenance.py",
+            "--check",
+            "replay: pass",
+        )
+        self.assertEqual((code, error), (0, ""))
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        entries = registry["items"][report_task]["evidence"]
+        report_entry = next(entry for entry in entries if entry["kind"] == "worker-report")
+        self.assertEqual(report_entry["provenance"], "simulation")
+        self.assertEqual(report_entry["source"], "examples/multi-runtime-conformance/run_conformance.py")
+        check_entry = next(entry for entry in entries if entry["kind"] == "check")
+        self.assertEqual(check_entry["provenance"], "simulation")
+        report_path = useagent.ROOT / registry["items"][report_task]["reports"][0]
+        report_text = report_path.read_text(encoding="utf-8")
+        self.assertIn("provenance: simulation", report_text)
+        self.assertIn("source: examples/multi-runtime-conformance/run_conformance.py", report_text)
+
+    def test_malformed_external_report_provenance_is_ignored_safely(self) -> None:
+        self.register_worker("malformed-provenance", "src")
+        task_id = self.new_task("Reject malformed provenance", "src/malformed.py")
+        code, _, error = self.invoke("task", "claim", task_id, "--agent", "malformed-provenance")
+        self.assertEqual((code, error), (0, ""))
+        report_path = useagent.ROOT / "work" / "reports" / "inbox" / f"{task_id}-malformed-provenance.md"
+        report_path.write_text(
+            "---\n"
+            "type: useagent-worker-report\n"
+            f"task_id: {task_id}\n"
+            "agent: malformed-provenance\n"
+            "result: completed\n"
+            "provenance: invented\n"
+            "source: external-runner\n"
+            "files: [\"src/malformed.py\"]\n"
+            "---\n\ninvalid provenance\n",
+            encoding="utf-8",
+        )
+        code, output, error = self.invoke("supervisor", "ingest")
+        self.assertEqual((code, error), (0, ""))
+        self.assertEqual(output.strip(), "no new reports")
+        registry = json.loads(useagent.REGISTRY.read_text(encoding="utf-8"))
+        item = registry["items"][task_id]
+        self.assertEqual(item["status"], "in_progress")
+        self.assertEqual(item["reports"], [])
+
     def test_dispatch_pull_report_and_supervisor_cycle(self) -> None:
         self.register_worker()
         self.register_reviewer()
@@ -1123,6 +1529,69 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual((code, error), (0, ""))
         supervisor_report = (useagent.ROOT / "work" / "SUPERVISOR_REPORT.md").read_text(encoding="utf-8")
         self.assertIn("Completed tasks", supervisor_report)
+
+    def test_supervisor_report_freshness_marker_and_safe_check(self) -> None:
+        self.new_task("Freshness marker", "docs/freshness.md")
+        code, _, error = self.invoke("supervisor", "report")
+        self.assertEqual((code, error), (0, ""))
+        report_path = useagent.ROOT / "work" / "SUPERVISOR_REPORT.md"
+        report = report_path.read_text(encoding="utf-8")
+        self.assertRegex(report, r"(?m)^<!-- useagent-report: registry_sha256=[0-9a-f]{64} -->$")
+        self.assertIn("Registry revision", report)
+
+        code, output, error = self.invoke("supervisor", "report", "--check")
+        self.assertEqual((code, error), (0, ""))
+        self.assertIn("freshness=fresh", output)
+
+        self.new_task("Make report stale", "docs/stale.md")
+        code, output, error = self.invoke("supervisor", "report", "--check")
+        self.assertEqual(code, 1)
+        self.assertEqual(error, "")
+        self.assertIn("freshness=stale", output)
+        code, output, error = self.invoke("context", "--max-chars", "10000")
+        self.assertEqual((code, error), (0, ""))
+        self.assertIn("Freshness:** stale", output)
+        self.assertIn("not current", output)
+
+        report_path.unlink()
+        code, output, error = self.invoke("supervisor", "report", "--check")
+        self.assertEqual(code, 1)
+        self.assertEqual(error, "")
+        self.assertIn("freshness=missing", output)
+
+        report_path.write_text("# Missing marker\n", encoding="utf-8")
+        code, output, error = self.invoke("supervisor", "report", "--check")
+        self.assertEqual(code, 1)
+        self.assertEqual(error, "")
+        self.assertIn("freshness=unknown", output)
+        self.assertIn("missing or malformed", output)
+
+        report_path.write_text("<!-- useagent-report: registry_sha256=not-a-revision -->\n", encoding="utf-8")
+        code, output, error = self.invoke("supervisor", "report", "--check")
+        self.assertEqual(code, 1)
+        self.assertEqual(error, "")
+        self.assertIn("freshness=unknown", output)
+
+    def test_supervisor_report_uses_safe_repository_relative_configured_path(self) -> None:
+        config = useagent.load_config()
+        config["paths"]["supervisor_report"] = "work/reports/custom-supervisor.md"
+        useagent.save_config(config)
+        self.new_task("Custom report path", "docs/custom-report.md")
+
+        code, output, error = self.invoke("supervisor", "report")
+        self.assertEqual((code, error), (0, ""))
+        self.assertEqual(output.strip(), "work/reports/custom-supervisor.md")
+        self.assertTrue((useagent.ROOT / "work" / "reports" / "custom-supervisor.md").is_file())
+
+        code, output, error = self.invoke("supervisor", "report", "--check")
+        self.assertEqual((code, error), (0, ""))
+        self.assertIn("freshness=fresh", output)
+
+        config["paths"]["supervisor_report"] = "../outside.md"
+        useagent.save_config(config)
+        code, _, error = self.invoke("supervisor", "report", "--check")
+        self.assertEqual(code, 2)
+        self.assertIn("leaves project root", error)
 
     def test_worker_can_use_explicit_markdown_paths(self) -> None:
         code, _, error = self.invoke(

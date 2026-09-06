@@ -17,6 +17,7 @@ INDEXABLE_URLS = {
     "getting-started.html": f"{PRIMARY_ORIGIN}/getting-started",
     "architecture.html": f"{PRIMARY_ORIGIN}/architecture",
     "operations.html": f"{PRIMARY_ORIGIN}/operations",
+    "case-study.html": f"{PRIMARY_ORIGIN}/case-study",
     "vi.html": f"{PRIMARY_ORIGIN}/vi",
 }
 
@@ -114,7 +115,7 @@ class DocsSiteTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("VALIDATED", result.stdout)
         pages = sorted(SITE.glob("*.html"))
-        self.assertEqual(len(pages), 6)
+        self.assertEqual(len(pages), 7)
         for page in pages:
             content = page.read_text(encoding="utf-8")
             self.assertIn("<meta name=\"description\"", content, page.name)
@@ -221,6 +222,10 @@ class DocsSiteTests(unittest.TestCase):
                 "en": INDEXABLE_URLS["operations.html"],
                 "x-default": INDEXABLE_URLS["operations.html"],
             },
+            "case-study.html": {
+                "en": INDEXABLE_URLS["case-study.html"],
+                "x-default": INDEXABLE_URLS["case-study.html"],
+            },
             "vi.html": {
                 "en": INDEXABLE_URLS["index.html"],
                 "vi": INDEXABLE_URLS["vi.html"],
@@ -256,12 +261,18 @@ class DocsSiteTests(unittest.TestCase):
         getting_started = (SITE / "getting-started.html").read_text(encoding="utf-8")
         operations = (SITE / "operations.html").read_text(encoding="utf-8")
         vietnamese = (SITE / "vi.html").read_text(encoding="utf-8")
+        search_index = (SITE / "script.js").read_text(encoding="utf-8")
+        case_study = (SITE / "case-study.html").read_text(encoding="utf-8")
         self.assertIn('id="automatic-runner"', getting_started)
         self.assertIn("{assignment_path}", getting_started)
         self.assertIn('id="automatic-runner"', operations)
         self.assertIn("worker run", operations)
         self.assertIn('id="runner"', vietnamese)
         self.assertIn("Tự động nhận task", vietnamese)
+        self.assertIn("OSBlog dogfood case study", search_index)
+        self.assertIn('href: "/case-study"', search_index)
+        self.assertIn("UA-0091", case_study)
+        self.assertIn("capture manifest", case_study)
 
     def test_visual_asset_contract(self) -> None:
         assets = SITE / "assets"

@@ -4,6 +4,7 @@ const docsIndex = [
   { title: "Architecture", description: "Understand the knowledge ledger, registry, mailbox and production gate.", href: "/architecture" },
   { title: "Worker loop", description: "Pull one task, implement in scope, report checks and continue the cycle.", href: "/operations#worker-loop" },
   { title: "Autopilot cycle", description: "Run bounded cycles with QA, checkpoints and explicit stop conditions.", href: "/operations#cycle" },
+  { title: "OSBlog dogfood case study", description: "See a real multi-agent run with quota failure, takeover, live evidence and product findings.", href: "/case-study" },
   { title: "Hướng dẫn tiếng Việt", description: "Thiết lập supervisor, worker và chu trình report bằng tiếng Việt.", href: "/vi" },
 ];
 
