@@ -13,6 +13,11 @@ Goal/completion criteria, latest checkpoint, compact knowledge index, ready work
 5. Update registry, evidence and knowledge.
 6. Write a checkpoint with one next action.
 
+If telemetry is available, include its bounded Usage summary in the handover:
+measured wall time, aggregate worker runtime, actual participants and explicit
+authoritative/partial/unavailable token status. Never estimate tokens or copy
+raw telemetry/runtime output into the handover.
+
 ## Terminal states
 
 - `complete`: outcome and verification are genuinely satisfied.

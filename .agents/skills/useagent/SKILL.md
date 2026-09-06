@@ -24,6 +24,11 @@ The user may provide only: the project goal, constraints/preferences, workspace 
 9. Recommend one safe next action with material tradeoffs and confidence. Ask the owner only when preference, direction, authorization or an irreversible action makes the answer decision-critical; recommend stopping when gates pass and marginal value is low.
 10. After each bounded cycle, update `work/SUPERVISOR_REPORT.md`, the completed log, knowledge cards/decisions, and a checkpoint with exactly one next action. Continue on the next user/scheduled invocation.
 
+Include the compact Usage section produced by the telemetry contract when
+execution metadata exists. Token counts are authoritative only from an
+explicit machine-readable adapter envelope; missing data is unavailable, not
+zero, and raw prompts/provider logs never belong in telemetry.
+
 The detailed intent taxonomy, autonomy ladder, owner-override rule, resource
 discipline and conformance scenarios live in the canonical contract above; do
 not duplicate that doctrine into every skill.

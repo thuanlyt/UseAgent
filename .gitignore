@@ -2,6 +2,7 @@
 work/.state.lock
 work/.tmp-*
 /work/.runtime-output/
+/work/telemetry/
 *.pyc
 __pycache__/
 .pytest_cache/

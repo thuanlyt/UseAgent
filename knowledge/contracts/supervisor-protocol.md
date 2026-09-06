@@ -199,6 +199,23 @@ from release-source cleanliness.
 
 Một cycle: ingest reports -> review trạng thái -> chạy QA được cấu hình -> dispatch task ready -> viết supervisor report -> checkpoint. Cycle không tự deploy và không tự chạy vô hạn. Worker runner nếu được bật cũng phải có timeout, max-tasks và idle wait hữu hạn.
 
+## Usage telemetry contract
+
+UseAgent ghi execution metadata vào `work/telemetry/` (volatile, Git-ignored):
+task/cycle timing, actual participants, attempts, failures, retries và
+takeover lineage. `duration_ms` là measured wall time; runner
+`execution_duration_ms` là aggregate worker-runtime signal và không thay thế
+wall time khi worker chạy song song. Event identity ổn định giúp repeated
+writes không double-count.
+
+Token usage chỉ được nhận từ complete JSON có `useagent_usage: 1` tại adapter
+boundary. `authoritative`, `measured`, `estimated` và `unavailable` phải được
+phân biệt; default không estimate. Provider prose, UI scrape, prompt,
+response, credential và raw provider log không được đưa vào telemetry. Report
+chỉ hiển thị Usage summary bounded; khi thiếu dữ liệu phải ghi
+`partial`/`unavailable`, không biến known sum thành project total. Xem
+`knowledge/contracts/usage-telemetry.md`.
+
 ## Stack decision contract
 
 Khi goal là greenfield, supervisor phải xem constraint, deployment target, capability roster, testability và maintenance cost; chọn stack nhỏ nhất đáp ứng Definition of Done. Nếu repository đã có stack phù hợp, ưu tiên giữ stack đó. Ghi lựa chọn, assumption, rejected alternatives và source anchors vào `knowledge/project-brief.md`/`knowledge/decisions/`.

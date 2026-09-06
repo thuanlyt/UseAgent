@@ -32,3 +32,10 @@ Worker `completed` is a claim, not a release decision. A task is `done` only aft
 ## User-facing output
 
 Return: current health, what changed, report/evidence paths, blockers, assignments waiting for workers, QA/review result, one recommendation with material tradeoff when relevant, confidence when uncertain, and exactly one next action or stop condition. The canonical Markdown copy is `work/SUPERVISOR_REPORT.md`.
+
+When telemetry exists, include a compact Usage summary: measured wall time,
+aggregate worker runtime, actual participants, attempts/failures/retries/
+takeovers and token status. Treat token usage as authoritative only when an
+explicit machine-readable adapter envelope provides it; otherwise say
+`unavailable` or `partial`. Never infer tokens, expose raw logs or turn usage
+into a worker-quality score. See `knowledge/contracts/usage-telemetry.md`.

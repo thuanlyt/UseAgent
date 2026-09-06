@@ -86,6 +86,12 @@ RUNTIME_FAILURE_CLASSES = {
 RUNTIME_DISPOSITIONS = {"retry", "reassign", "takeover", "needs_input"}
 PREFLIGHT_RESULT_MARKER = "useagent_preflight"
 RUNTIME_RESULT_MARKER = "useagent_runtime_result"
+USAGE_MARKER = "useagent_usage"
+TELEMETRY_SCHEMA_VERSION = 1
+TELEMETRY_PROVENANCE = {"authoritative", "measured", "estimated", "unavailable"}
+TELEMETRY_KINDS = {"task", "cycle", "phase", "project"}
+TELEMETRY_OUTCOMES = {"assigned", "in_progress", "completed", "failed", "blocked", "cancelled", "unknown"}
+SAFE_TELEMETRY_METADATA = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$")
 
 RUNTIME_REDACTION_PATTERNS = (
     (
@@ -132,6 +138,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "checkpoints": "work/checkpoints",
         "evidence": "work/evidence",
         "runtime_spool": "work/.runtime-output",
+        "telemetry": "work/telemetry",
     },
     "release_source": {
         "version": 1,
@@ -147,6 +154,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "work/SUPERVISOR_REPORT.md",
         "work/supervisor",
             "work/.runtime-output",
+            "work/telemetry",
             "work/.state.lock",
         ],
     },
@@ -300,6 +308,502 @@ def path_for(config: dict[str, Any], key: str) -> Path:
     return safe_repo_path(value)
 
 
+def telemetry_store_path(config: dict[str, Any]) -> Path:
+    """Return the ignored local event store used for execution telemetry."""
+
+    return path_for(config, "telemetry") / "events.json"
+
+
+def load_telemetry(config: dict[str, Any]) -> dict[str, Any]:
+    path = telemetry_store_path(config)
+    if not path.exists():
+        return {"version": TELEMETRY_SCHEMA_VERSION, "events": {}}
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise UseAgentError(f"invalid telemetry store: {exc}") from exc
+    if not isinstance(value, dict) or not isinstance(value.get("events"), dict):
+        raise UseAgentError("telemetry store must contain an object named events")
+    return value
+
+
+def save_telemetry(config: dict[str, Any], telemetry: dict[str, Any]) -> None:
+    telemetry["version"] = TELEMETRY_SCHEMA_VERSION
+    telemetry["updated_at"] = now_iso()
+    atomic_write(
+        telemetry_store_path(config),
+        json.dumps(telemetry, indent=2, ensure_ascii=False) + "\n",
+    )
+
+
+def safe_telemetry_metadata(value: Any) -> str | None:
+    """Allow only small identifier-like metadata; never persist free-form output."""
+
+    if not isinstance(value, str) or not SAFE_TELEMETRY_METADATA.fullmatch(value):
+        return None
+    if "://" in value or "@" in value:
+        return None
+    return value
+
+
+def unavailable_usage(reason: str, source: str = "runtime") -> dict[str, Any]:
+    return {
+        "status": "unavailable",
+        "provenance": "unavailable",
+        "source": safe_telemetry_metadata(source) or "runtime",
+        "reason": "usage unavailable: " + ("invalid or missing machine-readable usage" if reason else "not exposed"),
+    }
+
+
+def normalize_usage_envelope(value: Any, *, source: str = "adapter") -> dict[str, Any]:
+    """Normalize an explicit JSON usage envelope; prose is never interpreted."""
+
+    if not isinstance(value, dict) or value.get(USAGE_MARKER) != 1:
+        return unavailable_usage("missing", source)
+    numeric_fields = (
+        "input_tokens",
+        "cached_input_tokens",
+        "output_tokens",
+        "reasoning_tokens",
+        "total_tokens",
+    )
+    numbers: dict[str, int] = {}
+    for field in numeric_fields:
+        raw = value.get(field)
+        if raw is None:
+            continue
+        if isinstance(raw, bool) or not isinstance(raw, int) or raw < 0:
+            return unavailable_usage("invalid", source)
+        numbers[field] = raw
+    if not numbers:
+        return unavailable_usage("missing", source)
+    if (
+        "total_tokens" in numbers
+        and "input_tokens" in numbers
+        and "output_tokens" in numbers
+        and numbers["total_tokens"] != numbers["input_tokens"] + numbers["output_tokens"]
+    ):
+        return unavailable_usage("ambiguous", source)
+    if value.get("authoritative") is True:
+        provenance = "authoritative"
+    else:
+        raw_provenance = value.get("provenance")
+        provenance = raw_provenance if isinstance(raw_provenance, str) else "unavailable"
+        if provenance not in TELEMETRY_PROVENANCE or provenance == "unavailable":
+            return unavailable_usage("missing provenance", source)
+    normalized: dict[str, Any] = {
+        "status": "available",
+        "provenance": provenance,
+        "source": safe_telemetry_metadata(source) or "adapter",
+    }
+    for field, number in numbers.items():
+        normalized[field] = number
+    for field in ("provider", "runtime", "model", "usage_id"):
+        metadata = safe_telemetry_metadata(value.get(field))
+        if metadata is not None:
+            normalized[field] = metadata
+    return normalized
+
+
+def usage_from_runtime_streams(stdout: Any = "", stderr: Any = "") -> dict[str, Any]:
+    """Accept usage only from a complete marker-bearing JSON adapter response."""
+
+    for stream in (stdout, stderr):
+        payload = parse_machine_runtime_result(stream, USAGE_MARKER)
+        if payload is not None:
+            return normalize_usage_envelope(payload, source="adapter")
+    return unavailable_usage("missing", "adapter")
+
+
+def _parse_iso_timestamp(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value.endswith("Z"):
+        return None
+    try:
+        return datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError:
+        return None
+
+
+def _duration_ms_from_timestamps(started_at: Any, completed_at: Any) -> int | None:
+    started = _parse_iso_timestamp(started_at)
+    completed = _parse_iso_timestamp(completed_at)
+    if started is None or completed is None or completed < started:
+        return None
+    return max(0, round((completed - started).total_seconds() * 1000))
+
+
+def telemetry_event_id(kind: str, entity_id: str, attempt: int | None = None) -> str:
+    suffix = f":attempt:{attempt}" if attempt is not None else ""
+    return f"{kind}:{entity_id}{suffix}"
+
+
+def sanitize_telemetry_usage(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict) or value.get("status") != "available":
+        source = value.get("source") if isinstance(value, dict) else "runtime"
+        return unavailable_usage("invalid", source if isinstance(source, str) else "runtime")
+    provenance = value.get("provenance")
+    if provenance not in TELEMETRY_PROVENANCE - {"unavailable"}:
+        return unavailable_usage("invalid", "runtime")
+    safe: dict[str, Any] = {
+        "status": "available",
+        "provenance": provenance,
+        "source": safe_telemetry_metadata(value.get("source")) or "runtime",
+    }
+    for field in ("input_tokens", "cached_input_tokens", "output_tokens", "reasoning_tokens", "total_tokens"):
+        raw = value.get(field)
+        if isinstance(raw, int) and not isinstance(raw, bool) and raw >= 0:
+            safe[field] = raw
+    if (
+        "total_tokens" in safe
+        and "input_tokens" in safe
+        and "output_tokens" in safe
+        and safe["total_tokens"] != safe["input_tokens"] + safe["output_tokens"]
+    ):
+        return unavailable_usage("ambiguous", "runtime")
+    for field in ("provider", "runtime", "model", "usage_id"):
+        metadata = safe_telemetry_metadata(value.get(field))
+        if metadata is not None:
+            safe[field] = metadata
+    if not any(field in safe for field in ("input_tokens", "cached_input_tokens", "output_tokens", "reasoning_tokens", "total_tokens")):
+        return unavailable_usage("missing", safe["source"])
+    return safe
+
+
+def sanitize_telemetry_event_fields(fields: dict[str, Any]) -> dict[str, Any]:
+    allowed = {
+        "kind", "entity_id", "task_id", "task_ids", "outcome", "agent_id", "role",
+        "provider", "runtime", "model", "attempt", "retry", "takeover", "supersedes",
+        "assigned_at", "started_at", "completed_at", "duration_ms", "duration_provenance",
+        "execution_duration_ms", "execution_duration_provenance", "source", "usage",
+    }
+    safe: dict[str, Any] = {}
+    for key in allowed:
+        value = fields.get(key)
+        if value is None:
+            continue
+        if key == "usage":
+            safe[key] = sanitize_telemetry_usage(value)
+        elif key == "task_ids" and isinstance(value, list):
+            safe[key] = sorted({metadata for item in value if (metadata := safe_telemetry_metadata(item)) is not None})
+        elif key in {"retry", "takeover"} and isinstance(value, bool):
+            safe[key] = value
+        elif key in {"attempt", "duration_ms", "execution_duration_ms"} and isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+            safe[key] = value
+        elif key in {"kind", "outcome", "duration_provenance", "execution_duration_provenance"} and isinstance(value, str) and value in (TELEMETRY_KINDS | TELEMETRY_OUTCOMES | TELEMETRY_PROVENANCE | {"measured", "unavailable"}):
+            safe[key] = value
+        elif key in {"assigned_at", "started_at", "completed_at"} and _parse_iso_timestamp(value) is not None:
+            safe[key] = value
+        elif isinstance(value, str):
+            metadata = safe_telemetry_metadata(value)
+            if metadata is not None:
+                safe[key] = metadata
+    return safe
+
+
+def upsert_telemetry_event_locked(
+    config: dict[str, Any], event_id: str, fields: dict[str, Any]
+) -> dict[str, Any]:
+    telemetry = load_telemetry(config)
+    events = telemetry.setdefault("events", {})
+    existing = events.get(event_id)
+    event = dict(existing) if isinstance(existing, dict) else {}
+    event.update(sanitize_telemetry_event_fields(fields))
+    event["event_id"] = event_id
+    event["schema_version"] = TELEMETRY_SCHEMA_VERSION
+    events[event_id] = event
+    save_telemetry(config, telemetry)
+    return event
+
+
+def _agent_telemetry_metadata(agent: dict[str, Any]) -> dict[str, Any]:
+    metadata: dict[str, Any] = {
+        "agent_id": safe_telemetry_metadata(agent.get("id")) or "unknown",
+        "role": safe_telemetry_metadata(agent.get("role")) or "worker",
+    }
+    for key in ("provider", "runtime", "model"):
+        value = safe_telemetry_metadata(agent.get(key))
+        if value is not None:
+            metadata[key] = value
+    return metadata
+
+
+def record_assignment_telemetry_locked(
+    config: dict[str, Any], item: dict[str, Any], agent: dict[str, Any]
+) -> None:
+    dispatched_at = item.get("dispatched_at") or now_iso()
+    event_id = f"assignment:{item['id']}:{agent['id']}:{dispatched_at}"
+    fields = {
+        "kind": "task",
+        "task_id": item["id"],
+        "entity_id": item["id"],
+        "outcome": "assigned",
+        "assigned_at": dispatched_at,
+        "attempt": int(item.get("attempts", 0)) + 1,
+        "source": "useagent.dispatch",
+        **_agent_telemetry_metadata(agent),
+    }
+    upsert_telemetry_event_locked(config, event_id, fields)
+
+
+def record_task_telemetry_locked(
+    config: dict[str, Any],
+    item: dict[str, Any],
+    agent: dict[str, Any],
+    outcome: str,
+    *,
+    completed_at: str | None = None,
+    execution_duration_ms: int | None = None,
+    usage: dict[str, Any] | None = None,
+    source: str = "useagent.lifecycle",
+) -> None:
+    attempt = max(1, int(item.get("attempts", 1)))
+    event_id = telemetry_event_id("task", item["id"], attempt)
+    fields: dict[str, Any] = {
+        "kind": "task",
+        "task_id": item["id"],
+        "entity_id": item["id"],
+        "outcome": outcome if outcome in TELEMETRY_OUTCOMES else "unknown",
+        "attempt": attempt,
+        "retry": attempt > 1,
+        "takeover": bool(item.get("supersedes")),
+        "supersedes": item.get("supersedes"),
+        "started_at": item.get("started_at"),
+        "execution_duration_ms": execution_duration_ms,
+        "execution_duration_provenance": "measured" if execution_duration_ms is not None else "unavailable",
+        "source": safe_telemetry_metadata(source) or "useagent.lifecycle",
+        **_agent_telemetry_metadata(agent),
+    }
+    if completed_at is not None:
+        fields["completed_at"] = completed_at
+        fields["duration_ms"] = _duration_ms_from_timestamps(item.get("started_at"), completed_at)
+        fields["duration_provenance"] = "measured" if item.get("started_at") else "unavailable"
+    if execution_duration_ms is not None:
+        fields["execution_duration_ms"] = execution_duration_ms
+    if usage is not None:
+        fields["usage"] = usage
+    elif completed_at is not None:
+        fields["usage"] = unavailable_usage("missing", "runtime")
+    upsert_telemetry_event_locked(config, event_id, fields)
+
+
+def record_cycle_telemetry_locked(
+    config: dict[str, Any],
+    cycle_id: str,
+    started_at: str,
+    completed_at: str,
+    duration_ms: int,
+) -> None:
+    upsert_telemetry_event_locked(
+        config,
+        telemetry_event_id("cycle", cycle_id),
+        {
+            "kind": "cycle",
+            "entity_id": cycle_id,
+            "outcome": "completed",
+            "agent_id": "supervisor",
+            "role": "supervisor",
+            "started_at": started_at,
+            "completed_at": completed_at,
+            "duration_ms": duration_ms,
+            "duration_provenance": "measured",
+            "usage": unavailable_usage("host runtime did not expose usage", "supervisor-runtime"),
+            "source": "useagent.supervisor_cycle",
+        },
+    )
+
+
+def aggregate_telemetry(events: list[dict[str, Any]]) -> dict[str, Any]:
+    """Aggregate event identities already de-duplicated by the event store."""
+
+    task_events = [
+        event
+        for event in events
+        if event.get("kind") == "task"
+        and event.get("attempt") is not None
+        and event.get("outcome") != "assigned"
+    ]
+    worker_runtime_values = [
+        int(event["execution_duration_ms"])
+        for event in task_events
+        if isinstance(event.get("execution_duration_ms"), int) and event["execution_duration_ms"] >= 0
+    ]
+    worker_runtime = sum(
+        worker_runtime_values
+    )
+    completed = sum(event.get("outcome") == "completed" for event in task_events)
+    failed = sum(event.get("outcome") == "failed" for event in task_events)
+    retries = sum(bool(event.get("retry")) for event in task_events)
+    takeovers = sum(bool(event.get("takeover")) for event in task_events)
+    participants: dict[str, dict[str, Any]] = {}
+    for event in events:
+        agent_id = event.get("agent_id")
+        if not isinstance(agent_id, str) or not agent_id:
+            continue
+        participant = participants.setdefault(
+            agent_id,
+            {
+                "agent_id": agent_id,
+                "role": event.get("role") or "unknown",
+                "tasks": set(),
+                "events": 0,
+            },
+        )
+        participant["events"] += 1
+        task_id = event.get("task_id")
+        if isinstance(task_id, str):
+            participant["tasks"].add(task_id)
+        task_ids = event.get("task_ids")
+        if isinstance(task_ids, list):
+            participant["tasks"].update(value for value in task_ids if isinstance(value, str))
+        for key in ("provider", "runtime", "model"):
+            if key in event and key not in participant:
+                participant[key] = event[key]
+    task_usage_available = any(
+        isinstance(event.get("usage"), dict) and event["usage"].get("status") == "available"
+        for event in task_events
+    )
+    usage_events: list[tuple[str, dict[str, Any]]] = []
+    for event in events:
+        usage = event.get("usage")
+        if not isinstance(usage, dict):
+            continue
+        if event.get("kind") in {"phase", "project"} and task_usage_available:
+            continue
+        if event.get("kind") == "cycle" and task_usage_available and event.get("agent_id") != "supervisor":
+            continue
+        usage_events.append((str(event.get("event_id", "usage")), usage))
+    unique_usage_events: list[dict[str, Any]] = []
+    seen_usage_ids: set[str] = set()
+    for event_id, usage in usage_events:
+        usage_id = usage.get("usage_id") if isinstance(usage.get("usage_id"), str) else event_id
+        if usage_id in seen_usage_ids:
+            continue
+        seen_usage_ids.add(usage_id)
+        unique_usage_events.append(usage)
+    known_total = 0
+    known_events = 0
+    authoritative_total = 0
+    authoritative_events = 0
+    unavailable_events = 0
+    partial_events = 0
+    for usage in unique_usage_events:
+        provenance = usage.get("provenance")
+        total = usage.get("total_tokens")
+        if isinstance(total, int) and total >= 0:
+            known_total += total
+            known_events += 1
+            if provenance == "authoritative":
+                authoritative_total += total
+                authoritative_events += 1
+        elif any(isinstance(usage.get(field), int) for field in ("input_tokens", "output_tokens", "cached_input_tokens", "reasoning_tokens")):
+            partial_events += 1
+            if isinstance(usage.get("input_tokens"), int) and isinstance(usage.get("output_tokens"), int):
+                known_total += usage["input_tokens"] + usage["output_tokens"]
+                known_events += 1
+        else:
+            unavailable_events += 1
+    if not unique_usage_events:
+        token_status = "unavailable"
+    elif known_total == 0 and unavailable_events == len(unique_usage_events):
+        token_status = "unavailable"
+    elif unavailable_events or partial_events or known_events != len(unique_usage_events):
+        token_status = "partial"
+    else:
+        token_status = "total"
+    starts = [
+        parsed for event in events if (parsed := _parse_iso_timestamp(event.get("started_at"))) is not None
+    ]
+    completions = [
+        parsed for event in events if (parsed := _parse_iso_timestamp(event.get("completed_at"))) is not None
+    ]
+    wall_time_ms = None
+    if starts and completions:
+        wall_time_ms = max(0, round((max(completions) - min(starts)).total_seconds() * 1000))
+        measured_cycle_durations = [
+            event["duration_ms"]
+            for event in events
+            if event.get("kind") == "cycle"
+            and isinstance(event.get("duration_ms"), int)
+            and event["duration_ms"] >= 0
+        ]
+        if wall_time_ms == 0 and measured_cycle_durations:
+            wall_time_ms = max(measured_cycle_durations)
+    else:
+        durations = [
+            event["duration_ms"]
+            for event in events
+            if isinstance(event.get("duration_ms"), int) and event["duration_ms"] >= 0
+        ]
+        if len(durations) == 1:
+            wall_time_ms = durations[0]
+    return {
+        "wall_time_ms": wall_time_ms,
+        "worker_runtime_ms": worker_runtime if worker_runtime_values else None,
+        "wall_time_provenance": "measured" if wall_time_ms is not None else "unavailable",
+        "worker_runtime_provenance": "measured" if worker_runtime_values else "unavailable",
+        "tasks_completed": completed,
+        "attempts": len(task_events),
+        "failed_attempts": failed,
+        "retries": retries,
+        "takeovers": takeovers,
+        "participants": participants,
+        "tokens": known_total if known_events else None,
+        "token_status": token_status,
+        "token_provenance": "authoritative" if authoritative_events == known_events and known_events else "mixed" if authoritative_events else "unavailable",
+        "authoritative_tokens": authoritative_total if authoritative_events else None,
+        "unavailable_usage_events": unavailable_events,
+    }
+
+
+def load_telemetry_summary(config: dict[str, Any]) -> dict[str, Any]:
+    telemetry = load_telemetry(config)
+    events = [event for event in telemetry.get("events", {}).values() if isinstance(event, dict)]
+    return aggregate_telemetry(events)
+
+
+def format_duration_ms(value: Any) -> str:
+    if not isinstance(value, int) or value < 0:
+        return "unavailable"
+    seconds = value // 1000
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours}h {minutes:02d}m {seconds:02d}s"
+    if minutes:
+        return f"{minutes}m {seconds:02d}s"
+    return f"{seconds}s"
+
+
+def render_usage_section(summary: dict[str, Any]) -> list[str]:
+    participants = summary.get("participants", {})
+    participant_names = []
+    if isinstance(participants, dict):
+        for agent_id in sorted(participants):
+            tasks = participants[agent_id].get("tasks", set())
+            participant_names.append(f"{agent_id} ({len(tasks)} task{'s' if len(tasks) != 1 else ''})")
+    token_status = summary.get("token_status", "unavailable")
+    if token_status == "total":
+        token_line = f"total — {summary['tokens']} ({summary.get('token_provenance', 'unknown')})"
+    elif token_status == "partial":
+        token_line = f"partial — {summary.get('tokens') or 0} known ({summary.get('token_provenance', 'mixed')})"
+    else:
+        token_line = "unavailable (runtime did not expose authoritative usage)"
+    wall_provenance = summary.get("wall_time_provenance", "unavailable")
+    worker_provenance = summary.get("worker_runtime_provenance", "unavailable")
+    return [
+        "## Usage",
+        "",
+        f"- wall_time: `{format_duration_ms(summary.get('wall_time_ms'))}` ({wall_provenance})",
+        f"- aggregate_worker_runtime: `{format_duration_ms(summary.get('worker_runtime_ms'))}` ({worker_provenance})",
+        f"- tokens: `{token_line}`",
+        f"- participants: `{', '.join(participant_names) or 'none recorded'}`",
+        f"- tasks_completed: `{summary.get('tasks_completed', 0)}`; attempts: `{summary.get('attempts', 0)}`; failed_attempts: `{summary.get('failed_attempts', 0)}`",
+        f"- retries: `{summary.get('retries', 0)}`; takeovers: `{summary.get('takeovers', 0)}`",
+        "- privacy: prompts, responses, credentials and raw provider logs are not stored in telemetry",
+        "",
+    ]
+
+
 def release_source_settings(config: dict[str, Any]) -> tuple[int, list[str]]:
     settings = config.get("release_source", {})
     if not isinstance(settings, dict):
@@ -316,6 +820,14 @@ def release_source_settings(config: dict[str, Any]) -> tuple[int, list[str]]:
         if normalized == ".":
             raise UseAgentError("config.release_source.volatile_paths must not contain the project root")
         paths.append(normalized)
+    configured_paths = config.get("paths")
+    if not isinstance(configured_paths, dict):
+        configured_paths = {}
+    telemetry_relative = normalize_scope(
+        str(configured_paths.get("telemetry", DEFAULT_CONFIG["paths"]["telemetry"]))
+    )
+    if telemetry_relative not in paths:
+        paths.append(telemetry_relative)
     return version, paths
 
 
@@ -645,7 +1157,7 @@ def ensure_layout() -> None:
     ):
         directory.mkdir(parents=True, exist_ok=True)
     config = load_config()
-    for key in ("agent_root", "reports_inbox", "reports_archive", "outbox", "checkpoints", "evidence"):
+    for key in ("agent_root", "reports_inbox", "reports_archive", "outbox", "checkpoints", "evidence", "telemetry"):
         path_for(config, key).mkdir(parents=True, exist_ok=True)
     for key in ("completed_tasks", "reports_index", "supervisor_report", "supervisor_cycle", "supervisor_state"):
         path_for(config, key).parent.mkdir(parents=True, exist_ok=True)
@@ -1239,7 +1751,9 @@ def cmd_task_claim(args: argparse.Namespace) -> int:
         item["status"] = "in_progress"
         item["assigned_to"] = args.agent
         item["attempts"] = int(item.get("attempts", 0)) + 1
+        item["started_at"] = now_iso()
         item["updated_at"] = now_iso()
+        record_task_telemetry_locked(config, item, agent, "in_progress")
         save_registry(data)
         sync_item_frontmatter(item)
         append_event(args.task_id, f"claimed by {args.agent}")
@@ -1399,6 +1913,21 @@ def cmd_task_evidence(args: argparse.Namespace) -> int:
         evidence["recorded_at"] = now_iso()
         item.setdefault("evidence", []).append(evidence)
         item["updated_at"] = now_iso()
+        if args.kind == "review":
+            reviewer = agent_config(config or {}, args.agent)
+            upsert_telemetry_event_locked(
+                config or {},
+                f"review:{args.task_id}:{args.agent}:{evidence['recorded_at']}",
+                {
+                    "kind": "task",
+                    "entity_id": args.task_id,
+                    "task_id": args.task_id,
+                    "outcome": "completed",
+                    "source": "useagent.review",
+                    "usage": unavailable_usage("review runtime did not expose usage", "review-runtime"),
+                    **_agent_telemetry_metadata(reviewer),
+                },
+            )
         save_registry(data)
         append_event(args.task_id, f"evidence {evidence['kind']}: {evidence['value']}")
     print(f"evidence added to {args.task_id}")
@@ -1516,6 +2045,13 @@ def cmd_task_report(args: argparse.Namespace) -> int:
         item["status"] = "blocked" if args.result == "blocked" else "reported"
         item["last_result"] = args.result
         item["updated_at"] = now_iso()
+        record_task_telemetry_locked(
+            config,
+            item,
+            agent,
+            "blocked" if args.result == "blocked" else "completed",
+            completed_at=now_iso(),
+        )
         save_registry(data)
         sync_item_frontmatter(item)
         append_event(item["id"], f"worker report {rel(report_path)} result={args.result}")
@@ -1704,6 +2240,7 @@ def assign_task_locked(config: dict[str, Any], data: dict[str, Any], item: dict[
     atomic_write(outbox_path, content)
     write_if_missing(paths["inbox"], f"# INBOX - {agent['id']}\n\n")
     append_markdown(paths["inbox"], f"- {now_iso()} - `{item['id']}` assigned - `{assignment_rel}`\n")
+    record_assignment_telemetry_locked(config, item, agent)
     return assignment_rel
 
 
@@ -1814,6 +2351,7 @@ def pull_next_assignment(
         item["status"] = "in_progress"
         item["started_at"] = now_iso()
         item["updated_at"] = now_iso()
+        record_task_telemetry_locked(config, item, agent, "in_progress")
         save_registry(data)
         sync_item_frontmatter(item)
         append_event(item["id"], f"pulled by {agent_id}")
@@ -2414,6 +2952,8 @@ def run_configured_runner(
         timed_out=timed_out,
         start_error=start_error,
     )
+    execution_duration_ms = max(0, round((time.monotonic() - started) * 1000))
+    usage = usage_from_runtime_streams(stdout, stderr)
     status_before_evidence, _ = runner_task_status(item["id"])
     failure_metadata = failure if returncode != 0 or status_before_evidence == "in_progress" else None
     local_spool = write_runtime_spool(
@@ -2438,7 +2978,7 @@ def run_configured_runner(
         agent,
         command,
         returncode,
-        time.monotonic() - started,
+        execution_duration_ms / 1000,
         stdout,
         stderr,
         local_spool,
@@ -2478,6 +3018,18 @@ def run_configured_runner(
         status, last_result = runner_task_status(item["id"])
     elif returncode != 0:
         stderr = stderr or f"runner exited with returncode {returncode} after reporting"
+    outcome = "completed" if status == "reported" and last_result == "completed" else "failed"
+    with state_lock():
+        telemetry_data = load_registry()
+        telemetry_item = get_item(telemetry_data, item["id"])
+        record_task_telemetry_locked(
+            config,
+            telemetry_item,
+            agent,
+            outcome,
+            execution_duration_ms=execution_duration_ms,
+            usage=usage,
+        )
     if status == "blocked":
         return 2, evidence_path
     if returncode != 0 or last_result == "failed":
@@ -2606,7 +3158,7 @@ def ingest_reports_locked(config: dict[str, Any], data: dict[str, Any], state: d
         if not agent_id or result not in {"completed", "blocked", "failed"}:
             continue
         try:
-            agent_config(config, agent_id)
+            report_agent = agent_config(config, agent_id)
         except UseAgentError:
             continue
         item = data["items"][task_id]
@@ -2673,6 +3225,13 @@ def ingest_reports_locked(config: dict[str, Any], data: dict[str, Any], state: d
         elif result in {"completed", "failed"} and item.get("status") in {"assigned", "in_progress"}:
             item["status"] = "reported"
         item["updated_at"] = now_iso()
+        record_task_telemetry_locked(
+            config,
+            item,
+            report_agent,
+            "blocked" if result == "blocked" else "completed" if result == "completed" else "failed",
+            completed_at=now_iso(),
+        )
         processed.add(report_rel)
         ingested.append(report_rel)
         append_event(task_id, f"ingested report {report_rel}")
@@ -3003,6 +3562,8 @@ def build_supervisor_report(config: dict[str, Any], data: dict[str, Any], state:
     lines.extend(["", "## Blocked work", ""])
     blocked = [item for item in data["items"].values() if item.get("status") == "blocked"]
     lines.extend(f"- `{item['id']}` — {item['title']}" for item in blocked) or lines.append("- none")
+    lines.extend([""])
+    lines.extend(render_usage_section(load_telemetry_summary(config)))
     lines.extend(
         [
             "",
@@ -3123,6 +3684,8 @@ def cmd_supervisor_cycle(args: argparse.Namespace) -> int:
     ensure_layout()
     config = load_config()
     cycle_id = f"cycle-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:6]}"
+    cycle_started_at = now_iso()
+    cycle_started_monotonic = time.monotonic()
     with state_lock():
         data = load_registry()
         state = load_supervisor_state(config)
@@ -3137,6 +3700,14 @@ def cmd_supervisor_cycle(args: argparse.Namespace) -> int:
     with state_lock():
         data = load_registry()
         state = load_supervisor_state(config)
+        cycle_completed_at = now_iso()
+        record_cycle_telemetry_locked(
+            config,
+            cycle_id,
+            cycle_started_at,
+            cycle_completed_at,
+            max(0, round((time.monotonic() - cycle_started_monotonic) * 1000)),
+        )
         state["last_qa"] = qa_result
         state["last_qa_at"] = now_iso()
         report, next_action = build_supervisor_report(config, data, state, cycle_id, ingested, assignments, qa_result)
@@ -3151,6 +3722,63 @@ def cmd_supervisor_cycle(args: argparse.Namespace) -> int:
     print(f"report={rel(path_for(config, 'supervisor_report'))}")
     print(f"checkpoint={rel(checkpoint)}")
     print(f"next={next_action}")
+    return 0
+
+
+def cmd_telemetry_record(args: argparse.Namespace) -> int:
+    config = load_config()
+    for field in ("duration_ms", "execution_duration_ms"):
+        value = getattr(args, field)
+        if value is not None and value < 0:
+            raise UseAgentError(f"telemetry {field} must be non-negative")
+    entity_id = safe_telemetry_metadata(args.entity_id)
+    if entity_id is None:
+        raise UseAgentError("telemetry entity id must be a safe identifier")
+    event_id = safe_telemetry_metadata(args.event_id) if args.event_id else telemetry_event_id(args.kind, entity_id)
+    if event_id is None:
+        raise UseAgentError("telemetry event id must be a safe identifier")
+    usage: dict[str, Any] | None = None
+    if args.usage_json is not None:
+        try:
+            raw_usage = json.loads(args.usage_json)
+        except json.JSONDecodeError:
+            raw_usage = None
+        usage = normalize_usage_envelope(raw_usage, source=args.usage_source)
+    fields: dict[str, Any] = {
+        "kind": args.kind,
+        "entity_id": entity_id,
+        "task_id": entity_id if args.kind == "task" else None,
+        "outcome": args.outcome,
+        "started_at": args.started_at,
+        "completed_at": args.completed_at,
+        "duration_ms": args.duration_ms,
+        "duration_provenance": "measured" if args.duration_ms is not None else "unavailable",
+        "execution_duration_ms": args.execution_duration_ms,
+        "execution_duration_provenance": "measured" if args.execution_duration_ms is not None else "unavailable",
+        "source": safe_telemetry_metadata(args.source) or "telemetry.cli",
+        "retry": bool(args.retry),
+        "takeover": bool(args.takeover),
+    }
+    if args.task_id:
+        fields["task_ids"] = sorted(set(args.task_id))
+    if args.agent:
+        fields.update(_agent_telemetry_metadata({"id": args.agent, "role": args.role or "worker", "provider": args.provider, "runtime": args.runtime, "model": args.model}))
+    else:
+        for key, value in (("role", args.role), ("provider", args.provider), ("runtime", args.runtime), ("model", args.model)):
+            safe_value = safe_telemetry_metadata(value)
+            if safe_value is not None:
+                fields[key] = safe_value
+    if usage is not None:
+        fields["usage"] = usage
+    with state_lock():
+        event = upsert_telemetry_event_locked(config, event_id, fields)
+    print(f"telemetry event recorded: {event['event_id']} usage={event.get('usage', {}).get('provenance', 'unavailable')}")
+    return 0
+
+
+def cmd_telemetry_summary(_: argparse.Namespace) -> int:
+    config = load_config()
+    print("\n".join(render_usage_section(load_telemetry_summary(config))).rstrip())
     return 0
 
 
@@ -3693,6 +4321,32 @@ def build_parser() -> argparse.ArgumentParser:
     cycle.add_argument("--retry-blocked", action="store_true")
     cycle.add_argument("--run-qa", action="store_true")
     cycle.set_defaults(func=cmd_supervisor_cycle)
+
+    telemetry = sub.add_parser("telemetry", help="record or summarize privacy-safe execution telemetry")
+    telemetry_sub = telemetry.add_subparsers(dest="telemetry_command", required=True)
+    telemetry_record = telemetry_sub.add_parser("record", help="record one explicit machine-readable telemetry event")
+    telemetry_record.add_argument("--kind", required=True, choices=sorted(TELEMETRY_KINDS))
+    telemetry_record.add_argument("--id", dest="entity_id", required=True)
+    telemetry_record.add_argument("--event-id")
+    telemetry_record.add_argument("--agent")
+    telemetry_record.add_argument("--role")
+    telemetry_record.add_argument("--provider")
+    telemetry_record.add_argument("--runtime")
+    telemetry_record.add_argument("--model")
+    telemetry_record.add_argument("--task-id", action="append")
+    telemetry_record.add_argument("--outcome", choices=sorted(TELEMETRY_OUTCOMES), default="unknown")
+    telemetry_record.add_argument("--started-at")
+    telemetry_record.add_argument("--completed-at")
+    telemetry_record.add_argument("--duration-ms", type=int)
+    telemetry_record.add_argument("--execution-duration-ms", type=int)
+    telemetry_record.add_argument("--retry", action="store_true")
+    telemetry_record.add_argument("--takeover", action="store_true")
+    telemetry_record.add_argument("--usage-json", help="complete JSON object with the useagent_usage marker")
+    telemetry_record.add_argument("--usage-source", default="adapter")
+    telemetry_record.add_argument("--source", default="telemetry.cli")
+    telemetry_record.set_defaults(func=cmd_telemetry_record)
+    telemetry_summary = telemetry_sub.add_parser("summary", help="print the concise owner-facing Usage summary")
+    telemetry_summary.set_defaults(func=cmd_telemetry_summary)
 
     checkpoint = sub.add_parser("checkpoint", help="create resume checkpoint")
     checkpoint_sub = checkpoint.add_subparsers(dest="checkpoint_command", required=True)

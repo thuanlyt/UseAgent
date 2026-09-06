@@ -76,6 +76,7 @@ CLI Python phụ trách transition và validation có tính quyết định. Mod
 - Git release durability gate: source liên quan release phải sạch, không có file release untracked ngoài ignore và QA hiện tại phải hợp lệ.
 - QA dùng structured `argv` với `shell=False` mặc định; shell syntax chỉ là trusted-local opt-in rõ ràng.
 - Runtime readiness hữu hạn và failure classification provider-neutral tùy chọn.
+- Usage telemetry provider-neutral cho timing đo được, participant thực tế và token authoritative khi runtime cung cấp; usage thiếu vẫn là partial hoặc unavailable.
 - Harness conformance không cần credential cho identity kiểu Codex, Claude Code và Antigravity.
 - Không có dependency Python bên thứ ba khi chạy.
 

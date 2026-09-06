@@ -149,6 +149,64 @@ recommended disposition but does not retry forever or create a takeover task
 automatically. Raw stdout/stderr remains bounded and redacted in the ignored
 `work/.runtime-output/` spool; repository evidence contains only safe summaries.
 
+### Usage telemetry and execution summaries
+
+UseAgent records metadata-only execution events in the Git-ignored
+`work/telemetry/events.json`. Assignment, task attempt/report and supervisor
+cycle hooks record UTC timestamps, measured wall duration, runner execution
+duration (when an automatic runner exists), actual participants and retry/
+takeover lineage. Stable event identities make repeated lifecycle writes
+idempotent. `duration_ms` and `execution_duration_ms` are intentionally
+different: aggregate worker runtime may exceed elapsed wall time when workers
+run in parallel.
+
+Token usage is accepted only from a complete machine-readable adapter envelope:
+
+```json
+{
+  "useagent_usage": 1,
+  "authoritative": true,
+  "provider": "provider-name",
+  "runtime": "runtime-name",
+  "model": "model-name",
+  "input_tokens": 1000,
+  "output_tokens": 400,
+  "total_tokens": 1400
+}
+```
+
+The core never parses Codex, Claude, Antigravity, Gemini or other provider
+prose, and never scrapes a console. Missing, invalid or ambiguous usage is
+`unavailable`, not zero. Estimation is disabled by default; an explicit
+project-owned adapter may emit `provenance: estimated`, which remains labelled
+in the report. Supervisor tokens are unavailable unless its host provides the
+same safe machine-readable boundary.
+
+Record an explicit event when an adapter has authoritative usage that is not
+available through the automatic runner:
+
+```powershell
+python tools/useagent.py telemetry record --kind task --id UA-0001 `
+  --event-id task:UA-0001:attempt:1 --agent worker-a --outcome completed `
+  --usage-json '{"useagent_usage":1,"authoritative":true,"total_tokens":1400}'
+python tools/useagent.py telemetry summary
+```
+
+The supervisor report renders a concise Usage section with wall time, worker
+runtime, participants, attempts, failures, retries, takeovers and explicit
+`total`/`partial`/`unavailable` token semantics. It does not include prompts,
+responses, credentials, account identifiers, raw provider logs or monetary
+costs. The event JSON is not owner-facing output.
+
+### Telemetry / Telemetry bằng tiếng Việt
+
+Telemetry chỉ lưu metadata an toàn ở `work/telemetry/`: thời gian UTC,
+participant thực tế, attempt, retry, takeover và usage khi adapter trả JSON có
+marker. `duration_ms` là wall time; `execution_duration_ms` là runtime tổng của
+worker, không phải elapsed time khi chạy song song. Không đoán token, không đọc
+prose provider, không lưu prompt/response/credential. Thiếu hoặc mơ hồ là
+`unavailable`, và tổng biết được nhưng thiếu runtime khác phải ghi `partial`.
+
 ## Claim và thực thi
 
 ```powershell

@@ -76,6 +76,7 @@ The Python CLI owns deterministic state transitions and validation. The model ow
 - Git release durability gate: clean release-relevant source, no non-ignored untracked release files and valid current QA.
 - Structured QA `argv` execution with `shell=False` by default; shell syntax is an explicit trusted-local opt-in.
 - Optional bounded worker runtime readiness and provider-neutral failure classification.
+- Provider-neutral usage telemetry for measured timing, actual participants and authoritative token usage when a runtime exposes it; missing usage stays partial or unavailable.
 - Credential-free conformance coverage for Codex-, Claude Code- and Antigravity-style identities.
 - No third-party Python runtime dependencies.
 

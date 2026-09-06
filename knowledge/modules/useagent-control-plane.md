@@ -18,6 +18,7 @@ Create and transition work items, serialize state changes, print bounded context
 - `python tools/useagent.py worker pull --agent <id>`
 - `python tools/useagent.py worker run --agent <id> [--max-tasks N]`
 - `python tools/useagent.py supervisor dispatch|ingest|report|qa|cycle`
+- `python tools/useagent.py telemetry record|summary`
 - `python tools/useagent.py checkpoint create`
 - `python tools/useagent.py validate`
 - `python examples/multi-runtime-conformance/run_conformance.py`
@@ -25,6 +26,12 @@ Create and transition work items, serialize state changes, print bounded context
 ## Public interfaces / contracts
 
 See `knowledge/contracts/work-registry.md` and `knowledge/contracts/supervisor-protocol.md`. State lives in `work/registry.json`; item Markdown lives in `work/items/`. Repeated `--scope` options are preserved for a task, task scope can be extended through `task update`, takeover lineage is written by `task new --supersedes ... --takeover-reason ...`, configured QA commands use explicit structured `argv` or trusted-local `shell` objects, and production readiness files are repository-safe. A central checkout may pass `--root <project-root>` before the subcommand; all runtime globals and configured paths are rebound to that existing directory, and escape paths are rejected. Direct claims and pulls share dispatcher eligibility checks for availability, capacity, scope and capabilities.
+
+Usage telemetry anchors: `tools/useagent.py:normalize_usage_envelope`,
+`tools/useagent.py:upsert_telemetry_event_locked`,
+`tools/useagent.py:aggregate_telemetry` and
+`tools/useagent.py:render_usage_section`. The event store is
+`work/telemetry/events.json`; see `knowledge/contracts/usage-telemetry.md`.
 
 The package entry point is `tools.useagent:main`; an installed CLI uses the
 current working directory when the package is outside a prepared source
@@ -65,6 +72,13 @@ legacy command strings are rejected rather than heuristically parsed. QA
 evidence records the execution mode, while argv, mode, timeout and related
 configuration changes are already covered by the existing QA configuration
 fingerprint.
+
+Execution telemetry is provider-neutral and metadata-only. Lifecycle hooks write
+idempotent task/cycle events under the ignored `work/telemetry/` path. An
+explicit `useagent_usage: 1` JSON envelope is the only token-usage boundary;
+missing or prose-only usage is unavailable. Wall duration and runner runtime
+remain separate, and supervisor reports render only a concise Usage summary.
+See `knowledge/contracts/usage-telemetry.md`.
 
 ## Dependency edges
 

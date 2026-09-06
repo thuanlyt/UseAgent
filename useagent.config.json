@@ -12,7 +12,8 @@
     "supervisor_state": "work/supervisor/state.json",
     "checkpoints": "work/checkpoints",
     "evidence": "work/evidence",
-    "runtime_spool": "work/.runtime-output"
+    "runtime_spool": "work/.runtime-output",
+    "telemetry": "work/telemetry"
   },
   "release_source": {
     "version": 1,
@@ -28,6 +29,7 @@
       "work/SUPERVISOR_REPORT.md",
       "work/supervisor",
       "work/.runtime-output",
+      "work/telemetry",
       "work/.state.lock"
     ]
   },

@@ -14,4 +14,8 @@ Use this skill when continuing a multi-milestone project, resuming after interru
 5. If the cycle was not run through the CLI, create a checkpoint with `python tools/useagent.py checkpoint create ...` containing summary, evidence, blockers and exactly one next action. Keep `work/SUPERVISOR_REPORT.md` as the user-facing status surface.
 6. Finish with `complete`, `blocked` or `needs_input`. If the goal and appropriate gates pass and only low-value backlog remains, recommend stop rather than dispatching another task. Stop on ambiguity, missing access, scope conflict, repeated failure or any unapproved external/destructive action.
 
+When available, use the provider-neutral telemetry contract to report measured
+timing, actual participants and authoritative/partial/unavailable token usage.
+Do not estimate tokens or dump the local telemetry store.
+
 This skill can prepare the prompt for a scheduled task, but scheduling, permissions and deployment remain product/user-controlled actions. Read [references/autopilot-cycle.md](references/autopilot-cycle.md) for the cycle contract.
