@@ -218,18 +218,39 @@ python tools/useagent.py supervisor qa
 python tools/useagent.py supervisor cycle --retry-blocked --run-qa
 ```
 
-Khai báo `supervisor.qa_commands` dạng mảng command string trong `useagent.config.json` để CLI chạy test/lint/build đã được project cho phép:
+Khai báo `supervisor.qa_commands` dạng mảng command object trong
+`useagent.config.json`. Mặc định dùng `mode: "argv"`; mỗi phần tử trong `argv`
+là một argument thực, không được phân tích lại bằng shell:
 
 ```json
 {
   "supervisor": {
     "qa_commands": [
-      "python -m unittest discover -s tests -v",
-      "python tools/useagent.py validate"
+      {
+        "mode": "argv",
+        "argv": ["python", "-m", "unittest", "discover", "-s", "tests", "-v"]
+      },
+      {
+        "mode": "argv",
+        "argv": ["python", "tools/useagent.py", "validate"]
+      }
     ]
   }
 }
 ```
+
+Nếu thật sự cần shell syntax, phải ghi rõ capability trusted-local bằng object
+`{"mode": "shell", "command": "..."}`. Shell mode được chạy với
+`shell=True`, nên chỉ phù hợp với cấu hình do operator/repository tin cậy kiểm
+soát; UseAgent là control plane phối hợp, không phải sandbox OS. Không dùng
+chuỗi command legacy: validator sẽ từ chối chúng thay vì đoán cách tách quote,
+pipe, redirect hoặc metacharacter. Hãy migrate mỗi chuỗi sang `argv` (khuyến
+nghị) hoặc chuyển có chủ ý sang `mode: "shell"`.
+
+QA lưu execution mode trong kết quả và evidence. Thay đổi `argv`, `mode`,
+timeout hoặc QA/release configuration làm thay đổi fingerprint hiện có của
+UA-0052; QA cũ sẽ thành `QA_STALE` và phải chạy lại. Cả hai mode vẫn dùng
+budget, redaction và local spool của UA-0051.
 
 QA output follows the same evidence boundary as runner output. Each stdout and
 stderr stream has a deterministic 4,000-character durable preview budget;

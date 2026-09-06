@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import tomllib
 
@@ -920,13 +921,16 @@ class UseAgentCliTests(unittest.TestCase):
         }
         useagent.save_config(config)
 
-    def configure_qa(self, command: str = 'python -c "print(\'qa-pass\')"') -> dict:
+    def qa_python(self, code: str, *arguments: str) -> dict:
+        return {"mode": "argv", "argv": [sys.executable, "-c", code, *arguments]}
+
+    def configure_qa(self, command: dict[str, object] | None = None) -> dict:
         config = useagent.load_config()
-        config["supervisor"]["qa_commands"] = [command]
+        config["supervisor"]["qa_commands"] = [command or self.qa_python("print('qa-pass')")]
         useagent.save_config(config)
         return config
 
-    def successful_qa(self, command: str = 'python -c "print(\'qa-pass\')"') -> tuple[dict, dict]:
+    def successful_qa(self, command: dict[str, object] | None = None) -> tuple[dict, dict]:
         config = self.configure_qa(command)
         result = useagent.run_qa(config, "source-state-test")
         self.assertEqual(result["status"], "pass")
@@ -1800,7 +1804,7 @@ class UseAgentCliTests(unittest.TestCase):
 
     def test_qa_command_is_captured_as_evidence(self) -> None:
         config = useagent.load_config()
-        config["supervisor"]["qa_commands"] = ['python -c "print(\'qa-ok\')"']
+        config["supervisor"]["qa_commands"] = [self.qa_python("print('qa-ok')")]
         useagent.save_config(config)
         code, output, error = self.invoke("supervisor", "qa")
         self.assertEqual((code, error), (0, ""))
@@ -1813,7 +1817,7 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual(len(state["last_qa"]["executed_checks"]), 1)
         self.assertTrue((useagent.ROOT / state["last_qa"]["evidence"]).exists())
 
-        config["supervisor"]["qa_commands"] = ['python -c "raise SystemExit(1)"']
+        config["supervisor"]["qa_commands"] = [self.qa_python("raise SystemExit(1)")]
         useagent.save_config(config)
         code, output, error = self.invoke("supervisor", "cycle", "--run-qa")
         self.assertEqual((code, error), (0, ""))
@@ -1830,7 +1834,9 @@ class UseAgentCliTests(unittest.TestCase):
             encoding="utf-8",
         )
         config = useagent.load_config()
-        config["supervisor"]["qa_commands"] = [f'"{sys.executable}" "{qa_script}"']
+        config["supervisor"]["qa_commands"] = [
+            {"mode": "argv", "argv": [sys.executable, str(qa_script)]}
+        ]
         useagent.save_config(config)
 
         code, output, error = self.invoke("supervisor", "qa")
@@ -1860,6 +1866,101 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertTrue((useagent.ROOT / spool_rel).is_file())
         self.assertNotIn("qa-secret-123456789", (useagent.ROOT / spool_rel).read_text(encoding="utf-8"))
 
+    def test_qa_argv_mode_is_shell_false_and_preserves_real_arguments(self) -> None:
+        argument_log = useagent.ROOT / "qa-argv-arguments.json"
+        shell_side_effect = useagent.ROOT / "qa-shell-side-effect.txt"
+        malicious = f"; echo injected > {shell_side_effect}"
+        script = (
+            "import json, pathlib, sys\n"
+            "pathlib.Path(sys.argv[1]).write_text(json.dumps(sys.argv[2:], ensure_ascii=False), encoding='utf-8')\n"
+        )
+        config = self.configure_qa(
+            self.qa_python(script, str(argument_log), malicious, "a path with spaces/✓")
+        )
+        with mock.patch.object(useagent.subprocess, "run", wraps=subprocess.run) as run_mock:
+            result = useagent.run_qa(config, "argv-arguments-test")
+
+        self.assertEqual(result["status"], "pass")
+        self.assertEqual(result["commands"][0]["execution_mode"], "argv")
+        self.assertTrue(any(call.kwargs.get("shell") is False for call in run_mock.call_args_list))
+        self.assertEqual(json.loads(argument_log.read_text(encoding="utf-8")), [malicious, "a path with spaces/✓"])
+        self.assertFalse(shell_side_effect.exists())
+
+    def test_qa_argv_failure_preserves_nonzero_exit(self) -> None:
+        config = self.configure_qa(self.qa_python("import sys; raise SystemExit(7)"))
+        result = useagent.run_qa(config, "argv-failure-test")
+
+        self.assertEqual(result["status"], "fail")
+        self.assertEqual(result["commands"][0]["returncode"], 7)
+        self.assertEqual(result["commands"][0]["execution_mode"], "argv")
+
+    def test_qa_timeout_preserves_bounded_failure_evidence(self) -> None:
+        config = self.configure_qa(self.qa_python("import time; time.sleep(2)"))
+        config["supervisor"]["qa_timeout_seconds"] = 1
+        useagent.save_config(config)
+        result = useagent.run_qa(config, "argv-timeout-test")
+
+        self.assertEqual(result["status"], "fail")
+        self.assertEqual(result["commands"][0]["returncode"], 124)
+        self.assertEqual(result["commands"][0]["execution_mode"], "argv")
+        self.assertTrue(result["local_spool"].startswith("work/.runtime-output/"))
+
+    def test_qa_shell_execution_requires_explicit_opt_in_and_records_provenance(self) -> None:
+        shell_spec = {
+            "mode": "shell",
+            "command": f'"{sys.executable}" -c "print(\'shell-opt-in\')"',
+        }
+        config = self.configure_qa(shell_spec)
+        with mock.patch.object(useagent.subprocess, "run", wraps=subprocess.run) as run_mock:
+            result = useagent.run_qa(config, "shell-opt-in-test")
+
+        self.assertEqual(result["status"], "pass")
+        self.assertEqual(result["execution_modes"], ["shell"])
+        self.assertTrue(any(call.kwargs.get("shell") is True for call in run_mock.call_args_list))
+        self.assertIn("execution_mode: `shell`", (useagent.ROOT / result["evidence"]).read_text(encoding="utf-8"))
+
+    def test_qa_validator_rejects_legacy_and_ambiguous_command_shapes(self) -> None:
+        invalid_specs = [
+            "python -m unittest",
+            {"mode": "argv", "argv": ["python"], "command": "python"},
+            {"mode": "shell", "argv": ["python"]},
+            {"mode": "unknown", "argv": ["python"]},
+            {"mode": [], "argv": ["python"]},
+            {"mode": "argv", "argv": "python"},
+            {"mode": "argv", "argv": ["python"], "unexpected": True},
+            {1: "not-a-field", "mode": "argv", "argv": ["python"]},
+        ]
+        legacy_errors: list[str] = []
+        for spec in invalid_specs:
+            config = useagent.load_config()
+            config["supervisor"]["qa_commands"] = [spec]
+            errors: list[str] = []
+            useagent.validate_config(config, errors)
+            self.assertTrue(errors, spec)
+            if isinstance(spec, str):
+                legacy_errors = errors
+        self.assertTrue(legacy_errors)
+        self.assertIn("legacy command strings are rejected", legacy_errors[0])
+
+    def test_qa_execution_mode_change_stales_existing_source_bound_qa(self) -> None:
+        config, result = self.successful_qa()
+        changed_config = copy.deepcopy(config)
+        changed_config["supervisor"]["qa_commands"] = [
+            {"mode": "shell", "command": f'"{sys.executable}" -c "print(\'changed\')"'}
+        ]
+
+        self.assertEqual(useagent.validate_qa_source(config, {"last_qa": result})["status"], "valid")
+        self.assertEqual(useagent.validate_qa_source(changed_config, {"last_qa": result})["status"], "QA_STALE")
+
+    def test_repository_qa_configuration_uses_explicit_argv_specs(self) -> None:
+        repository_config = json.loads(
+            (self.original_root / "useagent.config.json").read_text(encoding="utf-8")
+        )
+        commands = repository_config["supervisor"]["qa_commands"]
+        self.assertTrue(commands)
+        self.assertTrue(all(command.get("mode") == "argv" for command in commands))
+        self.assertTrue(all(isinstance(command.get("argv"), list) for command in commands))
+
     def test_qa_source_fingerprint_is_valid_when_source_is_unchanged(self) -> None:
         config, result = self.successful_qa()
         gates, _ = useagent.production_snapshot(config, self.release_data_with_done_task(), {"last_qa": result})
@@ -1886,7 +1987,7 @@ class UseAgentCliTests(unittest.TestCase):
 
     def test_qa_source_fingerprint_stales_when_qa_contract_changes(self) -> None:
         config, result = self.successful_qa()
-        changed_config = self.configure_qa('python -c "print(\'qa-contract-changed\')"')
+        changed_config = self.configure_qa(self.qa_python("print('qa-contract-changed')"))
         self.assertNotEqual(config["supervisor"]["qa_commands"], changed_config["supervisor"]["qa_commands"])
         self.assertEqual(useagent.validate_qa_source(changed_config, {"last_qa": result})["status"], "QA_STALE")
 
@@ -2191,7 +2292,7 @@ class UseAgentCliTests(unittest.TestCase):
         (useagent.ROOT / "docs" / "rollback.md").write_text("Rollback plan", encoding="utf-8")
         config = useagent.load_config()
         config["supervisor"]["operational_readiness_files"] = ["docs/operations.md", "docs/rollback.md"]
-        config["supervisor"]["qa_commands"] = ['python -c "print(\'qa-pass\')"']
+        config["supervisor"]["qa_commands"] = [self.qa_python("print('qa-pass')")]
         useagent.save_config(config)
         qa_result = useagent.run_qa(config, "readiness-test")
         data = useagent.load_registry()

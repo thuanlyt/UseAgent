@@ -24,7 +24,7 @@ Create and transition work items, serialize state changes, print bounded context
 
 ## Public interfaces / contracts
 
-See `knowledge/contracts/work-registry.md` and `knowledge/contracts/supervisor-protocol.md`. State lives in `work/registry.json`; item Markdown lives in `work/items/`. Repeated `--scope` options are preserved for a task, task scope can be extended through `task update`, takeover lineage is written by `task new --supersedes ... --takeover-reason ...`, configured QA commands are shell command strings, and production readiness files are repository-safe. A central checkout may pass `--root <project-root>` before the subcommand; all runtime globals and configured paths are rebound to that existing directory, and escape paths are rejected. Direct claims and pulls share dispatcher eligibility checks for availability, capacity, scope and capabilities.
+See `knowledge/contracts/work-registry.md` and `knowledge/contracts/supervisor-protocol.md`. State lives in `work/registry.json`; item Markdown lives in `work/items/`. Repeated `--scope` options are preserved for a task, task scope can be extended through `task update`, takeover lineage is written by `task new --supersedes ... --takeover-reason ...`, configured QA commands use explicit structured `argv` or trusted-local `shell` objects, and production readiness files are repository-safe. A central checkout may pass `--root <project-root>` before the subcommand; all runtime globals and configured paths are rebound to that existing directory, and escape paths are rejected. Direct claims and pulls share dispatcher eligibility checks for availability, capacity, scope and capabilities.
 
 The package entry point is `tools.useagent:main`; an installed CLI uses the
 current working directory when the package is outside a prepared source
@@ -58,6 +58,13 @@ never requires `origin/main`, a network push or a merge; non-Git projects are
 explicitly `filesystem`/`manual` degraded mode.
 The generated root convenience report `work/SUPERVISOR_REPORT.md` is also
 configured as volatile so report refreshes cannot self-invalidate QA.
+
+QA defaults to structured argv execution with `shell=False`. A shell command
+requires an explicit `mode: "shell"` object and is a trusted-local capability;
+legacy command strings are rejected rather than heuristically parsed. QA
+evidence records the execution mode, while argv, mode, timeout and related
+configuration changes are already covered by the existing QA configuration
+fingerprint.
 
 ## Dependency edges
 

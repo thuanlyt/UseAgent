@@ -103,9 +103,8 @@ def main() -> int:
 
         config_path = project_root / "useagent.config.json"
         config = json.loads(config_path.read_text(encoding="utf-8"))
-        quoted_python = json.dumps(sys.executable)
         config["supervisor"]["qa_commands"] = [
-            f"{quoted_python} -c \"print('multi-runtime-qa-pass')\""
+            {"mode": "argv", "argv": [sys.executable, "-c", "print('multi-runtime-qa-pass')"]}
         ]
         config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
 

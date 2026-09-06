@@ -56,8 +56,9 @@ def main() -> int:
 
         config_path = project_root / "useagent.config.json"
         config = json.loads(config_path.read_text(encoding="utf-8"))
-        quoted_python = json.dumps(sys.executable)
-        config["supervisor"]["qa_commands"] = [f"{quoted_python} -c \"print('demo-qa-pass')\""]
+        config["supervisor"]["qa_commands"] = [
+            {"mode": "argv", "argv": [sys.executable, "-c", "print('demo-qa-pass')"]}
+        ]
         config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
 
         run_cli(

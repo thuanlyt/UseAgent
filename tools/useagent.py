@@ -68,6 +68,7 @@ MAX_RUNNER_TIMEOUT_SECONDS = 86400
 MAX_RUNNER_WAIT_SECONDS = 86400
 MAX_DURABLE_OUTPUT_CHARS = 4000
 MAX_LOCAL_OUTPUT_CHARS = 100000
+QA_EXECUTION_MODES = {"argv", "shell"}
 
 RUNTIME_REDACTION_PATTERNS = (
     (
@@ -1714,6 +1715,54 @@ def safe_runtime_command(command: Any) -> tuple[str, int]:
     return redact_runtime_text(command)
 
 
+def normalize_qa_command(value: Any, index: int) -> dict[str, Any]:
+    """Validate one explicit QA command without interpreting legacy strings."""
+
+    label = f"config.supervisor.qa_commands[{index}]"
+    if isinstance(value, str):
+        raise UseAgentError(
+            f"{label} must be a structured object; legacy command strings are rejected; "
+            "use {mode: 'argv', argv: [...]} or explicit {mode: 'shell', command: '...'}"
+        )
+    if not isinstance(value, dict):
+        raise UseAgentError(f"{label} must be an object with mode and argv/command")
+    unknown = [key for key in value if key not in {"mode", "argv", "command"}]
+    if unknown:
+        raise UseAgentError(f"{label} has unsupported fields: {', '.join(map(str, unknown))}")
+    mode = value.get("mode")
+    if not isinstance(mode, str) or mode not in QA_EXECUTION_MODES:
+        raise UseAgentError(f"{label}.mode must be one of: argv, shell")
+    if mode == "argv":
+        if "command" in value:
+            raise UseAgentError(f"{label} cannot contain command when mode=argv")
+        argv = value.get("argv")
+        if not isinstance(argv, list) or not argv:
+            raise UseAgentError(f"{label}.argv must be a non-empty array of non-empty strings")
+        if any(not isinstance(part, str) or not part or "\x00" in part for part in argv):
+            raise UseAgentError(f"{label}.argv must be a non-empty array of non-empty strings without NUL")
+        return {"mode": "argv", "argv": list(argv)}
+    if "argv" in value:
+        raise UseAgentError(f"{label} cannot contain argv when mode=shell")
+    command = value.get("command")
+    if not isinstance(command, str) or not command.strip() or "\x00" in command:
+        raise UseAgentError(f"{label}.command must be a non-empty string without NUL")
+    return {"mode": "shell", "command": command}
+
+
+def normalize_qa_commands(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        raise UseAgentError("config.supervisor.qa_commands must be an array of structured command objects")
+    return [normalize_qa_command(entry, index) for index, entry in enumerate(value)]
+
+
+def qa_command_display(spec: dict[str, Any]) -> str:
+    """Render command identity for evidence; this never participates in execution."""
+
+    if spec["mode"] == "argv":
+        return f"argv {json.dumps(spec['argv'], ensure_ascii=False)}"
+    return f"shell {spec['command']}"
+
+
 def write_runtime_spool(
     config: dict[str, Any],
     category: str,
@@ -1739,6 +1788,7 @@ def write_runtime_spool(
             [
                 f"## command {index}",
                 "",
+                f"- execution_mode: `{safe_markdown_code(record.get('execution_mode', 'legacy'))}`",
                 f"- command: `{safe_markdown_code(command)}`",
                 f"- returncode: `{record.get('returncode', 127)}`",
                 f"- stdout_chars: `{stdout['captured_chars']}`",
@@ -2141,19 +2191,20 @@ def cmd_supervisor_ingest(_: argparse.Namespace) -> int:
 
 
 def run_qa(config: dict[str, Any], cycle_id: str) -> dict[str, Any]:
-    commands = config["supervisor"].get("qa_commands", [])
+    commands = normalize_qa_commands(config["supervisor"].get("qa_commands", []))
     if not commands:
         return {"status": "not_configured", "commands": [], "evidence": None}
     source_state = release_source_fingerprint(config)
     timeout = int(config["supervisor"].get("qa_timeout_seconds", 900))
     raw_results = []
-    for command in commands:
+    for spec in commands:
         started = time.monotonic()
+        command = spec["argv"] if spec["mode"] == "argv" else spec["command"]
         try:
             result = subprocess.run(
-                str(command),
+                command,
                 cwd=ROOT,
-                shell=True,
+                shell=spec["mode"] == "shell",
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
@@ -2163,7 +2214,8 @@ def run_qa(config: dict[str, Any], cycle_id: str) -> dict[str, Any]:
             )
             raw_results.append(
                 {
-                    "command": str(command),
+                    "command": command,
+                    "execution_mode": spec["mode"],
                     "returncode": result.returncode,
                     "duration_sec": round(time.monotonic() - started, 2),
                     "stdout": result.stdout,
@@ -2173,20 +2225,49 @@ def run_qa(config: dict[str, Any], cycle_id: str) -> dict[str, Any]:
         except subprocess.TimeoutExpired as exc:
             raw_results.append(
                 {
-                    "command": str(command),
+                    "command": command,
+                    "execution_mode": spec["mode"],
                     "returncode": 124,
                     "duration_sec": round(time.monotonic() - started, 2),
                     "stdout": runtime_text(exc.stdout),
                     "stderr": f"timeout after {timeout}s",
                 }
             )
+        except FileNotFoundError as exc:
+            raw_results.append(
+                {
+                    "command": command,
+                    "execution_mode": spec["mode"],
+                    "returncode": 127,
+                    "duration_sec": round(time.monotonic() - started, 2),
+                    "stdout": "",
+                    "stderr": f"QA executable was not found: {exc}",
+                }
+            )
+        except OSError as exc:
+            raw_results.append(
+                {
+                    "command": command,
+                    "execution_mode": spec["mode"],
+                    "returncode": 126,
+                    "duration_sec": round(time.monotonic() - started, 2),
+                    "stdout": "",
+                    "stderr": f"QA command could not start: {exc}",
+                }
+            )
     local_spool = write_runtime_spool(config, "qa", cycle_id, raw_results)
     results = []
     for result in raw_results:
-        safe_command, command_redactions = safe_runtime_command(result["command"])
+        display_command = qa_command_display(
+            {"mode": result["execution_mode"], "argv": result["command"]}
+            if result["execution_mode"] == "argv"
+            else {"mode": "shell", "command": result["command"]}
+        )
+        safe_command, command_redactions = safe_runtime_command(display_command)
         results.append(
             {
                 "command": safe_command,
+                "execution_mode": result["execution_mode"],
                 "command_redactions": command_redactions,
                 "returncode": result["returncode"],
                 "duration_sec": result["duration_sec"],
@@ -2223,6 +2304,7 @@ def run_qa(config: dict[str, Any], cycle_id: str) -> dict[str, Any]:
             [
                 f"## `{safe_markdown_code(result['command'])}`",
                 "",
+                f"- execution_mode: `{result['execution_mode']}`",
                 f"- command_redactions: `{result['command_redactions']}`",
                 f"- returncode: `{result['returncode']}`",
                 f"- duration_sec: `{result['duration_sec']}`",
@@ -2254,6 +2336,7 @@ def run_qa(config: dict[str, Any], cycle_id: str) -> dict[str, Any]:
         "qa_config_version": source_state["qa_config_version"],
         "qa_config_fingerprint": source_state["qa_config_fingerprint"],
         "executed_checks": [result["command"] for result in results],
+        "execution_modes": [result["execution_mode"] for result in results],
     }
 
 
@@ -2784,7 +2867,16 @@ def validate_config(config: dict[str, Any], errors: list[str]) -> None:
     for key in ("run_qa_each_cycle", "auto_dispatch"):
         if not isinstance(supervisor.get(key), bool):
             errors.append(f"config.supervisor.{key} must be boolean")
-    for key in ("qa_commands", "operational_readiness_files", "production_gates"):
+    qa_commands = supervisor.get("qa_commands")
+    if not isinstance(qa_commands, list):
+        errors.append("config.supervisor.qa_commands must be an array of structured command objects")
+    else:
+        for index, entry in enumerate(qa_commands):
+            try:
+                normalize_qa_command(entry, index)
+            except UseAgentError as exc:
+                errors.append(str(exc))
+    for key in ("operational_readiness_files", "production_gates"):
         value = supervisor.get(key)
         if not isinstance(value, list) or any(not isinstance(entry, str) or not entry.strip() for entry in value):
             errors.append(f"config.supervisor.{key} must be an array of non-empty strings")

@@ -80,14 +80,27 @@ trạng thái hiện tại. `context` hiển thị nhãn và cảnh báo freshne
 
 ## QA contract
 
-`supervisor.qa_commands` is an array of shell command strings. Each command
-runs from the repository root with the configured timeout. QA writes only
-bounded sanitized stream summaries and metadata under `work/evidence/`; a
-separate bounded redacted diagnostic spool under `work/.runtime-output/`
-retains local debugging output. Each stream reports its captured size, preview
-budget, redaction count and truncation flag. The cycle records `pass`, `fail`
-or `not_configured`. This output boundary does not change the separate
-trusted-local execution boundary of configured shell commands.
+`supervisor.qa_commands` is an array of explicit command objects. The default
+shape is `{ "mode": "argv", "argv": ["program", "arg1", ...] }`; it runs from
+the repository root with `shell=False`, so arguments are passed literally and
+shell metacharacters are not interpreted. Shell syntax is available only through
+the explicit trusted-local shape `{ "mode": "shell", "command": "..." }`.
+Shell mode is repository/operator code execution, not a sandbox or an
+authentication boundary. Legacy command strings are rejected by validation and
+are never heuristically split or silently promoted to shell execution.
+
+Each command runs with the configured timeout. QA writes only bounded sanitized
+stream summaries and metadata under `work/evidence/`; a separate bounded
+redacted diagnostic spool under `work/.runtime-output/` retains local debugging
+output. Each stream reports its captured size, preview budget, redaction count
+and truncation flag, and each result records `execution_mode`. The cycle records
+`pass`, `fail` or `not_configured`. Both execution modes retain the UA-0051
+output boundary.
+
+The existing UA-0052 release-source fingerprint includes the complete QA
+configuration, so command argv, execution mode, timeout and related QA/release
+configuration changes invalidate an older QA result without introducing a
+second fingerprint.
 
 Successful QA also records a release-source fingerprint. The fingerprint
 includes Git `HEAD` when available, content hashes for tracked and non-ignored
