@@ -256,7 +256,11 @@ python tools/useagent.py worker run --agent codex-api --max-tasks 1
 The runner is an argv list, not a shell string, and must contain the
 `{assignment_path}` placeholder. The adapter runs from the project root, reads
 the assignment, performs the work and submits `task report`. UseAgent records
-runner evidence and creates a failed report if the adapter exits without one.
+bounded sanitized runner evidence with a local diagnostic spool reference and
+creates a failed report if the adapter exits without one. An optional argv-only
+preflight can return `ready`, `unavailable`, `misconfigured`, `no_target` or
+`unknown`; only an explicit `ready` result allows the task to become
+`in_progress`.
 The default remains manual/no-runner, so configuring this is an explicit
 permission boundary. Keep `--max-tasks` and `--wait-seconds` finite.
 
@@ -428,7 +432,7 @@ the manual pull/report flow.
 | `work/agents/<id>/REPORT.md` | worker/CLI | Per-agent handover history. |
 | `work/reports/inbox/<report>.md` | worker/CLI | Input for the next supervisor ingest. |
 | `work/completed/COMPLETED.md` | worker/CLI | Append-only worker completion log. |
-| `work/evidence/runner-*.md` | worker/CLI | Captured adapter return code and bounded output. |
+| `work/evidence/runner-*.md` | worker/CLI | Bounded sanitized adapter summary with provenance and local-spool reference. |
 | `work/SUPERVISOR_REPORT.md` | supervisor/CLI | Current project health, gates and next action. |
 | `work/evidence/<evidence>.md` | supervisor/CLI | Captured test, QA or review evidence. |
 | `work/checkpoints/<checkpoint>.md` | supervisor/CLI | Resume context for the next bounded cycle. |
@@ -591,8 +595,10 @@ Code làm frontend worker và Antigravity làm QA worker trong cùng một dự 
 Bạn không cần tự viết lại prompt assignment. Prompt đầy đủ nằm trong
 `work/outbox/`; phần prompt mẫu ở trên chỉ là “bootstrap” để runtime biết phải
 đọc file nào và dùng worker id nào. Với runner đã cấu hình, adapter nhận
-`{assignment_path}` và UseAgent tự ghi runner evidence/failed report nếu adapter
-không report.
+`{assignment_path}`. UseAgent tự ghi runner summary đã sanitize, kèm local spool
+reference, và tạo failed report nếu adapter không report. Preflight argv-only tùy
+chọn phải trả về trạng thái rõ ràng; chỉ `ready` mới cho task chuyển sang
+`in_progress`.
 
 ### Chạy demo không cần credential
 

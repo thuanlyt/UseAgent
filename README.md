@@ -1,135 +1,97 @@
 # UseAgent
 
-> A durable, file-first supervisor skill for coordinating multiple AI agents toward a production-ready result.
->
-> Bộ skill supervisor bền vững, file-first để điều phối nhiều AI agent cùng làm việc hướng tới sản phẩm hoàn chỉnh.
+English | [Tiếng Việt](README-vi.md)
 
 [![CI](https://github.com/thuanlyt/UseAgent/actions/workflows/ci.yml/badge.svg)](https://github.com/thuanlyt/UseAgent/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-English | [Tiếng Việt](#tiếng-việt)
+> A file-first multi-agent control plane that turns one project goal into scoped work, inspectable handovers and bounded release progress.
 
-## English
-
-### What is UseAgent?
-
-UseAgent turns one capable model into a project supervisor and gives the rest of the agents a shared operating protocol. You provide a lightweight goal and an agent roster; the supervisor derives a roadmap, creates scoped work items, dispatches ready tasks, reads evidence-backed reports, runs configured QA, and continues through bounded checkpoints.
-
-The central loop is:
-
-```text
-User goal
-   ↓
-UseAgent supervisor
-   ├─ project brief + roadmap + dependency graph
-   ├─ scoped task registry
-   ├─ worker mailboxes and prompts
-   └─ reports, QA, review, evidence, checkpoints
-   ↓
-Worker agents
-   ↓
-UseAgent supervisor
-   ↓
-User status, decisions, blockers and next action
-```
-
-UseAgent is intentionally small and transparent:
-
-- repository-local skills teach a model how to supervise, orchestrate, work, review, build context and run bounded autopilot cycles;
-- a dependency-free Python CLI owns state transitions, locking, dispatch and Markdown reports;
-- JSON is the machine-readable source of state, while Markdown is the human- and model-readable handoff surface;
-- one writer owns a scope at a time, so agents can share a folder without silently overwriting one another.
-
-UseAgent does not guess how to start an arbitrary external model. The CLI
-creates durable assignments and prompts. In manual mode, a Codex subagent,
-Claude Code session, Antigravity agent, another compatible runner or a human
-invokes the worker. For a project-owned adapter, an explicitly configured,
-argv-only runner can be invoked by bounded `worker run`; the supervisor then
-consumes the report on the next cycle.
-
-### Why it exists
-
-Multi-agent projects commonly lose time because context is reread from scratch, tasks are ambiguous, two agents edit the same files, and “completed” is confused with “verified”. UseAgent makes those boundaries explicit:
-
-| Problem | UseAgent control |
-| --- | --- |
-| Agents reread the whole repository | Compact knowledge ledger with source anchors |
-| Work disappears in chat | Durable task registry and Markdown mailboxes |
-| Two workers edit the same scope | Active-writer conflict check |
-| “Done” has no proof | Acceptance criteria, commands and evidence gates |
-| Long runs lose direction | Bounded cycles and resumable checkpoints |
-| Supervisors repeat stale conclusions | Ingested reports plus fresh QA evidence |
-
-### See the system
-
-UseAgent is easier to understand as a system map than as a wall of prose. The
-repository includes lightweight SVG diagrams for the supervisor loop, shared
-ledger and runtime handoff, plus a branded hero illustration used by the docs
-site and social previews.
+UseAgent gives one capable model the role of supervisor. Other coding agents and humans join through the same repository-local protocol: shared context, explicit work items, mailboxes, evidence, review gates and checkpoints.
 
 ![UseAgent supervisor coordinating workers, reports and production gates](docs-site/assets/useagent-control-plane-hero.png)
 
-![UseAgent supervisor loop from user goal to checkpoint](docs-site/assets/useagent-supervisor-loop.svg)
+## What UseAgent is
 
-![UseAgent shared knowledge and work ledger](docs-site/assets/useagent-shared-ledger.svg)
+UseAgent is a provider-neutral supervisor workflow for trusted local agents working in one prepared repository. The supervisor reads a lightweight goal and roster, builds a roadmap/DAG, dispatches ready tasks, reviews worker reports, runs configured QA and chooses the next bounded action.
 
-![Codex, Claude Code and Antigravity sharing one UseAgent protocol](docs-site/assets/useagent-runtime-handoff.svg)
+The repository is the shared memory:
 
-These visuals are explanatory assets, not a second source of truth. Commands,
-contracts and current state remain in the linked Markdown, registry and code.
+```text
+User goal
+    ↓
+UseAgent supervisor
+    ├─ project brief, knowledge ledger and task DAG
+    ├─ scoped assignments in worker mailboxes
+    └─ reports, evidence, review, QA and checkpoints
+    ↓
+Codex · Claude Code · Antigravity · other workers · humans
+    ↓
+UseAgent supervisor → next safe action or an explicit blocker
+```
 
-### Features
+The Python CLI owns deterministic state transitions and validation. The model owns planning, judgment and coordination. Markdown keeps handovers readable; JSON keeps the registry machine-checkable.
+
+## Why teams use it
+
+| Coordination problem | UseAgent response |
+| --- | --- |
+| Every agent rereads the repository | A compact, source-anchored `knowledge/` ledger |
+| Work disappears in chat | A durable registry, assignment mailboxes and reports |
+| Workers edit the same area | One active writer per path/subtree with scope checks |
+| “Done” has no proof | Acceptance criteria, review evidence and repeatable checks |
+| A long run loses direction | Bounded cycles, checkpoints and explicit stop conditions |
+| QA or reports become stale | Provenance, report freshness and source-bound release evidence |
+
+## Capabilities in the current release
+
+### Plan and coordinate
 
 - Supervisor front door through `$useagent`.
-- Five supporting skills: context, orchestrator, worker, review and autopilot.
 - Work levels from L0 discovery to L4 production/release.
-- Automatic task assignment based on status, scope, capabilities, preferred agents and capacity.
-- Per-agent `INBOX.md`, `REPORT.md`, `COMPLETED.md` and assignment inbox.
-- Global reports index, completed log, evidence directory and supervisor report.
-- Atomic JSON writes and a short-lived cross-process state lock.
-- Safe repository-relative paths; configured paths cannot escape the repository root.
-- Configurable QA commands with timeout and persisted evidence.
-- Optional bounded worker runner bridge with explicit assignment placeholders,
-  timeout and automatic failed-report fallback.
-- Cycle stop conditions for ambiguity, missing access, scope conflict, repeated failure and unsafe side effects.
-- Custom Markdown paths for teams that already have an established folder layout.
-- No third-party Python dependencies.
-- Credential-free end-to-end conformance demo for the assignment/report protocol.
-- Multi-runtime conformance harness for isolated Codex, Claude Code and Antigravity-style worker identities.
+- Dependency-aware task DAGs with scope, owner, capability and capacity checks.
+- Per-agent `INBOX.md`, assignment inbox, `REPORT.md` and `COMPLETED.md`.
+- Automatic dispatch to eligible workers; one writer owns a scope at a time.
 
-### Which agents are supported?
+### Preserve useful project memory
 
-UseAgent supports any local coding-agent runtime that can access the same
-repository, read Markdown, run the CLI and respect a declared file scope. The
-repository ships role profiles for `supervisor`, `explorer`, `planner`,
-`worker`, `reviewer` and `release_gate`; the default config registers only the
-supervisor, so real worker sessions must be registered with unique ids.
+- Source-anchored knowledge cards and contracts that reduce rereading.
+- Typed evidence provenance: `local`, `live`, `simulation`, `blocked`, `operator-confirmed` and compatible `legacy` history.
+- Report freshness markers so `work/SUPERVISOR_REPORT.md` cannot silently look current when the registry moved on.
+- First-class takeover lineage with `supersedes`, `superseded_by` and a preserved failure history.
+- Bounded cycles and resumable checkpoints; no unbounded supervisor loop.
 
-Codex has the tightest integration through `$useagent`, `$useagent-worker` and
-the optional `.codex/agents/` profiles. Claude Code and Google Antigravity work
-through the same portable file protocol: open the target repository, read the
-relevant `SKILL.md`, run `worker pull`, edit only the claimed scope and submit a
-`task report`. UseAgent does not call a vendor API or require a vendor-specific
-adapter.
+### Verify and release safely
 
-If you are new to multi-agent work, read the complete
-[hands-on onboarding guide](docs/getting-started.md) before registering agents.
-It uses one concrete Codex + Claude Code + Antigravity example and shows the
-exact prompts, commands, mailbox files and troubleshooting steps.
+- Sanitized, bounded durable summaries for runner and QA output.
+- Local redacted diagnostic spool at `work/.runtime-output/`; raw runtime output is not repository evidence by default.
+- Source-bound QA with Git HEAD, dirty-state, source-content and QA configuration fingerprints.
+- Git release durability gate: clean release-relevant source, no non-ignored untracked release files and valid current QA.
+- Structured QA `argv` execution with `shell=False` by default; shell syntax is an explicit trusted-local opt-in.
+- Optional bounded worker runtime readiness and provider-neutral failure classification.
+- Credential-free conformance coverage for Codex-, Claude Code- and Antigravity-style identities.
+- No third-party Python runtime dependencies.
 
-For a real, evidence-frozen run rather than a replay fixture, read the
-[OSBlog dogfooding case study](docs/case-study-osblog.md) and its
-[capture manifest](docs/evidence/osblog-dogfood-capture-manifest.md). It keeps
-quota failures, takeovers, live Vercel evidence and blocked capture work
-visible, then turns the findings into a prioritized UseAgent improvement list.
+## Supported runtimes and roles
 
-### Quick start
+UseAgent does not require a particular model vendor. Codex, Claude Code, Google Antigravity, another compatible runtime or a human can work in the same repository when they can read the Markdown contract, run the CLI and respect the claimed scope.
 
-Prerequisites:
+Runtimes are execution surfaces; roles are workflow responsibilities:
 
-- Python 3.11 or newer.
-- Git for versioning and optional worktrees.
-- A model/agent runtime that can load repository skills. In Codex, use the repository-local `$useagent` skill; compatible runtimes can use the same Markdown contract.
+| Role | Responsibility |
+| --- | --- |
+| `supervisor` | Understand the goal, plan the DAG, dispatch, review evidence, run QA and choose the next action |
+| `explorer` | Read-only discovery, constraints and source anchors |
+| `planner` | Decompose milestones into scoped work items |
+| `worker` | Pull one assignment, implement within scope and report checks |
+| `reviewer` | Inspect diff, regressions, security and evidence gaps |
+| `release_gate` | Check acceptance, operations, rollback and release readiness |
+
+The repository includes a practical [Codex + Claude Code + Antigravity onboarding guide](docs/getting-started.md). The conformance harness proves the shared protocol and routing; it does not claim that it called vendor APIs.
+
+## Quick start
+
+Requirements: Python 3.11+, Git, and a prepared project repository. UseAgent can live in the target repository or operate on an existing repository through `--root`.
 
 ```powershell
 git clone https://github.com/thuanlyt/UseAgent.git
@@ -137,509 +99,173 @@ Set-Location UseAgent
 
 python tools/useagent.py init
 python tools/useagent.py validate
-python -m unittest discover -s tests -v
 python examples/multi-agent-demo/run_demo.py
 python examples/multi-runtime-conformance/run_conformance.py
 ```
 
-`tools/useagent.py` operates on the repository root that contains it. For a
-different application, vendor or merge the UseAgent control-plane files into
-that application's repository first; see
-[Put the control plane in the target repository](docs/getting-started.md#2-put-the-control-plane-in-the-target-repository).
-
-If the CLI is kept in a central UseAgent checkout, target an existing prepared
-repository explicitly:
+For a separate prepared project:
 
 ```powershell
 python F:\dev\UseAgent\tools\useagent.py --root F:\dev\MyProject init
 python F:\dev\UseAgent\tools\useagent.py --root F:\dev\MyProject validate
 ```
 
-`--root` must appear before the subcommand. It makes the selected project root
-the boundary for the registry, mailboxes, reports and configured paths; a
-configured path that escapes that boundary is rejected.
+`--root` comes before the subcommand. It makes the selected project the boundary for the registry, mailboxes, reports and configured paths. A configured path that escapes that boundary is rejected. See [getting started](docs/getting-started.md) for the copy-in and central-checkout choices.
 
-For a reusable console command:
-
-```powershell
-python -m pip install --no-deps .
-useagent --help
-useagent validate
-```
-
-An installed CLI uses the current directory as its default root. Use
-`useagent --root F:\dev\MyProject ...` when operating from a central checkout.
-
-The public docs-site is also runnable locally:
-
-```powershell
-python docs-site/build.py --check-only
-python docs-site/build.py --output dist
-python -m http.server 4173 --directory docs-site/dist
-```
-
-Open `http://localhost:4173` for the English experience or the Vietnamese
-entry point at `/vi.html`. The hosting and custom-domain path is documented and
-gated separately; no DNS is changed by this repository command.
-
-For a new project, register the workers that actually exist:
+Register the real worker sessions that will actually work on the project:
 
 ```powershell
 python tools/useagent.py agent register `
-  --id backend `
+  --id claude-frontend `
   --role worker `
-  --scope src/backend `
-  --scope tests `
-  --capability python `
-  --max-active 1
-
-python tools/useagent.py agent register `
-  --id reviewer `
-  --role reviewer `
-  --scope src/backend `
-  --scope tests `
-  --capability review `
+  --scope src/frontend `
+  --scope tests/frontend `
+  --capability web `
   --max-active 1
 ```
 
-Then give the supervisor a small prompt. It should not be necessary to design the DAG or write worker prompts yourself:
+Then give the supervisor a light prompt:
 
 ```text
 Use $useagent in F:\dev\MyProject.
 Goal: build a production-ready inventory API with authentication and tests.
-Agents: backend (Python), frontend (web), reviewer (security and QA).
-Constraints: use the existing repository conventions; do not deploy without approval.
-Plan the roadmap, create scoped tasks, dispatch ready work, inspect reports, run QA,
-and continue in bounded cycles until a production gate is evidenced or a blocker
-requires my decision.
+Agents: codex-supervisor, claude-frontend, antigravity-reviewer.
+Constraints: keep scopes non-overlapping; do not deploy or change secrets without approval.
+Create the roadmap and scoped tasks, dispatch ready work, inspect reports, run QA,
+review evidence and continue in bounded cycles until the release gate passes or I
+need to decide a blocker.
 ```
 
-### The worker and supervisor loop
+The supervisor writes the full worker prompts to `work/outbox/`. Workers do not need a second hand-written assignment.
 
-The CLI is deterministic; the model supplies planning and judgment.
+## The worker loop
 
-```mermaid
-flowchart TD
-    A[User goal + roster] --> B[UseAgent supervisor skill]
-    B --> C[Brief, roadmap and DAG]
-    C --> D[task new: planned]
-    D --> E[supervisor cycle]
-    E --> F[Scoped assignment in worker mailbox]
-    F --> G[Worker pull: in_progress]
-    G --> H[Implement only inside claimed scope]
-    H --> I[task report: reported + Markdown handover]
-    I --> J[Supervisor ingest]
-    J --> K{Evidence and QA pass?}
-    K -- No --> L[Review or scoped debug task]
-    L --> E
-    K -- Yes --> M[needs_review / done]
-    M --> N[Knowledge refresh + checkpoint]
-    N --> E
-```
-
-One bounded cycle is finite. It may end in `complete`, `blocked` or `needs_input`; a scheduler may invoke another cycle later, but UseAgent never creates an unbounded self-loop or deploys on its own.
-
-### Work levels and statuses
-
-| Level | Intended use |
-| --- | --- |
-| L0 | Discovery, inventory, constraints and unknowns |
-| L1 | Small isolated change or focused documentation |
-| L2 | Feature slice spanning a module and tests |
-| L3 | Cross-module integration, migration or release preparation |
-| L4 | Production gate, operational readiness and release evidence |
-
-Normal task flow:
-
-```text
-planned → assigned → in_progress → reported → needs_review → done
-                                      ↘ blocked / cancelled
-```
-
-`reported` means the worker submitted a handover. It is not the same as production-ready. A task reaches `done` only after the supervisor/reviewer accepts its criteria and evidence.
-
-### Repository structure
-
-```text
-UseAgent/
-├── .agents/skills/              Repository-local skills discovered by agents
-│   ├── useagent/                Supervisor front door
-│   ├── useagent-context/        Compact knowledge ledger
-│   ├── useagent-orchestrator/   DAG, dispatch and coordination
-│   ├── useagent-worker/         Scoped implementation handover
-│   ├── useagent-review/         Evidence, regressions and security review
-│   └── useagent-autopilot/      One bounded long-running cycle
-├── .codex/agents/               Optional role-specific Codex agent profiles
-├── .github/                     CI, issue forms and pull-request template
-├── docs/                        Public operations and autopilot guides
-├── knowledge/                   Compact source-anchored project context
-│   ├── INDEX.md                 Required context entry point
-│   ├── architecture.md          Invariants and coordination model
-│   ├── project-brief.md         Goal, stack assumptions and definition of done
-│   ├── project-map.md           Repository map and source anchors
-│   ├── modules/                 Module cards
-│   ├── contracts/               Stable file/CLI contracts
-│   └── decisions/               Architecture decision records
-├── templates/                   Work item, module, decision and checkpoint templates
-├── tests/                       Standard-library unit tests
-├── tools/useagent.py            Dependency-free control-plane CLI
-├── useagent.config.json         Paths, roster, QA and production gates
-└── work/                        Durable state and Markdown handoff surface
-    ├── agents/<agent>/          INBOX, REPORT, COMPLETED and private inbox
-    ├── items/                   One Markdown file per task
-    ├── reports/                 Incoming reports, archive and index
-    ├── completed/               Global completed-task log
-    ├── evidence/                Reproducible command output and artifacts
-    ├── checkpoints/             Resume points for long-running work
-    ├── outbox/                  Prompts for external worker runtimes
-    └── registry.json            Machine-readable task state
-```
-
-Read `knowledge/INDEX.md` before opening source files. Use `python tools/useagent.py context --task <id>` when a bounded snapshot is enough.
-
-### Creating, dispatching and reporting work
-
-Create a scoped task with explicit acceptance criteria:
+The normal manual path is portable across runtimes:
 
 ```powershell
-python tools/useagent.py task new `
-  --title "Implement inventory endpoint" `
-  --objective "Expose authenticated inventory reads" `
-  --level L2 `
-  --owner supervisor `
-  --scope src/api/inventory.py `
-  --scope tests/test_inventory.py `
-  --capability python `
-  --acceptance "GET /inventory returns the authenticated user's items" `
-  --acceptance "Unauthenticated access is rejected" `
-  --verification "python -m unittest discover -s tests -v"
+# supervisor: ingest reports, dispatch ready work and write the next checkpoint
+python tools/useagent.py supervisor cycle
 
-python tools/useagent.py supervisor dispatch
-python tools/useagent.py worker pull --agent backend
-```
+# worker: pull only after the supervisor assigned the task
+python tools/useagent.py worker pull --agent claude-frontend
 
-After implementation, the worker reports evidence through the CLI:
-
-```powershell
+# worker: report the result through the CLI
 python tools/useagent.py task report UA-0001 `
-  --agent backend `
+  --agent claude-frontend `
   --result completed `
-  --summary "Inventory endpoint implemented with focused tests" `
-  --next-action "Reviewer checks auth boundary and regression evidence" `
-  --file src/api/inventory.py `
-  --file tests/test_inventory.py `
-  --check "python -m unittest discover -s tests -v: pass"
+  --summary "Frontend slice implemented and checked" `
+  --next-action "Reviewer inspects the diff and accessibility evidence" `
+  --file src/frontend/app.tsx `
+  --check "npm test: pass"
+
+# supervisor: ingest the report, review and run configured QA
+python tools/useagent.py supervisor cycle --run-qa
+python tools/useagent.py supervisor report --check
 ```
 
-The report is written to the configured report inbox, the worker's `REPORT.md`, the global reports index, and `work/completed/COMPLETED.md`. The task remains reviewable until the supervisor accepts it.
+`reported` means that a worker submitted a handover. It is not `done`; a supervisor or reviewer must accept the evidence first. If a worker is blocked, it reports the concrete blocker instead of guessing or silently changing scope.
 
-### Optional automatic worker execution
+## Optional automatic worker intake
 
-If a runtime has a local CLI or project-owned adapter, register its command as
-an argv list. Include `{assignment_path}` so the adapter receives the generated
-Markdown assignment:
+Automatic execution is opt-in. Configure a project-owned adapter as an argv list containing `{assignment_path}`:
 
 ```powershell
-python tools/useagent.py agent register --id backend --role worker `
-  --scope src/backend --scope tests `
+python tools/useagent.py agent register `
+  --id codex-api `
+  --role worker `
+  --scope src/api `
+  --scope tests/api `
+  --capability python `
   --runner-arg=python `
-  --runner-arg=tools/backend_adapter.py `
+  --runner-arg=tools/codex_worker_adapter.py `
   --runner-arg=--assignment `
   --runner-arg={assignment_path} `
   --runner-timeout 3600
 
-python tools/useagent.py worker run --agent backend --max-tasks 1 --wait-seconds 300
+python tools/useagent.py worker run --agent codex-api --max-tasks 1 --wait-seconds 300
 ```
 
-UseAgent never passes this command through a shell. It runs from the selected
-project root, captures bounded runner evidence, and creates a failed worker
-report if the adapter exits without calling `task report`. No runner is
-configured by default; `worker pull` remains the portable manual path. Vendor
-flags and permissions belong in the adapter, so Codex, Claude Code and
-Antigravity can each use their own supported integration without changing the
-core protocol.
+The runner is bounded by task count, idle wait and timeout. An optional argv-only preflight can return an explicit `ready`, `unavailable`, `misconfigured`, `no_target` or `unknown` state before the task becomes `in_progress`. A missing report becomes a failed report; UseAgent does not retry forever or invent quota/auth facts from provider prose.
 
-Useful commands:
+### Current QA configuration shape
 
-```powershell
-python tools/useagent.py task list
-python tools/useagent.py task show UA-0001
-python tools/useagent.py supervisor ingest
-python tools/useagent.py supervisor report
-python tools/useagent.py supervisor qa
-python tools/useagent.py supervisor cycle --run-qa
-python tools/useagent.py checkpoint create `
-  --name "after-inventory" `
-  --status active `
-  --summary "Inventory implementation reported; review pending" `
-  --next-action "Run security review and close evidence gaps"
-```
-
-### Configuration
-
-`useagent.config.json` is the project contract. Keep paths repository-relative and commit the intended shared layout.
+QA commands are structured objects. The safe default passes literal arguments without a shell:
 
 ```json
 {
   "supervisor": {
-    "max_assignments_per_cycle": 4,
-    "run_qa_each_cycle": false,
     "qa_timeout_seconds": 900,
     "qa_commands": [
-      "python -m unittest discover -s tests -v",
-      "python tools/useagent.py validate"
-    ],
-    "operational_readiness_files": [
-      "docs/operations.md",
-      "docs/autopilot.md"
-    ],
-    "production_gates": [
-      "Acceptance criteria have repeatable evidence",
-      "Focused and integration tests pass",
-      "No open P0/P1 review finding",
-      "Operational and rollback notes exist"
+      {
+        "mode": "argv",
+        "argv": ["python", "-m", "unittest", "discover", "-s", "tests", "-v"]
+      }
     ]
-  },
-  "agents": []
+  }
 }
 ```
 
-Use `agent register` to add the roster. It creates the standard Markdown mailboxes automatically. Existing teams may set `--directory`, `--inbox-file`, `--report-file` and `--completed-file` to use explicit paths; all paths are validated to stay inside the repository.
+If shell composition is genuinely required, use an explicit `{ "mode": "shell", "command": "..." }` entry only in a trusted local repository. Shell mode is an execution capability, not a sandbox or authentication boundary. See [operations](docs/operations.md) for preflight, evidence, QA and release details.
 
-### Parallel work and Git worktrees
+## Autopilot and release integrity
 
-Read-only exploration, test analysis and documentation analysis can run in parallel. Writers must have non-overlapping scopes. For a first setup, keep all
-agents in one checkout so they see the same `work/registry.json`; if two changes
-need the same files, serialize the tasks. Git worktrees isolate source files
-but also have separate checkout copies of the file-first `work/` ledger, so use
-them only with an explicit process for returning reports/evidence to the
-canonical supervisor checkout. The short-lived state lock protects metadata
-transitions; it is not a substitute for source ownership. See the
-[shared-folder and worktree guide](docs/getting-started.md#5-shared-folder-or-git-worktree).
+One `supervisor cycle` is finite. It ingests reports, evaluates dependencies and review state, dispatches ready work, runs configured QA when requested and records a checkpoint. A scheduler may invoke another cycle later, but UseAgent does not create an infinite self-loop and never deploys by itself.
 
-### Production gate
+The release path keeps separate decisions separate:
 
-UseAgent considers a project ready only when the supervisor can point to:
+1. A worker report says what was attempted.
+2. Review accepts or rejects the work and evidence.
+3. QA records bounded summaries and binds the result to the current source fingerprint.
+4. The release durability gate checks Git HEAD, non-volatile cleanliness, untracked release files and QA validity.
+5. Deployment remains an explicit operator-authorized action.
 
-1. acceptance criteria and implementation evidence for every release task;
-2. focused, integration and configured QA results;
-3. review evidence with no unresolved critical/high finding;
-4. operational, observability, rollback and recovery notes;
-5. explicit user authorization for deployment or other external side effects.
+Generated control-plane state under the configured `release_source.volatile_paths` does not self-invalidate QA. Durable evidence contains sanitized summaries and provenance; detailed redacted diagnostics stay in the ignored `work/.runtime-output/` spool. Historical tracked evidence is preserved and is not automatically rewritten.
 
-UseAgent can prepare release evidence. It does not deploy, migrate destructively, change secrets/permissions, or call external services unless a higher-level prompt authorizes that action.
+## Trust model and boundaries
 
-### Validation and contribution
+UseAgent is designed for a **trusted-local / trusted-repository** threat model. Scope ownership is a workflow boundary, not an OS sandbox. The CLI cannot stop a non-compliant external process from writing outside its declared scope unless the project uses an additional isolation mechanism such as Git worktrees or CI-enforced diff checks.
 
-Run the same checks locally and in CI:
+UseAgent also does not authenticate agent identity, manage provider accounts or quotas, launch vendor APIs by guessing flags, or promise an autonomous infinite agent swarm. Stronger remote identity, sandboxing and provider integration belong in a project-owned adapter or execution environment.
 
-```powershell
-python -m py_compile tools/useagent.py tests/test_useagent.py
-python -m unittest discover -s tests -v
-python tools/useagent.py validate
-```
+## Real-world dogfood: OSBlog
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the work-item and review contract, [SECURITY.md](SECURITY.md) for responsible disclosure, [docs/operations.md](docs/operations.md) for daily operation, [docs/autopilot.md](docs/autopilot.md) for bounded long-running cycles, and [docs/architecture.md](docs/architecture.md) for the public architecture guide.
+UseAgent was dogfooded on OSBlog, a real open-source blog workload. The run covered multi-agent planning and dispatch, independent review/QA, Vercel release activity, worker quota interruption, checkpoint recovery, takeover lineage and human resume decisions. Those findings directly drove the UseAgent hardening shipped through UA-0048–UA-0055.
 
-### Relationship to Codex
+OSBlog is evidence for the control plane, not the product being documented here. Its live workload was Vercel-only; VPS, Netlify and local Node were documented targets, not claimed live environments. Read the [source-anchored case study](docs/case-study-osblog.md) and [capture manifest](docs/evidence/osblog-dogfood-capture-manifest.md) for the evidence boundary.
 
-UseAgent is designed to work with repository-local skills and specialized subagents. Codex's official documentation describes repository customization with `AGENTS.md`, skills and subagents, as well as long-running work and Git worktrees:
+## Repository and documentation map
 
-- [Custom agents and subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
-- [Build skills](https://developers.openai.com/plugins/build/skills)
-- [Long-running work](https://learn.chatgpt.com/docs/long-running-work)
-- [Git worktrees](https://learn.chatgpt.com/docs/environments/git-worktrees)
-- [Automations](https://learn.chatgpt.com/docs/automations)
+| Path | Purpose |
+| --- | --- |
+| `.agents/skills/` | Supervisor, context, orchestration, worker, review and bounded autopilot skills |
+| `.codex/agents/` | Optional role-specific Codex profiles |
+| `knowledge/` | Compact project brief, architecture, module cards, contracts and decisions |
+| `work/` | Registry, assignments, reports, evidence and checkpoints |
+| `tools/useagent.py` | Dependency-free state CLI and validator |
+| `useagent.config.json` | Paths, roster, QA and production-readiness configuration |
+| `docs/` | Hands-on, operations, autopilot and dogfood documentation |
+| `docs-site/` | Crawlable bilingual static documentation site |
+| `tests/` | Standard-library regression and docs-site tests |
 
-The repository protocol remains useful outside Codex because its state and handovers are plain JSON and Markdown. For provider-specific setup, see the
-[hands-on onboarding guide](docs/getting-started.md#3-complete-example-codex--claude-code--antigravity).
+Start with [getting started](docs/getting-started.md), then read [operations](docs/operations.md), [autopilot](docs/autopilot.md) and [architecture](docs/architecture.md). The public documentation site is at [useagent.thuanlyt.id.vn](https://useagent.thuanlyt.id.vn/).
 
-Xem thêm [case study dogfood OSBlog](docs/case-study-osblog.md) và
-[manifest screenshot/GIF/video](docs/evidence/osblog-dogfood-capture-manifest.md)
-để thấy evidence thật, quota failure, takeover, live Vercel và các finding dùng
-để cải tiến UseAgent.
+## Contributing and license
 
-### License
-
-Released under the [MIT License](LICENSE).
+Contributions follow the [work-item and review contract](CONTRIBUTING.md). For security reports, read [SECURITY.md](SECURITY.md). The project is released under the [MIT License](LICENSE).
 
 ---
 
-## Tiếng Việt
+## 💖 Support the Project
 
-### UseAgent là gì?
+UseAgent is **free and open source**. If it saves you time, please give us a ⭐ **Star** — it keeps the project alive and helps us ship more skills.
 
-UseAgent biến một model có năng lực thành supervisor của dự án và cung cấp cho các agent còn lại một giao thức làm việc chung. Người dùng chỉ cần đưa goal ngắn và roster agent; supervisor tự suy ra roadmap, tạo task có scope, dispatch task sẵn sàng, đọc report có evidence, chạy QA đã cấu hình và tiếp tục qua các checkpoint hữu hạn.
+<a href="https://github.com/thuanlyt/UseAgent/stargazers">
+  <img src="https://img.shields.io/github/stars/thuanlyt/UseAgent?style=social" alt="GitHub Stars">
+</a>
 
-Luồng trung tâm:
+### 🤝 Community & Support
+- 📖 [Read the Docs](https://useagent.thuanlyt.id.vn/)
+- 🐛 [Report an Issue](https://github.com/thuanlyt/UseAgent/issues)
+- 🌐 [ThuanLYT Website](https://thuanlyt.id.vn)
 
-```text
-Goal người dùng
-   ↓
-UseAgent supervisor
-   ├─ project brief + roadmap + dependency graph
-   ├─ task registry có scope
-   ├─ mailbox và prompt cho worker
-   └─ report, QA, review, evidence, checkpoint
-   ↓
-Các worker agent
-   ↓
-UseAgent supervisor
-   ↓
-Người dùng nhận trạng thái, quyết định, blocker và next action
-```
-
-UseAgent không tự đoán cách khởi chạy model bên ngoài. CLI tạo assignment và
-prompt bền vững; ở manual mode Codex, Claude Code, Antigravity, runner tương
-thích hoặc con người sẽ gọi worker. Nếu người dùng cấu hình rõ một adapter argv,
-`worker run` hữu hạn có thể tự pull và gọi adapter; cycle sau supervisor sẽ
-ingest report.
-
-### Mục tiêu vận hành
-
-- Agent không phải đọc lại toàn bộ code: dùng knowledge ledger có source anchor.
-- Task không bị mất trong chat: dùng registry và mailbox Markdown bền vững.
-- Không cho hai writer cùng sửa một scope.
-- “Đã báo cáo” không bị nhầm là “đã production-ready”.
-- Long-running work có cycle hữu hạn, checkpoint và điều kiện dừng rõ ràng.
-- Worker tự nhận task được dispatch, tự ghi report/completed theo các file đã cấu hình.
-- Supervisor tự xem report, completed log, QA và lên task debug còn thiếu ở cycle sau.
-
-### Bắt đầu nhanh
-
-Yêu cầu: Python 3.11+, Git và model/agent runtime có thể load repository skill.
-
-```powershell
-git clone https://github.com/thuanlyt/UseAgent.git
-Set-Location UseAgent
-python tools/useagent.py init
-python tools/useagent.py validate
-python -m unittest discover -s tests -v
-```
-
-Nếu bạn chưa từng dùng hệ multi-agent, hãy đọc trước
-[Hướng dẫn thao tác thực tế](docs/getting-started.md#hướng-dẫn-thao-tác-thực-tế-bằng-tiếng-việt).
-Tài liệu này dùng ví dụ cụ thể Codex + Claude Code + Antigravity và chỉ rõ
-người dùng phải mở session nào, gửi prompt nào, xem file nào và xử lý lỗi ra
-sao.
-
-Đăng ký roster thật sự có trong dự án:
-
-```powershell
-python tools/useagent.py agent register `
-  --id backend --role worker `
-  --scope src/backend --scope tests `
-  --capability python --max-active 1
-
-python tools/useagent.py agent register `
-  --id reviewer --role reviewer `
-  --scope src/backend --scope tests `
-  --capability review --max-active 1
-```
-
-Prompt tối giản cho supervisor:
-
-```text
-Use $useagent trong F:\dev\MyProject.
-Goal: xây dựng inventory API production-ready có authentication và test.
-Agents: backend (Python), frontend (web), reviewer (security và QA).
-Constraints: theo convention hiện có; không deploy nếu chưa được phép.
-Hãy tự lập roadmap, tạo task có scope, dispatch, đọc report, chạy QA và tiếp tục
-từng cycle hữu hạn cho tới production gate hoặc khi cần tôi quyết định blocker.
-```
-
-### Cách hoạt động
-
-Supervisor model lập kế hoạch và phán đoán; CLI đảm bảo state transition, lock, dispatch và ghi Markdown nhất quán. Trạng thái chuẩn là:
-
-```text
-planned → assigned → in_progress → reported → needs_review → done
-                                      ↘ blocked / cancelled
-```
-
-`reported` chỉ có nghĩa worker đã nộp handover. Chỉ sau khi supervisor/reviewer xác nhận acceptance criteria và evidence thì task mới `done`.
-
-### Các agent/runtime được hỗ trợ
-
-Các role chuẩn của UseAgent là `supervisor`, `explorer`, `planner`, `worker`,
-`reviewer` và `release_gate`. `Codex`, `Claude Code` và `Antigravity` là runtime
-để chạy các role đó, không phải ba role cố định. Bạn có thể dùng Codex làm
-supervisor, Claude Code làm worker frontend và Antigravity làm worker QA trong
-cùng repository.
-
-- Codex: hỗ trợ trực tiếp `$useagent`, `$useagent-worker` và profile trong
-  `.codex/agents/`.
-- Claude Code: mở local session trong cùng repository, đọc trực tiếp
-  `.agents/skills/useagent-worker/SKILL.md` nếu alias skill không tự nhận, rồi
-  chạy CLI.
-- Antigravity: mở đúng repository dưới dạng Project/local mode, đọc skill trong
-  `.agents/skills/` và dùng cùng `worker pull`/`task report`.
-
-UseAgent không tự đoán API/flags của nhà cung cấp. Supervisor tạo prompt bền
-vững tại `work/outbox/`; manual runtime có thể thực thi prompt đó, hoặc adapter
-argv đã cấu hình có thể được gọi bằng bounded `worker run`. Xem [hướng dẫn
-thực chiến](docs/getting-started.md) để biết cả hai cách.
-
-### Cấu trúc thư mục
-
-Các thư mục chính gồm `.agents/skills` (skill), `.codex/agents` (profile agent), `knowledge` (ngữ cảnh cô đọng), `work` (registry/mailbox/report/evidence/checkpoint), `tools/useagent.py` (CLI), `useagent.config.json` (cấu hình), `docs` (tài liệu công khai) và `tests` (kiểm thử). Xem cây đầy đủ ở phần [Repository structure](#repository-structure).
-
-Người mới nên bắt đầu tại [docs/getting-started.md](docs/getting-started.md),
-không cần đọc toàn bộ cây thư mục trước.
-
-Luôn đọc `knowledge/INDEX.md` trước khi đọc code. Với task cụ thể, chạy `python tools/useagent.py context --task <id>` để lấy snapshot giới hạn token.
-
-### Worker tự nhận task và tự báo cáo
-
-Supervisor chạy:
-
-```powershell
-python tools/useagent.py supervisor cycle --run-qa
-```
-
-CLI sẽ ingest report đến, tìm task `planned` không còn dependency, chọn worker phù hợp theo scope/capability/capacity, ghi assignment vào `work/agents/<agent>/INBOX.md` và prompt chi tiết vào `work/outbox/`. Worker chạy:
-
-```powershell
-python tools/useagent.py worker pull --agent backend
-python tools/useagent.py task report UA-0001 `
-  --agent backend --result completed `
-  --summary "Đã hoàn tất implementation và test" `
-  --next-action "Reviewer kiểm tra evidence" `
-  --file src/api/inventory.py `
-  --check "python -m unittest discover -s tests -v: pass"
-```
-
-Report được ghi vào report inbox, `REPORT.md` của agent, report index và `work/completed/COMPLETED.md`. Supervisor đọc các file này ở cycle tiếp theo, chạy QA, tạo debug task nếu fail, cập nhật knowledge và checkpoint.
-
-Muốn worker tự nhận task, đăng ký adapter một lần với `--runner-arg` (bắt buộc
-có `{assignment_path}`), rồi chạy:
-
-```powershell
-python tools/useagent.py worker run --agent backend --max-tasks 1 --wait-seconds 300
-```
-
-Runner dùng argv với `shell=False`, có timeout và output được lưu vào
-`work/evidence/`; nếu adapter không gọi `task report`, CLI tự tạo failed report
-để supervisor tiếp tục xử lý. Không cấu hình runner thì không có process ngoài
-nào được tự chạy.
-
-### An toàn và production
-
-Không deploy, xóa dữ liệu, migration destructive, đổi secret/quyền hoặc gọi dịch vụ ngoài nếu prompt cấp trên chưa cho phép. Worker chỉ sửa trong scope đã claim; task cùng file phải tuần tự hoặc chạy trong Git worktree riêng. Runner tự động là opt-in, dùng argv không qua shell, có timeout và `max-tasks` hữu hạn. Một cycle luôn có điểm dừng `complete`, `blocked` hoặc `needs_input`.
-
-Production gate cần có acceptance/evidence, test và QA, review không còn finding nghiêm trọng, operational/rollback notes và quyền deploy rõ ràng. UseAgent chuẩn bị bằng chứng phát hành chứ không tự deploy.
-
-Mô hình shared-folder, cách đăng ký từng runtime và quy trình Codex + Claude Code
-và Antigravity được minh họa đầy đủ trong [hướng dẫn onboarding](docs/getting-started.md).
-
-### Đóng góp, kiểm thử và giấy phép
-
-Chạy:
-
-```powershell
-python -m py_compile tools/useagent.py tests/test_useagent.py
-python -m unittest discover -s tests -v
-python tools/useagent.py validate
-```
-
-Đọc [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [docs/operations.md](docs/operations.md), [docs/autopilot.md](docs/autopilot.md), [docs/architecture.md](docs/architecture.md) và [case study OSBlog](docs/case-study-osblog.md). Dự án phát hành theo [MIT License](LICENSE).
+<p align="center"><em>Built with ❤️ by ThuanLYT</em></p>

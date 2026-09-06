@@ -133,19 +133,19 @@ for unavailable runtimes.
 | F-07 | The task ledger grew to 93 items, including 29 cancelled and 2 blocked states, across fallback, takeover and release work. | **P2 overhead** — history is valuable but current-state scanning becomes expensive. | OSBlog `work/registry.json` at evidence freeze. |
 | F-08 | The first UA-0092 topology pass over-scoped an undocumented VPS concern until the correction re-anchored OSBlog to Vercel-only production. | **Process finding** — environment assumptions can pull the supervisor away from the real goal. | UA-0092 topology checkpoint and re-anchor decision. |
 
-## Product changes recommended for UseAgent
+## What changed in UseAgent after dogfooding
 
-These are follow-up product opportunities, not hidden claims that this case
-study task implemented them.
+The case study is now a record of the improvements it triggered, not a stale
+to-do list. These changes are shipped in the current UseAgent release; they do
+not reopen OSBlog implementation work.
 
-| Priority | Proposed change | Why it follows from OSBlog |
+| Status | Shipped change or residual | Why it follows from OSBlog |
 | --- | --- | --- |
-| P1 | Add a report freshness contract: persist the registry revision or latest task timestamp in `work/SUPERVISOR_REPORT.md`; `supervisor cycle` refreshes it and `validate` warns when the report is stale. | Prevents a convenience view from contradicting the machine-readable ledger. |
-| P1 | Add an explicit worker-runtime preflight/health result before dispatch or waiting, including “unavailable”, “no target”, “quota-limited” and “ready”. | Reduces silent waits and makes fallback decisions earlier and cheaper. |
-| P1 | Give evidence a typed provenance field such as `live`, `local`, `simulation`, `blocked` and `operator-confirmed`, with command/time/source anchors. | Prevents generated demos and old smoke results from being mistaken for live provider evidence. |
-| P2 | Make interruption lineage first-class: `supersedes`, `superseded_by`, preserved-WIP summary and takeover reason should be CLI-managed. | UA-0091 → UA-0093 worked, but the relationship is currently distributed across prose/checkpoints. |
-| P2 | Add a bounded capture-manifest helper with target discovery, privacy checks and explicit content verification before promoting screenshots/GIF/video. | Cap proved that “recording exists” and “recording is useful” are different claims. |
-| P2 | Add cycle-overhead counters: dispatch latency, retries, cancellations, blocked time, takeover count and worker utilization. | The 93-item ledger shows value in history but no compact cost model. |
+| Shipped | Report freshness, typed evidence provenance and CLI-managed takeover lineage (`UA-0048`–`UA-0050`). | Keeps the registry authoritative, labels evidence honestly and preserves quota/interruption history. |
+| Shipped | Sanitized bounded evidence with an ignored local runtime spool (`UA-0051`). | Prevents raw runner/QA output from becoming repository evidence by default. |
+| Shipped | Source-bound QA and Git release durability (`UA-0052`–`UA-0053`). | Prevents a passing or completed state from being mistaken for verification of a different source snapshot. |
+| Shipped | Safe QA argv execution and bounded worker runtime readiness/failure classification (`UA-0054`–`UA-0055`). | Reduces shell ambiguity, blind dispatch and unsupported quota/auth guesses. |
+| Residual | Filesystem sandboxing, authenticated remote identity, stale-lock recovery, CI action SHA pinning, capture verification and cycle metrics remain backlog. | These are useful higher-assurance or operational improvements, but none is required to claim the trusted-local UseAgent dogfood closeout. |
 
 ## OSBlog handover after closeout
 
@@ -165,10 +165,10 @@ backlog:
 - **Important boundary:** later local hardening (including UA-0093) must not be
   described as deployed unless a later Vercel deployment record proves it.
 
-The next useful work belongs in the UseAgent repository: implement the
-highest-value freshness/provenance improvement, then use the improved control
-plane for the next real workload. Do not reopen OSBlog implementation merely
-to drive its backlog to zero.
+The next useful work belongs in the UseAgent repository: choose from the
+remaining higher-assurance backlog only when its threat model and evidence
+justify it. Do not reopen OSBlog implementation merely to drive its backlog to
+zero.
 
 ## Tóm tắt tiếng Việt
 
@@ -209,17 +209,21 @@ trường live của OSBlog.
   failure history và recovery có thể kiểm tra.
 - Ma sát: runtime provider unavailable gây wait/fallback/cancel; con người phải
   cung cấp resume instruction chính xác.
-- Khoảng trống P1: supervisor report có thể stale so với registry mới nhất.
-- Khoảng trống P1: interruption lineage và takeover chưa phải dữ liệu có schema
-  riêng.
+- Đã ship: supervisor report có freshness marker, evidence có provenance kiểu rõ
+  và interruption/takeover lineage được quản lý trong registry.
+- Đã ship: evidence runtime được giới hạn, sanitize và giữ raw diagnostic ở
+  local spool bị ignore; QA/release được bind vào source state hiện tại.
 - Khoảng trống P2: Cap cần target discovery, privacy gate và content verification.
 - Overhead: ledger lớn giúp audit nhưng làm việc đọc current state tốn hơn.
 
 ### Hướng cải tiến UseAgent
 
-Ưu tiên tiếp theo là report freshness, worker-runtime preflight, evidence
-provenance có kiểu rõ ràng, takeover lineage, capture manifest và cycle metrics.
-Đây là các đề xuất cho UseAgent; không phải yêu cầu tiếp tục mở rộng OSBlog.
+Report freshness, evidence provenance, takeover lineage, evidence hygiene,
+source-bound QA, Git durability, safe QA và runtime readiness đã được đưa vào
+UseAgent qua UA-0048–UA-0055. Các khoảng trống còn lại gồm sandbox/diff
+enforcement, identity xác thực, stale-lock recovery, CI action SHA, capture
+verification và cycle metrics. Đây là backlog của UseAgent, không phải lý do để
+mở rộng lại OSBlog.
 
 ## Source anchors
 

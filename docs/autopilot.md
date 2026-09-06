@@ -25,11 +25,13 @@ python tools/useagent.py worker run --agent claude-web --max-tasks 2 --wait-seco
 
 The configured runner is an argv list containing `{assignment_path}`. The CLI
 uses `shell=False`, runs from the selected project root, enforces a timeout and
-stores stdout/stderr as runner evidence. The adapter must make the model read
-the assignment and call `task report`; if it exits without a report, UseAgent
-creates a failed report rather than leaving an invisible active task. The
-default configuration has no runner, so manual `worker pull` remains available
-and no external process starts implicitly.
+stores only bounded sanitized summaries plus a local diagnostic spool reference.
+An optional argv-only preflight can keep a task `assigned` until it returns an
+explicit `ready` state. The adapter must make the model read the assignment and
+call `task report`; if it exits without a report, UseAgent creates a failed
+report rather than leaving an invisible active task. The default configuration
+has no runner, so manual `worker pull` remains available and no external
+process starts implicitly.
 
 Use one adapter per runtime identity. A Codex adapter may invoke the installed
 Codex CLI, a Claude adapter may invoke `claude`, and an Antigravity adapter may
