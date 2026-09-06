@@ -250,6 +250,26 @@ do not invalidate a fresh QA result. A missing or mismatched fingerprint is
 automatically. Run `python tools/useagent.py supervisor qa` again after a
 source, test or QA/release configuration change.
 
+### Local release durability / Độ bền source local
+
+Task `done`, QA `pass` and local release durability are separate decisions. The
+production snapshot adds `release_source_durability`. On a Git-backed project it
+is `pass` only when Git `HEAD` is concrete, the release-source state is clean,
+there are no non-ignored untracked release-source files, and the current QA
+source fingerprint is valid. QA run on a dirty tree may remain valid for
+development, but it cannot make the strong release gate ready. A commit after
+QA changes the source identity, even when the file content is otherwise the
+same, so QA must run again on the durable commit.
+
+The snapshot also records the current branch, locally known upstream ref and
+ahead/behind relation. These are observational metadata only: `origin/main` is
+not required, ahead/behind does not fail local durability, and the CLI never
+pulls, merges or pushes. When no upstream is configured the relation is
+`none`; detached or unavailable tracking metadata is reported explicitly. A
+workspace without Git uses `filesystem`/`manual` degraded mode and never claims
+strong Git durability. Volatile control-plane writes remain excluded according
+to `release_source.volatile_paths`.
+
 ### Report freshness / Tính mới của report
 
 `work/registry.json` và task evidence là nguồn sự thật. `work/SUPERVISOR_REPORT.md`

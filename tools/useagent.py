@@ -465,6 +465,158 @@ def release_source_fingerprint(config: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _git_single_line(arguments: list[str]) -> str | None:
+    """Return one safe local Git metadata value, or None when unavailable."""
+
+    try:
+        result = subprocess.run(
+            ["git", *arguments],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+    except OSError:
+        return None
+    if result.returncode != 0:
+        return None
+    value = result.stdout.strip()
+    if not value or "\n" in value or "\r" in value:
+        return None
+    return value
+
+
+def git_upstream_snapshot() -> dict[str, Any]:
+    """Read branch/upstream metadata without contacting or mutating a remote."""
+
+    branch = _git_single_line(["symbolic-ref", "--quiet", "--short", "HEAD"])
+    if branch is None:
+        return {
+            "branch": None,
+            "branch_state": "detached",
+            "upstream": None,
+            "upstream_state": "not_applicable",
+            "upstream_relation": "not_applicable",
+            "ahead": None,
+            "behind": None,
+        }
+    upstream = _git_single_line(["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{upstream}"])
+    if upstream is None:
+        tracking_remote = _git_single_line(["config", "--get", f"branch.{branch}.remote"])
+        tracking_merge = _git_single_line(["config", "--get", f"branch.{branch}.merge"])
+        if tracking_remote and tracking_merge:
+            return {
+                "branch": branch,
+                "branch_state": "attached",
+                "upstream": None,
+                "upstream_state": "unknown",
+                "upstream_relation": "unknown",
+                "ahead": None,
+                "behind": None,
+            }
+        return {
+            "branch": branch,
+            "branch_state": "attached",
+            "upstream": None,
+            "upstream_state": "none",
+            "upstream_relation": "none",
+            "ahead": None,
+            "behind": None,
+        }
+    counts = _git_single_line(["rev-list", "--left-right", "--count", "HEAD...@{upstream}"])
+    if counts is None:
+        return {
+            "branch": branch,
+            "branch_state": "attached",
+            "upstream": upstream,
+            "upstream_state": "unknown",
+            "upstream_relation": "unknown",
+            "ahead": None,
+            "behind": None,
+        }
+    parts = counts.split()
+    if len(parts) != 2 or any(not part.isdigit() for part in parts):
+        return {
+            "branch": branch,
+            "branch_state": "attached",
+            "upstream": upstream,
+            "upstream_state": "unknown",
+            "upstream_relation": "unknown",
+            "ahead": None,
+            "behind": None,
+        }
+    ahead, behind = (int(part) for part in parts)
+    if ahead == 0 and behind == 0:
+        relation = "up_to_date"
+    elif ahead > 0 and behind == 0:
+        relation = "ahead"
+    elif ahead == 0 and behind > 0:
+        relation = "behind"
+    else:
+        relation = "diverged"
+    return {
+        "branch": branch,
+        "branch_state": "attached",
+        "upstream": upstream,
+        "upstream_state": "known",
+        "upstream_relation": relation,
+        "ahead": ahead,
+        "behind": behind,
+    }
+
+
+def release_durability_snapshot(config: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate strong local release durability independently from task completion."""
+
+    source = release_source_fingerprint(config)
+    last_qa = state.get("last_qa") if isinstance(state, dict) else None
+    last_qa = last_qa if isinstance(last_qa, dict) else {}
+    qa_source = validate_qa_source(config, state, source)
+    if source["vcs"] == "git":
+        upstream = git_upstream_snapshot()
+    else:
+        upstream = {
+            "branch": None,
+            "branch_state": "not_applicable",
+            "upstream": None,
+            "upstream_state": "not_applicable",
+            "upstream_relation": "not_applicable",
+            "ahead": None,
+            "behind": None,
+        }
+
+    status = "pass"
+    reason = "release source is committed, clean and QA-bound"
+    if source["vcs"] != "git":
+        status = "manual"
+        reason = "strong Git durability is unavailable without a Git repository"
+    elif source["head_sha"] == "unavailable":
+        status = "fail"
+        reason = "Git HEAD is unavailable"
+    elif source["dirty_state"] != "clean":
+        status = "fail"
+        reason = "release-source working tree contains nonvolatile changes"
+    elif source["untracked_path_count"] != 0:
+        status = "fail"
+        reason = "non-ignored untracked release-source files are present"
+    elif qa_source["status"] != "valid":
+        status = "fail"
+        reason = f"QA source state is {qa_source['status']}"
+
+    return {
+        **source,
+        **upstream,
+        "status": status,
+        "reason": reason,
+        "qa_source_state": qa_source["status"],
+        "qa_source_reason": qa_source.get("reason"),
+        "qa_source_fingerprint": last_qa.get("source_fingerprint"),
+        "qa_recorded_head_sha": last_qa.get("source_head_sha"),
+    }
+
+
 def ensure_layout() -> None:
     for directory in (
         ROOT / ".agents" / "skills",
@@ -2104,7 +2256,9 @@ def run_qa(config: dict[str, Any], cycle_id: str) -> dict[str, Any]:
     }
 
 
-def validate_qa_source(config: dict[str, Any], state: dict[str, Any]) -> dict[str, str]:
+def validate_qa_source(
+    config: dict[str, Any], state: dict[str, Any], source_state: dict[str, Any] | None = None
+) -> dict[str, str]:
     last_qa = state.get("last_qa")
     if not isinstance(last_qa, dict) or last_qa.get("status") != "pass":
         return {"status": "not_checked"}
@@ -2112,7 +2266,7 @@ def validate_qa_source(config: dict[str, Any], state: dict[str, Any]) -> dict[st
     if not isinstance(recorded, str) or not recorded:
         return {"status": "QA_STALE", "reason": "QA result has no source fingerprint"}
     try:
-        current = release_source_fingerprint(config)
+        current = source_state if source_state is not None else release_source_fingerprint(config)
     except UseAgentError as exc:
         return {"status": "invalid", "reason": str(exc)}
     if current["fingerprint"] != recorded:
@@ -2120,14 +2274,19 @@ def validate_qa_source(config: dict[str, Any], state: dict[str, Any]) -> dict[st
     return {"status": "valid"}
 
 
-def production_snapshot(config: dict[str, Any], data: dict[str, Any], state: dict[str, Any]) -> tuple[list[tuple[str, str]], bool]:
+def production_snapshot_details(
+    config: dict[str, Any], data: dict[str, Any], state: dict[str, Any]
+) -> tuple[list[tuple[str, str]], bool, dict[str, Any]]:
     items = list(data["items"].values())
     if not items:
         task_gate = "manual"
     else:
         task_gate = "pass" if all(item.get("status") in {"done", "cancelled"} for item in items) else "fail"
     qa_status = (state.get("last_qa") or {}).get("status", "not_configured")
-    qa_source = validate_qa_source(config, state)
+    durability = release_durability_snapshot(config, state)
+    qa_source = {"status": durability["qa_source_state"]}
+    if durability.get("qa_source_reason"):
+        qa_source["reason"] = durability["qa_source_reason"]
     if qa_status == "pass":
         qa_gate = "pass" if qa_source["status"] == "valid" else "fail"
     else:
@@ -2149,10 +2308,16 @@ def production_snapshot(config: dict[str, Any], data: dict[str, Any], state: dic
         ("all_tasks_done", task_gate),
         ("qa", qa_gate),
         ("qa_source_state", "pass" if qa_source["status"] == "valid" else qa_source["status"]),
+        ("release_source_durability", durability["status"]),
         ("no_blocked_tasks", blocked_gate),
         ("operational_rollback_notes", readiness_gate),
     ]
-    return gates, all(value == "pass" for _, value in gates)
+    return gates, all(value == "pass" for _, value in gates), durability
+
+
+def production_snapshot(config: dict[str, Any], data: dict[str, Any], state: dict[str, Any]) -> tuple[list[tuple[str, str]], bool]:
+    gates, ready, _ = production_snapshot_details(config, data, state)
+    return gates, ready
 
 
 def choose_next_action(data: dict[str, Any], assignments: list[dict[str, str]], config: dict[str, Any], qa_result: dict[str, Any] | None = None) -> str:
@@ -2213,11 +2378,15 @@ def build_supervisor_report(config: dict[str, Any], data: dict[str, Any], state:
     for item in data["items"].values():
         counts[item.get("status", "unknown")] = counts.get(item.get("status", "unknown"), 0) + 1
     next_action = choose_next_action(data, assignments, config, qa_result)
-    gates, production_ready = production_snapshot(config, data, state)
-    qa_source = validate_qa_source(config, state)
+    gates, production_ready, durability = production_snapshot_details(config, data, state)
+    qa_source = {"status": durability["qa_source_state"]}
+    if durability.get("qa_source_reason"):
+        qa_source["reason"] = durability["qa_source_reason"]
     if qa_result.get("status") == "pass" and qa_source["status"] in {"QA_STALE", "invalid"}:
         if next_action == "Run the production release gate and obtain explicit deploy approval.":
             next_action = "QA_STALE: run `python tools/useagent.py supervisor qa` before the production release gate."
+    elif durability["status"] != "pass" and next_action == "Run the production release gate and obtain explicit deploy approval.":
+        next_action = f"Release durability is {durability['status']}: {durability['reason']}."
     revision = registry_revision(data)
     lines = [
         f"<!-- useagent-report: registry_sha256={revision} -->",
@@ -2255,6 +2424,31 @@ def build_supervisor_report(config: dict[str, Any], data: dict[str, Any], state:
             f"- source_state: `{qa_source['status']}`",
             f"- source_reason: `{qa_source.get('reason', 'none')}`",
             f"- evidence: `{qa_result.get('evidence') or 'none'}`",
+            "",
+        ]
+    )
+    lines.extend(
+        [
+            "## Release source",
+            "",
+            f"- vcs: `{durability['vcs']}`",
+            f"- head_sha: `{durability['head_sha']}`",
+            f"- branch: `{durability['branch'] or 'none'}`",
+            f"- source_fingerprint: `{durability['fingerprint']}`",
+            f"- source_dirty_state: `{durability['dirty_state']}`",
+            f"- source_dirty_path_count: `{durability['dirty_path_count']}`",
+            f"- source_untracked_path_count: `{durability['untracked_path_count']}`",
+            f"- qa_source_state: `{durability['qa_source_state']}`",
+            f"- qa_source_fingerprint: `{durability['qa_source_fingerprint'] or 'none'}`",
+            f"- qa_recorded_head_sha: `{durability['qa_recorded_head_sha'] or 'none'}`",
+            f"- qa_config_fingerprint: `{durability['qa_config_fingerprint']}`",
+            f"- local_durability: `{durability['status']}`",
+            f"- durability_reason: `{durability['reason']}`",
+            f"- upstream: `{durability['upstream'] or 'none'}`",
+            f"- upstream_state: `{durability['upstream_state']}`",
+            f"- upstream_relation: `{durability['upstream_relation']}`",
+            f"- ahead: `{durability['ahead'] if durability['ahead'] is not None else 'unknown'}`",
+            f"- behind: `{durability['behind'] if durability['behind'] is not None else 'unknown'}`",
             "",
         ]
     )

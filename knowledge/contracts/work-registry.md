@@ -35,6 +35,18 @@ VCS/HEAD and dirty-state provenance, QA/release configuration fingerprint and
 executed checks; a missing or mismatched source fingerprint is `QA_STALE` and
 cannot satisfy a release gate.
 
+Task `done` does not imply Git durability. A strong local release gate requires
+a concrete Git `HEAD`, clean release-relevant tracked state, no non-ignored
+untracked release-source files and a QA fingerprint valid for the current
+source identity. QA may be valid on a dirty development tree while release
+durability fails. A commit after QA changes source identity and requires a new
+QA run. Volatile control-plane paths configured in
+`release_source.volatile_paths` remain exempt and historical evidence is not
+deleted or rewritten. Upstream branch relation is observational metadata; no
+specific remote, push, pull or `origin/main` equality is required. Non-Git
+workspaces use an explicit degraded/manual result rather than claiming Git
+durability.
+
 ## Invariants
 
 - `id` matches `UA-####` and is unique.

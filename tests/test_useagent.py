@@ -950,6 +950,25 @@ class UseAgentCliTests(unittest.TestCase):
             result = subprocess.run(command, cwd=useagent.ROOT, capture_output=True, text=True, check=False)
             self.assertEqual(result.returncode, 0, result.stderr)
 
+    def git_output(self, *arguments: str, input_text: str | None = None) -> str:
+        result = subprocess.run(
+            ["git", *arguments],
+            cwd=useagent.ROOT,
+            input=input_text,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return result.stdout.strip()
+
+    def configure_tracking_ref(self, branch: str, commit: str) -> None:
+        self.git_output("remote", "add", "origin", str(useagent.ROOT))
+        self.git_output("update-ref", f"refs/remotes/origin/{branch}", commit)
+        self.git_output("config", f"branch.{branch}.remote", "origin")
+        self.git_output("config", f"branch.{branch}.merge", f"refs/heads/{branch}")
+
     def test_worker_run_invokes_runner_and_accepts_automatic_report(self) -> None:
         self.register_worker("worker-1", "src")
         self.configure_runner(self.reporting_runner())
@@ -1933,6 +1952,214 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertNotEqual(first["source_fingerprint"], second["source_fingerprint"])
         self.assertEqual(useagent.validate_qa_source(config, {"last_qa": second})["status"], "valid")
 
+    def test_release_durability_passes_for_clean_committed_git_source(self) -> None:
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+        result = useagent.run_qa(config, "durability-clean-test")
+
+        snapshot = useagent.release_durability_snapshot(config, {"last_qa": result})
+
+        self.assertEqual(snapshot["status"], "pass")
+        self.assertEqual(snapshot["vcs"], "git")
+        self.assertEqual(snapshot["dirty_state"], "clean")
+        self.assertEqual(snapshot["untracked_path_count"], 0)
+        self.assertEqual(snapshot["qa_source_state"], "valid")
+        self.assertEqual(snapshot["upstream_state"], "none")
+        self.assertEqual(snapshot["upstream_relation"], "none")
+
+    def test_dirty_tracked_source_keeps_qa_valid_but_fails_release_durability(self) -> None:
+        source = useagent.ROOT / "src" / "dirty-release.py"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("baseline", encoding="utf-8")
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+        source.write_text("dirty", encoding="utf-8")
+        result = useagent.run_qa(config, "durability-dirty-test")
+
+        snapshot = useagent.release_durability_snapshot(config, {"last_qa": result})
+
+        self.assertEqual(useagent.validate_qa_source(config, {"last_qa": result})["status"], "valid")
+        self.assertEqual(snapshot["status"], "fail")
+        self.assertEqual(snapshot["dirty_state"], "dirty")
+        self.assertEqual(snapshot["qa_source_state"], "valid")
+
+    def test_staged_source_change_fails_release_durability(self) -> None:
+        source = useagent.ROOT / "src" / "staged-release.py"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("baseline", encoding="utf-8")
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+        source.write_text("staged", encoding="utf-8")
+        self.git_output("add", "src/staged-release.py")
+        result = useagent.run_qa(config, "durability-staged-test")
+
+        snapshot = useagent.release_durability_snapshot(config, {"last_qa": result})
+
+        self.assertEqual(snapshot["status"], "fail")
+        self.assertEqual(snapshot["dirty_state"], "dirty")
+        self.assertGreater(snapshot["dirty_path_count"], 0)
+
+    def test_nonignored_untracked_source_fails_release_durability(self) -> None:
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+        source = useagent.ROOT / "src" / "untracked-release.py"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("untracked", encoding="utf-8")
+        result = useagent.run_qa(config, "durability-untracked-test")
+
+        snapshot = useagent.release_durability_snapshot(config, {"last_qa": result})
+
+        self.assertEqual(snapshot["status"], "fail")
+        self.assertEqual(snapshot["untracked_path_count"], 1)
+
+    def test_volatile_control_plane_writes_do_not_fail_release_durability(self) -> None:
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+        result = useagent.run_qa(config, "durability-volatile-test")
+        volatile = useagent.ROOT / "work" / "evidence" / "volatile-only.md"
+        volatile.write_text("runtime evidence", encoding="utf-8")
+
+        snapshot = useagent.release_durability_snapshot(config, {"last_qa": result})
+
+        self.assertEqual(snapshot["status"], "pass")
+        self.assertEqual(snapshot["dirty_state"], "clean")
+        self.assertEqual(snapshot["untracked_path_count"], 0)
+
+    def test_commit_after_qa_requires_rerun_then_durability_passes(self) -> None:
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+        first = useagent.run_qa(config, "durability-commit-transition-test")
+        first_snapshot = useagent.release_durability_snapshot(config, {"last_qa": first})
+        self.assertEqual(first_snapshot["status"], "pass")
+
+        marker = useagent.ROOT / "work" / "evidence" / "post-qa-commit.md"
+        marker.write_text("post QA bookkeeping", encoding="utf-8")
+        self.git_output("add", "work/evidence/post-qa-commit.md")
+        self.git_output("commit", "-qm", "post QA bookkeeping")
+        stale = useagent.release_durability_snapshot(config, {"last_qa": first})
+
+        self.assertEqual(stale["status"], "fail")
+        self.assertEqual(stale["qa_source_state"], "QA_STALE")
+        self.assertNotEqual(first["source_fingerprint"], stale["fingerprint"])
+
+        second = useagent.run_qa(config, "durability-commit-rerun-test")
+        second_snapshot = useagent.release_durability_snapshot(config, {"last_qa": second})
+        self.assertEqual(second_snapshot["status"], "pass")
+        self.assertEqual(second_snapshot["qa_source_state"], "valid")
+
+    def test_non_git_workspace_is_explicitly_degraded(self) -> None:
+        config, result = self.successful_qa()
+
+        snapshot = useagent.release_durability_snapshot(config, {"last_qa": result})
+        gates, ready = useagent.production_snapshot(config, self.release_data_with_done_task(), {"last_qa": result})
+
+        self.assertEqual(snapshot["vcs"], "filesystem")
+        self.assertEqual(snapshot["status"], "manual")
+        self.assertEqual(snapshot["upstream_state"], "not_applicable")
+        self.assertEqual(dict(gates)["release_source_durability"], "manual")
+        self.assertFalse(ready)
+
+    def test_supervisor_report_records_release_provenance(self) -> None:
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+        result = useagent.run_qa(config, "durability-report-test")
+        data = self.release_data_with_done_task()
+        data["items"]["UA-9999"] = {
+            "id": "UA-9999",
+            "title": "Durability report fixture",
+            "status": "done",
+            "evidence": [],
+            "reports": [],
+        }
+        report, _ = useagent.build_supervisor_report(
+            config,
+            data,
+            {"last_qa": result},
+            "durability-report-cycle",
+            [],
+            [],
+            result,
+        )
+
+        self.assertIn("## Release source", report)
+        self.assertIn(f"- source_fingerprint: `{result['source_fingerprint']}`", report)
+        self.assertIn(f"- qa_source_fingerprint: `{result['source_fingerprint']}`", report)
+        self.assertIn(f"- qa_config_fingerprint: `{result['qa_config_fingerprint']}`", report)
+        self.assertIn("- local_durability: `pass`", report)
+        self.assertIn("- upstream_relation: `none`", report)
+        self.assertIn("`release_source_durability`: `pass`", report)
+
+    def test_upstream_metadata_is_local_and_does_not_require_origin_sync(self) -> None:
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+        branch = self.git_output("symbolic-ref", "--quiet", "--short", "HEAD")
+        previous = self.git_output("rev-parse", "HEAD")
+        source = useagent.ROOT / "src" / "ahead.py"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("ahead", encoding="utf-8")
+        self.git_output("add", "src/ahead.py")
+        self.git_output("commit", "-qm", "ahead commit")
+        self.configure_tracking_ref(branch, previous)
+        result = useagent.run_qa(config, "durability-ahead-test")
+
+        snapshot = useagent.release_durability_snapshot(config, {"last_qa": result})
+
+        self.assertEqual(snapshot["status"], "pass")
+        self.assertEqual(snapshot["upstream_state"], "known")
+        self.assertEqual(snapshot["upstream_relation"], "ahead")
+        self.assertEqual(snapshot["ahead"], 1)
+        self.assertEqual(snapshot["behind"], 0)
+
+    def test_configured_but_unavailable_upstream_is_explicitly_unknown(self) -> None:
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+        branch = self.git_output("symbolic-ref", "--quiet", "--short", "HEAD")
+        self.git_output("remote", "add", "origin", str(useagent.ROOT))
+        self.git_output("config", f"branch.{branch}.remote", "origin")
+        self.git_output("config", f"branch.{branch}.merge", f"refs/heads/{branch}")
+        result = useagent.run_qa(config, "durability-unknown-upstream-test")
+
+        snapshot = useagent.release_durability_snapshot(config, {"last_qa": result})
+
+        self.assertEqual(snapshot["status"], "pass")
+        self.assertEqual(snapshot["upstream_state"], "unknown")
+        self.assertEqual(snapshot["upstream_relation"], "unknown")
+        self.assertIsNone(snapshot["ahead"])
+        self.assertIsNone(snapshot["behind"])
+
+    def test_upstream_metadata_reports_behind_and_diverged_without_failing_local_durability(self) -> None:
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+        branch = self.git_output("symbolic-ref", "--quiet", "--short", "HEAD")
+        base = self.git_output("rev-parse", "HEAD")
+        base_tree = self.git_output("rev-parse", "HEAD^{tree}")
+        remote_only = self.git_output("commit-tree", base_tree, "-p", base, "-m", "remote-only")
+        self.configure_tracking_ref(branch, remote_only)
+        behind_result = useagent.run_qa(config, "durability-behind-test")
+        behind = useagent.release_durability_snapshot(config, {"last_qa": behind_result})
+
+        self.assertEqual(behind["status"], "pass")
+        self.assertEqual(behind["upstream_relation"], "behind")
+        self.assertEqual(behind["ahead"], 0)
+        self.assertEqual(behind["behind"], 1)
+
+        source = useagent.ROOT / "src" / "diverged.py"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("local-only", encoding="utf-8")
+        self.git_output("add", "src/diverged.py")
+        self.git_output("commit", "-qm", "local-only")
+        local_base = self.git_output("rev-parse", "HEAD~1")
+        local_base_tree = self.git_output("rev-parse", "HEAD~1^{tree}")
+        remote_diverged = self.git_output("commit-tree", local_base_tree, "-p", local_base, "-m", "remote-diverged")
+        self.git_output("update-ref", f"refs/remotes/origin/{branch}", remote_diverged)
+        diverged_result = useagent.run_qa(config, "durability-diverged-test")
+        diverged = useagent.release_durability_snapshot(config, {"last_qa": diverged_result})
+
+        self.assertEqual(diverged["status"], "pass")
+        self.assertEqual(diverged["upstream_relation"], "diverged")
+        self.assertEqual(diverged["ahead"], 1)
+        self.assertEqual(diverged["behind"], 1)
+
     def test_legacy_pass_without_source_fingerprint_is_stale(self) -> None:
         config = self.configure_qa()
         gates, ready = useagent.production_snapshot(
@@ -1958,7 +2185,8 @@ class UseAgentCliTests(unittest.TestCase):
         state = {"last_qa": qa_result}
         gates, ready = useagent.production_snapshot(config, data, state)
         self.assertEqual(dict(gates)["operational_rollback_notes"], "pass")
-        self.assertTrue(ready)
+        self.assertEqual(dict(gates)["release_source_durability"], "manual")
+        self.assertFalse(ready)
 
         config["supervisor"]["operational_readiness_files"] = ["docs/missing.md"]
         gates, ready = useagent.production_snapshot(config, data, state)

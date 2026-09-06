@@ -98,6 +98,23 @@ registry, report, checkpoint, evidence and runtime updates must not
 self-invalidate QA. A missing or mismatched fingerprint is `QA_STALE`; the
 production snapshot fails closed and never reruns QA implicitly.
 
+Task completion, QA validity and local release durability are separate
+decisions. The production snapshot adds a `release_source_durability` gate. In
+a Git-backed repository it passes only when a concrete `HEAD` exists, all
+release-relevant tracked state is clean, no non-ignored untracked release
+source exists, and the current QA source fingerprint is valid. A QA pass on a
+dirty tree may remain valid for development, but strong release readiness must
+reject it. A later commit changes source identity, so QA must be rerun rather
+than silently reused.
+
+The release snapshot records branch, locally configured upstream and
+ahead/behind relation without contacting or mutating a remote. Local
+durability does not require `HEAD == origin/main`; ahead, behind and diverged
+metadata are informational. No upstream is represented as `none`, and missing
+tracking metadata is explicit. A non-Git workspace is `filesystem`/`manual`
+degraded mode and never claims strong Git durability. Only the configured
+volatile control-plane paths are exempt from release-source cleanliness.
+
 `supervisor.operational_readiness_files` is an array of non-empty repository-relative Markdown paths. The production snapshot marks the operational/rollback gate as `pass` only when every configured file exists and contains content; missing or unsafe paths remain `manual`.
 
 ## Supervisor cycle contract

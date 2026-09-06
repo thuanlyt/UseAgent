@@ -49,7 +49,13 @@ preserved and requires an explicit migration policy before cleanup. Successful
 QA binds its pass to a deterministic release-source fingerprint; stale or
 missing fingerprints fail the production snapshot until QA is rerun. Volatile
 control-plane roots are configured explicitly in `release_source.volatile_paths`
-and excluded from the source manifest.
+and excluded from the source manifest. The production snapshot separately
+ evaluates `release_source_durability`: Git `HEAD`, clean nonvolatile tracked
+ state, no non-ignored untracked release source and valid current QA are
+ required for `pass`. QA can remain valid on a dirty development tree while
+ durability fails. Branch/upstream/ahead-behind metadata is read locally and
+ never requires `origin/main`, a network push or a merge; non-Git projects are
+ explicitly `filesystem`/`manual` degraded mode.
 
 ## Dependency edges
 
