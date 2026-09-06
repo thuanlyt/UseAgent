@@ -113,7 +113,8 @@ durability does not require `HEAD == origin/main`; ahead, behind and diverged
 metadata are informational. No upstream is represented as `none`, and missing
 tracking metadata is explicit. A non-Git workspace is `filesystem`/`manual`
 degraded mode and never claims strong Git durability. Only the configured
-volatile control-plane paths are exempt from release-source cleanliness.
+volatile control-plane paths, including `work/SUPERVISOR_REPORT.md`, are exempt
+from release-source cleanliness.
 
 `supervisor.operational_readiness_files` is an array of non-empty repository-relative Markdown paths. The production snapshot marks the operational/rollback gate as `pass` only when every configured file exists and contains content; missing or unsafe paths remain `manual`.
 

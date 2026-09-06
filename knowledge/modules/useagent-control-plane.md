@@ -54,8 +54,10 @@ and excluded from the source manifest. The production snapshot separately
  state, no non-ignored untracked release source and valid current QA are
  required for `pass`. QA can remain valid on a dirty development tree while
  durability fails. Branch/upstream/ahead-behind metadata is read locally and
- never requires `origin/main`, a network push or a merge; non-Git projects are
- explicitly `filesystem`/`manual` degraded mode.
+never requires `origin/main`, a network push or a merge; non-Git projects are
+explicitly `filesystem`/`manual` degraded mode.
+The generated root convenience report `work/SUPERVISOR_REPORT.md` is also
+configured as volatile so report refreshes cannot self-invalidate QA.
 
 ## Dependency edges
 

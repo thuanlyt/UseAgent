@@ -45,7 +45,8 @@ QA run. Volatile control-plane paths configured in
 deleted or rewritten. Upstream branch relation is observational metadata; no
 specific remote, push, pull or `origin/main` equality is required. Non-Git
 workspaces use an explicit degraded/manual result rather than claiming Git
-durability.
+durability. The generated `work/SUPERVISOR_REPORT.md` is volatile control-plane
+output and is not part of the durable release-source identity.
 
 ## Invariants
 

@@ -25,6 +25,7 @@
       "work/checkpoints",
       "work/evidence",
       "work/outbox",
+      "work/SUPERVISOR_REPORT.md",
       "work/supervisor",
       "work/.runtime-output",
       "work/.state.lock"

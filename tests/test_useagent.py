@@ -1932,6 +1932,7 @@ class UseAgentCliTests(unittest.TestCase):
             "work/checkpoints/generated.md",
             "work/evidence/generated.md",
             "work/.runtime-output/generated.md",
+            "work/SUPERVISOR_REPORT.md",
             "work/supervisor/generated.json",
         )
         for relative in generated_paths:
@@ -2018,6 +2019,19 @@ class UseAgentCliTests(unittest.TestCase):
         result = useagent.run_qa(config, "durability-volatile-test")
         volatile = useagent.ROOT / "work" / "evidence" / "volatile-only.md"
         volatile.write_text("runtime evidence", encoding="utf-8")
+
+        snapshot = useagent.release_durability_snapshot(config, {"last_qa": result})
+
+        self.assertEqual(snapshot["status"], "pass")
+        self.assertEqual(snapshot["dirty_state"], "clean")
+        self.assertEqual(snapshot["untracked_path_count"], 0)
+
+    def test_convenience_supervisor_report_is_volatile_for_release_durability(self) -> None:
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+        result = useagent.run_qa(config, "durability-report-write-test")
+        report_path = useagent.ROOT / "work" / "SUPERVISOR_REPORT.md"
+        report_path.write_text("generated convenience report", encoding="utf-8")
 
         snapshot = useagent.release_durability_snapshot(config, {"last_qa": result})
 

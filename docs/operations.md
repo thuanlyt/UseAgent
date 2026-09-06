@@ -268,7 +268,8 @@ pulls, merges or pushes. When no upstream is configured the relation is
 `none`; detached or unavailable tracking metadata is reported explicitly. A
 workspace without Git uses `filesystem`/`manual` degraded mode and never claims
 strong Git durability. Volatile control-plane writes remain excluded according
-to `release_source.volatile_paths`.
+to `release_source.volatile_paths`, including the generated convenience report
+at `work/SUPERVISOR_REPORT.md`.
 
 ### Report freshness / Tính mới của report
 
