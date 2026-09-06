@@ -28,6 +28,9 @@ classifiers = [
 Homepage = "https://github.com/thuanlyt/UseAgent"
 Repository = "https://github.com/thuanlyt/UseAgent"
 Issues = "https://github.com/thuanlyt/UseAgent/issues"
+Documentation = "https://useagent.thuanlyt.id.vn/"
+Changelog = "https://github.com/thuanlyt/UseAgent/blob/main/CHANGELOG.md"
+Releases = "https://github.com/thuanlyt/UseAgent/releases"
 
 [project.scripts]
 useagent = "tools.useagent:main"

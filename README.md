@@ -3,6 +3,8 @@
 English | [Tiếng Việt](README-vi.md)
 
 [![CI](https://github.com/thuanlyt/UseAgent/actions/workflows/ci.yml/badge.svg)](https://github.com/thuanlyt/UseAgent/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/thuanlyt/UseAgent?display_name=tag&sort=semver)](https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.0)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > A file-first multi-agent control plane that turns one project goal into scoped work, inspectable handovers and bounded release progress.
@@ -14,6 +16,15 @@ UseAgent gives one capable model the role of supervisor. Other coding agents and
 ## What UseAgent is
 
 UseAgent is a provider-neutral supervisor workflow for trusted local agents working in one prepared repository. The supervisor reads a lightweight goal and roster, builds a roadmap/DAG, dispatches ready tasks, reviews worker reports, runs configured QA and chooses the next bounded action.
+
+## Current Release
+
+**v0.1.0 — Initial Public Release**
+
+UseAgent v0.1.0 is the first public release of a Beta, trusted-local, file-first multi-agent control plane. It brings scoped work, evidence/review/QA gates, runtime resilience and judgment-aware supervision into one repository-local workflow.
+
+- [Release notes](https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.0) · [All releases](https://github.com/thuanlyt/UseAgent/releases)
+- [CHANGELOG](CHANGELOG.md) · [Documentation](https://useagent.thuanlyt.id.vn/) · [Getting started](docs/getting-started.md)
 
 The repository is the shared memory:
 
@@ -119,6 +130,12 @@ python F:\dev\UseAgent\tools\useagent.py --root F:\dev\MyProject validate
 ```
 
 `--root` comes before the subcommand. It makes the selected project the boundary for the registry, mailboxes, reports and configured paths. A configured path that escapes that boundary is rejected. See [getting started](docs/getting-started.md) for the copy-in and central-checkout choices.
+
+`main` is the current development branch. To reproduce the published v0.1.0 snapshot, check out the immutable release tag after cloning:
+
+```powershell
+git checkout v0.1.0
+```
 
 Register the real worker sessions that will actually work on the project:
 

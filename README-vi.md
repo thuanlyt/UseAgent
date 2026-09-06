@@ -3,6 +3,8 @@
 [English](README.md) | Tiếng Việt
 
 [![CI](https://github.com/thuanlyt/UseAgent/actions/workflows/ci.yml/badge.svg)](https://github.com/thuanlyt/UseAgent/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/thuanlyt/UseAgent?display_name=tag&sort=semver)](https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.0)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > Bộ điều phối multi-agent file-first, biến một mục tiêu dự án thành công việc có scope rõ, handover có thể kiểm tra và tiến trình release hữu hạn.
@@ -14,6 +16,15 @@ UseAgent trao cho một model đủ năng lực vai trò supervisor. Các coding
 ## UseAgent là gì?
 
 UseAgent là workflow supervisor provider-neutral dành cho các agent local đáng tin cậy cùng làm việc trong một repository đã chuẩn bị. Supervisor đọc goal và roster ngắn, lập roadmap/DAG, dispatch task sẵn sàng, đọc report của worker, chạy QA được cấu hình và chọn hành động tiếp theo trong một cycle hữu hạn.
+
+## Phiên bản hiện tại
+
+**v0.1.0 — Initial Public Release / Bản phát hành công khai đầu tiên**
+
+UseAgent v0.1.0 là bản phát hành công khai đầu tiên của control plane multi-agent file-first, trusted-local, đang ở mức Beta. Bản này kết hợp work có scope, evidence/review/QA gate, khả năng phục hồi runtime và supervisor có judgment trong một workflow chung của repository.
+
+- [Release notes](https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.0) · [Tất cả bản phát hành](https://github.com/thuanlyt/UseAgent/releases)
+- [CHANGELOG](CHANGELOG.md) · [Tài liệu](https://useagent.thuanlyt.id.vn/) · [Hướng dẫn bắt đầu](docs/getting-started.md)
 
 Repository trở thành bộ nhớ dùng chung:
 
@@ -119,6 +130,12 @@ python F:\dev\UseAgent\tools\useagent.py --root F:\dev\MyProject validate
 ```
 
 `--root` phải đứng trước subcommand. Nó đặt repository được chọn làm boundary cho registry, mailbox, report và các path đã cấu hình. Path nào thoát khỏi boundary sẽ bị từ chối. Xem [hướng dẫn bắt đầu](docs/getting-started.md) để chọn cách copy control plane hoặc dùng checkout trung tâm.
+
+`main` là nhánh phát triển hiện tại. Để tái hiện snapshot v0.1.0 đã phát hành, hãy checkout tag release bất biến sau khi clone:
+
+```powershell
+git checkout v0.1.0
+```
 
 Đăng ký đúng các worker session thực tế sẽ làm việc:
 
