@@ -238,8 +238,17 @@ reference for debugging. The durable preview and command metadata are
 sanitized as defense-in-depth, but sanitization is not a sandbox or an
 authentication boundary. Raw or generated output must not be copied into
 tracked `work/evidence/`; historical tracked evidence is preserved and needs
-an explicit migration policy before any cleanup. The cycle still reports task
-status, blockers, active workers and the next action.
+an explicit migration policy before any cleanup.
+
+Every successful QA run also records a release-source fingerprint. It covers
+the Git `HEAD` when available, content hashes for tracked and non-ignored
+untracked files, the relevant dirty state and the QA/release configuration.
+The configured `release_source.volatile_paths` are excluded so registry,
+reports, checkpoints, evidence, runtime spool and other control-plane updates
+do not invalidate a fresh QA result. A missing or mismatched fingerprint is
+`QA_STALE`; the production snapshot rejects it and does not rerun QA
+automatically. Run `python tools/useagent.py supervisor qa` again after a
+source, test or QA/release configuration change.
 
 ### Report freshness / Tính mới của report
 

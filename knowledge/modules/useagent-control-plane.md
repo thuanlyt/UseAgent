@@ -2,7 +2,7 @@
 
 - `freshness`: verified (2026-09-06)
 - `owner`: orchestrator
-- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:validate_relative_scope`, `tools/useagent.py:scope_overlaps`, `tools/useagent.py:scope_within`, `tools/useagent.py:append_markdown`, `tools/useagent.py:agent_claim_blocker`, `tools/useagent.py:cmd_task_new`, `tools/useagent.py:cmd_task_claim`, `tools/useagent.py:cmd_task_update`, `tools/useagent.py:cmd_task_report`, `tools/useagent.py:cmd_worker_pull`, `tools/useagent.py:ingest_reports_locked`, `tools/useagent.py:choose_next_action`, `tools/useagent.py:normalize_evidence_provenance`, `tools/useagent.py:normalize_evidence_source`, `tools/useagent.py:parse_evidence`, `tools/useagent.py:registry_revision`, `tools/useagent.py:supervisor_report_freshness`, `tools/useagent.py:build_supervisor_report`, `tools/useagent.py:cmd_supervisor_report`, `tools/useagent.py:cmd_context`, `tools/useagent.py:validate_registry`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`
+- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:validate_relative_scope`, `tools/useagent.py:scope_overlaps`, `tools/useagent.py:scope_within`, `tools/useagent.py:append_markdown`, `tools/useagent.py:agent_claim_blocker`, `tools/useagent.py:cmd_task_new`, `tools/useagent.py:cmd_task_claim`, `tools/useagent.py:cmd_task_update`, `tools/useagent.py:cmd_task_report`, `tools/useagent.py:cmd_worker_pull`, `tools/useagent.py:ingest_reports_locked`, `tools/useagent.py:choose_next_action`, `tools/useagent.py:normalize_evidence_provenance`, `tools/useagent.py:normalize_evidence_source`, `tools/useagent.py:parse_evidence`, `tools/useagent.py:registry_revision`, `tools/useagent.py:release_source_fingerprint`, `tools/useagent.py:validate_qa_source`, `tools/useagent.py:supervisor_report_freshness`, `tools/useagent.py:build_supervisor_report`, `tools/useagent.py:cmd_supervisor_report`, `tools/useagent.py:cmd_context`, `tools/useagent.py:validate_registry`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`
 
 ## Responsibility
 
@@ -45,7 +45,11 @@ remain authoritative.
 Runner and QA output is runtime data first. Future writes keep only bounded
 sanitized summaries in `work/evidence/`; bounded redacted diagnostics go to
 the Git-ignored `work/.runtime-output/` spool. Historical tracked evidence is
-preserved and requires an explicit migration policy before cleanup.
+preserved and requires an explicit migration policy before cleanup. Successful
+QA binds its pass to a deterministic release-source fingerprint; stale or
+missing fingerprints fail the production snapshot until QA is rerun. Volatile
+control-plane roots are configured explicitly in `release_source.volatile_paths`
+and excluded from the source manifest.
 
 ## Dependency edges
 

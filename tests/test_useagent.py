@@ -920,6 +920,36 @@ class UseAgentCliTests(unittest.TestCase):
         }
         useagent.save_config(config)
 
+    def configure_qa(self, command: str = 'python -c "print(\'qa-pass\')"') -> dict:
+        config = useagent.load_config()
+        config["supervisor"]["qa_commands"] = [command]
+        useagent.save_config(config)
+        return config
+
+    def successful_qa(self, command: str = 'python -c "print(\'qa-pass\')"') -> tuple[dict, dict]:
+        config = self.configure_qa(command)
+        result = useagent.run_qa(config, "source-state-test")
+        self.assertEqual(result["status"], "pass")
+        self.assertTrue(result["source_fingerprint"])
+        return config, result
+
+    def release_data_with_done_task(self) -> dict:
+        data = useagent.load_registry()
+        data["items"]["UA-9999"] = {"status": "done"}
+        return data
+
+    def initialize_git_baseline(self) -> None:
+        commands = [
+            ["git", "init", "-q"],
+            ["git", "config", "user.email", "useagent-tests@example.test"],
+            ["git", "config", "user.name", "UseAgent Tests"],
+            ["git", "add", "-A"],
+            ["git", "commit", "-qm", "test baseline"],
+        ]
+        for command in commands:
+            result = subprocess.run(command, cwd=useagent.ROOT, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_worker_run_invokes_runner_and_accepts_automatic_report(self) -> None:
         self.register_worker("worker-1", "src")
         self.configure_runner(self.reporting_runner())
@@ -1758,6 +1788,10 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertIn('"status": "pass"', output)
         state = json.loads((useagent.ROOT / "work" / "supervisor" / "state.json").read_text(encoding="utf-8"))
         self.assertEqual(state["last_qa"]["status"], "pass")
+        self.assertTrue(state["last_qa"]["source_fingerprint"])
+        self.assertEqual(state["last_qa"]["source_dirty_state"], "unknown")
+        self.assertTrue(state["last_qa"]["qa_config_fingerprint"])
+        self.assertEqual(len(state["last_qa"]["executed_checks"]), 1)
         self.assertTrue((useagent.ROOT / state["last_qa"]["evidence"]).exists())
 
         config["supervisor"]["qa_commands"] = ['python -c "raise SystemExit(1)"']
@@ -1807,15 +1841,121 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertTrue((useagent.ROOT / spool_rel).is_file())
         self.assertNotIn("qa-secret-123456789", (useagent.ROOT / spool_rel).read_text(encoding="utf-8"))
 
+    def test_qa_source_fingerprint_is_valid_when_source_is_unchanged(self) -> None:
+        config, result = self.successful_qa()
+        gates, _ = useagent.production_snapshot(config, self.release_data_with_done_task(), {"last_qa": result})
+        self.assertEqual(dict(gates)["qa"], "pass")
+        self.assertEqual(dict(gates)["qa_source_state"], "pass")
+
+    def test_qa_source_fingerprint_stales_when_untracked_source_changes(self) -> None:
+        config, result = self.successful_qa()
+        source = useagent.ROOT / "src" / "article.py"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("version one", encoding="utf-8")
+        self.assertEqual(useagent.validate_qa_source(config, {"last_qa": result})["status"], "QA_STALE")
+        gates, ready = useagent.production_snapshot(config, self.release_data_with_done_task(), {"last_qa": result})
+        self.assertEqual(dict(gates)["qa_source_state"], "QA_STALE")
+        self.assertEqual(dict(gates)["qa"], "fail")
+        self.assertFalse(ready)
+
+    def test_qa_source_fingerprint_stales_when_test_file_changes(self) -> None:
+        config, result = self.successful_qa()
+        test_file = useagent.ROOT / "tests" / "test_article.py"
+        test_file.parent.mkdir(parents=True, exist_ok=True)
+        test_file.write_text("assert True", encoding="utf-8")
+        self.assertEqual(useagent.validate_qa_source(config, {"last_qa": result})["status"], "QA_STALE")
+
+    def test_qa_source_fingerprint_stales_when_qa_contract_changes(self) -> None:
+        config, result = self.successful_qa()
+        changed_config = self.configure_qa('python -c "print(\'qa-contract-changed\')"')
+        self.assertNotEqual(config["supervisor"]["qa_commands"], changed_config["supervisor"]["qa_commands"])
+        self.assertEqual(useagent.validate_qa_source(changed_config, {"last_qa": result})["status"], "QA_STALE")
+
+    def test_qa_fingerprint_records_dirty_git_source_state(self) -> None:
+        source = useagent.ROOT / "src" / "dirty.py"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("baseline", encoding="utf-8")
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+        source.write_text("working tree change", encoding="utf-8")
+
+        result = useagent.run_qa(config, "dirty-source-test")
+
+        self.assertEqual(result["status"], "pass")
+        self.assertEqual(result["source_vcs"], "git")
+        self.assertEqual(result["source_dirty_state"], "dirty")
+        self.assertTrue(result["source_dirty"])
+        self.assertEqual(len(result["source_head_sha"]), 40)
+        self.assertGreater(result["source_dirty_path_count"], 0)
+        source.write_text("second working tree change", encoding="utf-8")
+        self.assertEqual(useagent.validate_qa_source(config, {"last_qa": result})["status"], "QA_STALE")
+
+    def test_clean_qa_becomes_stale_when_git_dirty_state_changes(self) -> None:
+        source = useagent.ROOT / "src" / "clean.py"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("baseline", encoding="utf-8")
+        config = self.configure_qa()
+        self.initialize_git_baseline()
+
+        result = useagent.run_qa(config, "clean-source-test")
+
+        self.assertEqual(result["source_vcs"], "git")
+        self.assertEqual(result["source_dirty_state"], "clean")
+        source.write_text("now dirty", encoding="utf-8")
+        self.assertEqual(useagent.validate_qa_source(config, {"last_qa": result})["status"], "QA_STALE")
+
+    def test_volatile_control_plane_updates_do_not_stale_qa(self) -> None:
+        config, result = self.successful_qa()
+        generated_paths = (
+            "work/registry.json",
+            "work/items/generated.md",
+            "work/reports/generated.md",
+            "work/checkpoints/generated.md",
+            "work/evidence/generated.md",
+            "work/.runtime-output/generated.md",
+            "work/supervisor/generated.json",
+        )
+        for relative in generated_paths:
+            path = useagent.ROOT / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("control-plane update", encoding="utf-8")
+        self.assertEqual(useagent.validate_qa_source(config, {"last_qa": result})["status"], "valid")
+
+    def test_qa_rerun_on_new_source_state_restores_validity(self) -> None:
+        config, first = self.successful_qa()
+        source = useagent.ROOT / "src" / "rerun.py"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("new source state", encoding="utf-8")
+        self.assertEqual(useagent.validate_qa_source(config, {"last_qa": first})["status"], "QA_STALE")
+
+        second = useagent.run_qa(config, "rerun-source-test")
+
+        self.assertNotEqual(first["source_fingerprint"], second["source_fingerprint"])
+        self.assertEqual(useagent.validate_qa_source(config, {"last_qa": second})["status"], "valid")
+
+    def test_legacy_pass_without_source_fingerprint_is_stale(self) -> None:
+        config = self.configure_qa()
+        gates, ready = useagent.production_snapshot(
+            config,
+            self.release_data_with_done_task(),
+            {"last_qa": {"status": "pass"}},
+        )
+        self.assertEqual(dict(gates)["qa_source_state"], "QA_STALE")
+        self.assertEqual(dict(gates)["qa"], "fail")
+        self.assertFalse(ready)
+
     def test_production_snapshot_checks_operational_readiness_files(self) -> None:
         (useagent.ROOT / "docs").mkdir(parents=True, exist_ok=True)
         (useagent.ROOT / "docs" / "operations.md").write_text("Operational runbook", encoding="utf-8")
         (useagent.ROOT / "docs" / "rollback.md").write_text("Rollback plan", encoding="utf-8")
         config = useagent.load_config()
         config["supervisor"]["operational_readiness_files"] = ["docs/operations.md", "docs/rollback.md"]
+        config["supervisor"]["qa_commands"] = ['python -c "print(\'qa-pass\')"']
+        useagent.save_config(config)
+        qa_result = useagent.run_qa(config, "readiness-test")
         data = useagent.load_registry()
         data["items"]["UA-9999"] = {"status": "done"}
-        state = {"last_qa": {"status": "pass"}}
+        state = {"last_qa": qa_result}
         gates, ready = useagent.production_snapshot(config, data, state)
         self.assertEqual(dict(gates)["operational_rollback_notes"], "pass")
         self.assertTrue(ready)

@@ -1,16 +1,16 @@
-<!-- useagent-report: registry_sha256=545c0b2e055d3f6273378628ec76932ffadc81c025d7d0b05767dce109e190bd -->
+<!-- useagent-report: registry_sha256=989f7dcbccaba9a0e0d656f7a8fe4fcad644393efd8bf3d939bc744ff202f327 -->
 # UseAgent supervisor report
 
-- **Cycle:** `manual-20260906T025302Z`
-- **Generated:** 2026-09-06T02:53:02Z
-- **Registry revision:** sha256:545c0b2e055d3f6273378628ec76932ffadc81c025d7d0b05767dce109e190bd
-- **Next action:** Run the production release gate and obtain explicit deploy approval.
-- **Production snapshot:** `ready`
+- **Cycle:** `manual-20260906T031628Z`
+- **Generated:** 2026-09-06T03:16:28Z
+- **Registry revision:** sha256:989f7dcbccaba9a0e0d656f7a8fe4fcad644393efd8bf3d939bc744ff202f327
+- **Next action:** QA_STALE: run `python tools/useagent.py supervisor qa` before the production release gate.
+- **Production snapshot:** `not_ready`
 
 ## Status counts
 
 - `cancelled`: 3
-- `done`: 48
+- `done`: 49
 
 ## Reports ingested this cycle
 
@@ -74,6 +74,7 @@
 - `UA-0049` — Add typed evidence provenance to handovers — evidence: 7
 - `UA-0050` — Make takeover lineage first-class — evidence: 7
 - `UA-0051` — Make runner and QA output evidence-safe — evidence: 10
+- `UA-0052` — Bind QA and release gates to source state — evidence: 8
 - none
 
 ## Blocked work
@@ -83,15 +84,18 @@
 ## QA
 
 - status: `pass`
+- source_state: `QA_STALE`
+- source_reason: `QA result has no source fingerprint`
 - evidence: `work/evidence/cycle-20260904T180551Z-7c3648-qa.md`
 
 ## Production gates
 
 - [x] `all_tasks_done`: `pass`
-- [x] `qa`: `pass`
+- [ ] `qa`: `fail`
+- [ ] `qa_source_state`: `QA_STALE`
 - [x] `no_blocked_tasks`: `pass`
 - [x] `operational_rollback_notes`: `pass`
 
 ## Resume instruction
 
-Run the production release gate and obtain explicit deploy approval.
+QA_STALE: run `python tools/useagent.py supervisor qa` before the production release gate.

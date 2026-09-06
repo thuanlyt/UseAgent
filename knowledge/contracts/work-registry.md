@@ -30,6 +30,11 @@ remains readable and valid for backward compatibility; malformed new fields
 are validation errors. Existing tracked evidence is historical data and is not
 rewritten or deleted by this contract.
 
+A successful QA record must also carry the release-source fingerprint, source
+VCS/HEAD and dirty-state provenance, QA/release configuration fingerprint and
+executed checks; a missing or mismatched source fingerprint is `QA_STALE` and
+cannot satisfy a release gate.
+
 ## Invariants
 
 - `id` matches `UA-####` and is unique.

@@ -328,3 +328,10 @@ Implemented a future-write evidence boundary: runner and QA now persist bounded 
 
 - Report: `work/reports/inbox/UA-0051-20260906T024252Z-475cab.md`
 - Next: Run an independent review of the evidence boundary, redaction coverage, budget metadata, ignore contract and runner/QA regressions; do not edit source during review.
+
+## 2026-09-06T03:15:51Z - UA-0052 (completed)
+
+Implemented source-bound QA and release evidence. QA now records a deterministic release-source fingerprint from Git HEAD when available, tracked/non-ignored untracked file content, dirty-state provenance and QA/release configuration. Production snapshot rejects missing or mismatched fingerprints as QA_STALE without automatic rerun; explicit volatile control-plane paths prevent self-invalidation.
+
+- Report: `work/reports/inbox/UA-0052-20260906T031551Z-0e32f2.md`
+- Next: Run the independent stale-state/self-invalidation review, then close UA-0052 and create its durable checkpoint; do not start P1 or polish README.

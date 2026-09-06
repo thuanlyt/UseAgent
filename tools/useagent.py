@@ -115,6 +115,22 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "evidence": "work/evidence",
         "runtime_spool": "work/.runtime-output",
     },
+    "release_source": {
+        "version": 1,
+        "volatile_paths": [
+            "work/registry.json",
+            "work/items",
+            "work/agents",
+            "work/reports",
+            "work/completed",
+            "work/checkpoints",
+            "work/evidence",
+            "work/outbox",
+            "work/supervisor",
+            "work/.runtime-output",
+            "work/.state.lock",
+        ],
+    },
     "supervisor": {
         "max_assignments_per_cycle": 4,
         "run_qa_each_cycle": False,
@@ -263,6 +279,190 @@ def path_for(config: dict[str, Any], key: str) -> Path:
     if not isinstance(value, (str, Path)) or not str(value).strip():
         raise UseAgentError(f"missing configured path: {key}")
     return safe_repo_path(value)
+
+
+def release_source_settings(config: dict[str, Any]) -> tuple[int, list[str]]:
+    settings = config.get("release_source", {})
+    if not isinstance(settings, dict):
+        raise UseAgentError("config.release_source must be an object")
+    version = settings.get("version", DEFAULT_CONFIG["release_source"]["version"])
+    if isinstance(version, bool) or not isinstance(version, int) or version < 1:
+        raise UseAgentError("config.release_source.version must be a positive integer")
+    raw_paths = settings.get("volatile_paths", DEFAULT_CONFIG["release_source"]["volatile_paths"])
+    if not isinstance(raw_paths, list) or any(not isinstance(value, str) or not value.strip() for value in raw_paths):
+        raise UseAgentError("config.release_source.volatile_paths must be an array of non-empty strings")
+    paths: list[str] = []
+    for value in raw_paths:
+        normalized = validate_relative_scope(value, "config.release_source.volatile_paths")
+        if normalized == ".":
+            raise UseAgentError("config.release_source.volatile_paths must not contain the project root")
+        paths.append(normalized)
+    return version, paths
+
+
+def release_path_is_volatile(path: str, volatile_paths: list[str]) -> bool:
+    normalized = path.replace("\\", "/").strip("/").casefold()
+    return any(
+        normalized == value.casefold() or normalized.startswith(f"{value.casefold().rstrip('/')}/")
+        for value in volatile_paths
+    )
+
+
+def _git_nul_paths(arguments: list[str]) -> list[str]:
+    result = subprocess.run(
+        ["git", *arguments],
+        cwd=ROOT,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise UseAgentError("git could not enumerate release source paths")
+    return [value.decode("utf-8", errors="replace") for value in result.stdout.split(b"\0") if value]
+
+
+def _filesystem_source_paths(volatile_paths: list[str]) -> list[str]:
+    paths: list[str] = []
+    for directory, dirnames, filenames in os.walk(ROOT):
+        dirnames[:] = [
+            name
+            for name in dirnames
+            if name not in {".git", "__pycache__", ".pytest_cache", "node_modules", "dist", "build"}
+        ]
+        for name in filenames:
+            path = Path(directory) / name
+            relative = path.relative_to(ROOT).as_posix()
+            if path.suffix == ".pyc" or release_path_is_volatile(relative, volatile_paths):
+                continue
+            paths.append(relative)
+    return sorted(set(paths))
+
+
+def _sha256_file(path: Path) -> tuple[str, int, str]:
+    try:
+        resolved = path.resolve()
+        resolved.relative_to(ROOT.resolve())
+        content = resolved.read_bytes()
+    except (OSError, ValueError) as exc:
+        if not path.exists():
+            return "<missing>", 0, "missing"
+        raise UseAgentError(f"cannot fingerprint release source file: {rel(path)}") from exc
+    return hashlib.sha256(content).hexdigest(), len(content), "present"
+
+
+def _qa_release_config_fingerprint(config: dict[str, Any]) -> str:
+    supervisor = config.get("supervisor", {})
+    if not isinstance(supervisor, dict):
+        supervisor = {}
+    payload = {
+        "config_version": config.get("version"),
+        "release_source": config.get("release_source"),
+        "qa_commands": supervisor.get("qa_commands"),
+        "qa_timeout_seconds": supervisor.get("qa_timeout_seconds"),
+        "run_qa_each_cycle": supervisor.get("run_qa_each_cycle"),
+        "operational_readiness_files": supervisor.get("operational_readiness_files"),
+        "production_gates": supervisor.get("production_gates"),
+    }
+    serialized = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def release_source_fingerprint(config: dict[str, Any]) -> dict[str, Any]:
+    release_version, volatile_paths = release_source_settings(config)
+    try:
+        probe = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+    except OSError:
+        probe = None
+    git_available = probe is not None and probe.returncode == 0 and bool(probe.stdout.strip())
+    head_sha = "unavailable"
+    dirty_paths: list[str] = []
+    untracked_paths: list[str] = []
+    if git_available:
+        try:
+            git_root = Path(probe.stdout.strip()).resolve()
+            if git_root != ROOT.resolve():
+                raise UseAgentError("git repository root does not match the configured project root")
+            head_result = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                check=False,
+            )
+            if head_result.returncode != 0 or not head_result.stdout.strip():
+                raise UseAgentError("git HEAD is unavailable for release fingerprint")
+            head_sha = head_result.stdout.strip()
+            tracked_paths = _git_nul_paths(["ls-files", "--cached", "-z"])
+            untracked_paths = _git_nul_paths(["ls-files", "--others", "--exclude-standard", "-z"])
+            dirty_candidates: set[str] = set()
+            for arguments in (
+                ["diff", "--name-only", "-z"],
+                ["diff", "--cached", "--name-only", "-z"],
+                ["ls-files", "--others", "--exclude-standard", "-z"],
+            ):
+                dirty_candidates.update(_git_nul_paths(arguments))
+            dirty_paths = sorted(
+                path for path in dirty_candidates if not release_path_is_volatile(path, volatile_paths)
+            )
+            source_paths = sorted(
+                {
+                    path
+                    for path in [*tracked_paths, *untracked_paths]
+                    if not release_path_is_volatile(path, volatile_paths)
+                }
+            )
+            tracked_count = sum(not release_path_is_volatile(path, volatile_paths) for path in tracked_paths)
+            untracked_count = sum(not release_path_is_volatile(path, volatile_paths) for path in untracked_paths)
+        except UseAgentError:
+            raise
+    else:
+        source_paths = _filesystem_source_paths(volatile_paths)
+        tracked_count = None
+        untracked_count = None
+
+    manifest: list[dict[str, Any]] = []
+    for relative in source_paths:
+        path = ROOT / Path(relative)
+        digest, byte_count, file_state = _sha256_file(path)
+        manifest.append({"path": relative, "sha256": digest, "bytes": byte_count, "state": file_state})
+    dirty_state = "dirty" if dirty_paths else "clean"
+    if not git_available:
+        dirty_state = "unknown"
+    qa_config_fingerprint = _qa_release_config_fingerprint(config)
+    payload = {
+        "version": release_version,
+        "vcs": "git" if git_available else "filesystem",
+        "head_sha": head_sha,
+        "dirty_state": dirty_state,
+        "dirty_paths": dirty_paths,
+        "manifest": manifest,
+        "qa_config_fingerprint": qa_config_fingerprint,
+    }
+    serialized = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return {
+        "fingerprint": hashlib.sha256(serialized.encode("utf-8")).hexdigest(),
+        "version": release_version,
+        "vcs": payload["vcs"],
+        "head_sha": head_sha,
+        "dirty": dirty_state == "dirty",
+        "dirty_state": dirty_state,
+        "dirty_path_count": len(dirty_paths),
+        "source_file_count": len(manifest),
+        "tracked_path_count": tracked_count,
+        "untracked_path_count": untracked_count,
+        "qa_config_version": config.get("version"),
+        "qa_config_fingerprint": qa_config_fingerprint,
+        "volatile_paths": volatile_paths,
+    }
 
 
 def ensure_layout() -> None:
@@ -1791,6 +1991,7 @@ def run_qa(config: dict[str, Any], cycle_id: str) -> dict[str, Any]:
     commands = config["supervisor"].get("qa_commands", [])
     if not commands:
         return {"status": "not_configured", "commands": [], "evidence": None}
+    source_state = release_source_fingerprint(config)
     timeout = int(config["supervisor"].get("qa_timeout_seconds", 900))
     raw_results = []
     for command in commands:
@@ -1850,6 +2051,18 @@ def run_qa(config: dict[str, Any], cycle_id: str) -> dict[str, Any]:
         "- source: `configured supervisor.qa_commands`",
         f"- local_spool: `{rel(local_spool)}`",
         f"- output_budget_chars: `{MAX_DURABLE_OUTPUT_CHARS}` per stream",
+        f"- source_fingerprint: `{source_state['fingerprint']}`",
+        f"- source_version: `{source_state['version']}`",
+        f"- source_vcs: `{source_state['vcs']}`",
+        f"- source_head_sha: `{source_state['head_sha']}`",
+        f"- source_dirty_state: `{source_state['dirty_state']}`",
+        f"- source_dirty_path_count: `{source_state['dirty_path_count']}`",
+        f"- source_file_count: `{source_state['source_file_count']}`",
+        f"- tracked_path_count: `{source_state['tracked_path_count']}`",
+        f"- untracked_path_count: `{source_state['untracked_path_count']}`",
+        f"- qa_config_version: `{source_state['qa_config_version']}`",
+        f"- qa_config_fingerprint: `{source_state['qa_config_fingerprint']}`",
+        f"- executed_checks: `{len(results)}`",
         "",
     ]
     for result in results:
@@ -1875,7 +2088,36 @@ def run_qa(config: dict[str, Any], cycle_id: str) -> dict[str, Any]:
         "provenance": "local",
         "source": "configured supervisor.qa_commands",
         "recorded_at": now_iso(),
+        "source_fingerprint": source_state["fingerprint"],
+        "source_version": source_state["version"],
+        "source_vcs": source_state["vcs"],
+        "source_head_sha": source_state["head_sha"],
+        "source_dirty": source_state["dirty"],
+        "source_dirty_state": source_state["dirty_state"],
+        "source_dirty_path_count": source_state["dirty_path_count"],
+        "source_file_count": source_state["source_file_count"],
+        "tracked_path_count": source_state["tracked_path_count"],
+        "untracked_path_count": source_state["untracked_path_count"],
+        "qa_config_version": source_state["qa_config_version"],
+        "qa_config_fingerprint": source_state["qa_config_fingerprint"],
+        "executed_checks": [result["command"] for result in results],
     }
+
+
+def validate_qa_source(config: dict[str, Any], state: dict[str, Any]) -> dict[str, str]:
+    last_qa = state.get("last_qa")
+    if not isinstance(last_qa, dict) or last_qa.get("status") != "pass":
+        return {"status": "not_checked"}
+    recorded = last_qa.get("source_fingerprint")
+    if not isinstance(recorded, str) or not recorded:
+        return {"status": "QA_STALE", "reason": "QA result has no source fingerprint"}
+    try:
+        current = release_source_fingerprint(config)
+    except UseAgentError as exc:
+        return {"status": "invalid", "reason": str(exc)}
+    if current["fingerprint"] != recorded:
+        return {"status": "QA_STALE", "reason": "current release source state differs from QA source state"}
+    return {"status": "valid"}
 
 
 def production_snapshot(config: dict[str, Any], data: dict[str, Any], state: dict[str, Any]) -> tuple[list[tuple[str, str]], bool]:
@@ -1885,7 +2127,11 @@ def production_snapshot(config: dict[str, Any], data: dict[str, Any], state: dic
     else:
         task_gate = "pass" if all(item.get("status") in {"done", "cancelled"} for item in items) else "fail"
     qa_status = (state.get("last_qa") or {}).get("status", "not_configured")
-    qa_gate = "pass" if qa_status == "pass" else "manual" if qa_status == "not_configured" else "fail"
+    qa_source = validate_qa_source(config, state)
+    if qa_status == "pass":
+        qa_gate = "pass" if qa_source["status"] == "valid" else "fail"
+    else:
+        qa_gate = "manual" if qa_status == "not_configured" else "fail"
     blocked_gate = "pass" if not any(item.get("status") == "blocked" for item in items) else "fail"
     readiness_files = config["supervisor"].get("operational_readiness_files", [])
     readiness_gate = "manual"
@@ -1902,6 +2148,7 @@ def production_snapshot(config: dict[str, Any], data: dict[str, Any], state: dic
     gates = [
         ("all_tasks_done", task_gate),
         ("qa", qa_gate),
+        ("qa_source_state", "pass" if qa_source["status"] == "valid" else qa_source["status"]),
         ("no_blocked_tasks", blocked_gate),
         ("operational_rollback_notes", readiness_gate),
     ]
@@ -1967,6 +2214,10 @@ def build_supervisor_report(config: dict[str, Any], data: dict[str, Any], state:
         counts[item.get("status", "unknown")] = counts.get(item.get("status", "unknown"), 0) + 1
     next_action = choose_next_action(data, assignments, config, qa_result)
     gates, production_ready = production_snapshot(config, data, state)
+    qa_source = validate_qa_source(config, state)
+    if qa_result.get("status") == "pass" and qa_source["status"] in {"QA_STALE", "invalid"}:
+        if next_action == "Run the production release gate and obtain explicit deploy approval.":
+            next_action = "QA_STALE: run `python tools/useagent.py supervisor qa` before the production release gate."
     revision = registry_revision(data)
     lines = [
         f"<!-- useagent-report: registry_sha256={revision} -->",
@@ -1995,7 +2246,18 @@ def build_supervisor_report(config: dict[str, Any], data: dict[str, Any], state:
     lines.extend(["", "## Blocked work", ""])
     blocked = [item for item in data["items"].values() if item.get("status") == "blocked"]
     lines.extend(f"- `{item['id']}` — {item['title']}" for item in blocked) or lines.append("- none")
-    lines.extend(["", "## QA", "", f"- status: `{qa_result.get('status')}`", f"- evidence: `{qa_result.get('evidence') or 'none'}`", ""])
+    lines.extend(
+        [
+            "",
+            "## QA",
+            "",
+            f"- status: `{qa_result.get('status')}`",
+            f"- source_state: `{qa_source['status']}`",
+            f"- source_reason: `{qa_source.get('reason', 'none')}`",
+            f"- evidence: `{qa_result.get('evidence') or 'none'}`",
+            "",
+        ]
+    )
     lines.extend(["## Production gates", ""])
     for name, value in gates:
         lines.append(f"- [{'x' if value == 'pass' else ' '}] `{name}`: `{value}`")
@@ -2294,6 +2556,27 @@ def validate_config(config: dict[str, Any], errors: list[str]) -> None:
                     errors.append("config.paths.runtime_spool must not overlap config.paths.evidence")
             except (TypeError, UseAgentError):
                 pass
+
+    release_source = config.get("release_source")
+    if not isinstance(release_source, dict):
+        errors.append("config.release_source must be an object")
+        release_source = {}
+    version = release_source.get("version")
+    if isinstance(version, bool) or not isinstance(version, int) or version < 1:
+        errors.append("config.release_source.version must be a positive integer")
+    volatile_paths = release_source.get("volatile_paths")
+    if not isinstance(volatile_paths, list) or any(
+        not isinstance(value, str) or not value.strip() for value in volatile_paths
+    ):
+        errors.append("config.release_source.volatile_paths must be an array of non-empty strings")
+    else:
+        for value in volatile_paths:
+            try:
+                validate_relative_scope(value, "config.release_source.volatile_paths")
+            except UseAgentError as exc:
+                errors.append(str(exc))
+        if any(normalize_scope(value) == "." for value in volatile_paths):
+            errors.append("config.release_source.volatile_paths must not contain the project root")
 
     supervisor = config.get("supervisor")
     if not isinstance(supervisor, dict):

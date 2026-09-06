@@ -89,6 +89,15 @@ budget, redaction count and truncation flag. The cycle records `pass`, `fail`
 or `not_configured`. This output boundary does not change the separate
 trusted-local execution boundary of configured shell commands.
 
+Successful QA also records a release-source fingerprint. The fingerprint
+includes Git `HEAD` when available, content hashes for tracked and non-ignored
+untracked files, the current dirty-state equivalent and the QA/release
+configuration. `release_source.volatile_paths` is an explicit, validated
+configuration of control-plane paths excluded from that fingerprint; generated
+registry, report, checkpoint, evidence and runtime updates must not
+self-invalidate QA. A missing or mismatched fingerprint is `QA_STALE`; the
+production snapshot fails closed and never reruns QA implicitly.
+
 `supervisor.operational_readiness_files` is an array of non-empty repository-relative Markdown paths. The production snapshot marks the operational/rollback gate as `pass` only when every configured file exists and contains content; missing or unsafe paths remain `manual`.
 
 ## Supervisor cycle contract

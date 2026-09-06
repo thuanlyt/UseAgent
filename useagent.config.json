@@ -14,6 +14,22 @@
     "evidence": "work/evidence",
     "runtime_spool": "work/.runtime-output"
   },
+  "release_source": {
+    "version": 1,
+    "volatile_paths": [
+      "work/registry.json",
+      "work/items",
+      "work/agents",
+      "work/reports",
+      "work/completed",
+      "work/checkpoints",
+      "work/evidence",
+      "work/outbox",
+      "work/supervisor",
+      "work/.runtime-output",
+      "work/.state.lock"
+    ]
+  },
   "supervisor": {
     "max_assignments_per_cycle": 4,
     "run_qa_each_cycle": false,
