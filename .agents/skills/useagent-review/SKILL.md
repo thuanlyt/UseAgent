@@ -8,7 +8,7 @@ description: "Review a UseAgent work item for correctness, regressions, security
 Use this skill when implementation is ready for an independent verification pass or a milestone needs a release gate.
 
 1. Read `AGENTS.md`, `work/SUPERVISOR_REPORT.md`, the work item, the relevant knowledge cards, the diff and existing evidence.
-2. Verify behavior against acceptance criteria; prioritize correctness, security, data loss, compatibility and missing regression tests.
+2. Apply the [Supervisor Judgment and Owner Communication contract](../../../knowledge/contracts/supervisor-judgment.md) when evaluating recommendations, audit severity and residual risk; verify behavior against acceptance criteria and prioritize correctness, security, data loss, compatibility and missing regression tests.
 3. Run the smallest useful focused checks and capture exact commands/results. Do not fix while reviewing; create a follow-up task for code changes.
 4. Report each finding with severity, file/line, impact and reproduction. State explicitly when no actionable finding was found.
 5. Store long output under `work/evidence/`, add a short registry evidence entry, update the worker report if needed, and recommend `done`, `blocked` or another iteration.

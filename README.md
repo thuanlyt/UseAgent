@@ -53,6 +53,13 @@ The Python CLI owns deterministic state transitions and validation. The model ow
 - Per-agent `INBOX.md`, assignment inbox, `REPORT.md` and `COMPLETED.md`.
 - Automatic dispatch to eligible workers; one writer owns a scope at a time.
 
+### Judgment-aware supervision
+
+- Separates project outcomes, hard constraints, flexible preferences and proposed solutions.
+- Challenges materially weak plans, weighs relevant tradeoffs and recommends one default with clear confidence.
+- Asks only decision-critical owner questions, escalates irreversible/external actions and respects valid owner overrides.
+- Recognizes diminishing returns and can recommend stopping when the goal and appropriate gates are complete.
+
 ### Preserve useful project memory
 
 - Source-anchored knowledge cards and contracts that reduce rereading.

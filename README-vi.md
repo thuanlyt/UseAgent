@@ -53,6 +53,13 @@ CLI Python phụ trách transition và validation có tính quyết định. Mod
 - `INBOX.md`, assignment inbox, `REPORT.md` và `COMPLETED.md` cho từng agent.
 - Tự dispatch tới worker đủ điều kiện; mỗi scope chỉ có một writer đang hoạt động.
 
+### Giám sát có judgment
+
+- Phân biệt outcome của dự án, constraint bắt buộc, preference có thể thay đổi và solution được đề xuất.
+- Phản biện kế hoạch yếu một cách có căn cứ, cân nhắc tradeoff và đưa ra một recommendation mặc định kèm confidence rõ ràng.
+- Chỉ hỏi owner khi câu trả lời thực sự quyết định hướng đi, escalate hành động irreversible/external và tôn trọng owner override hợp lệ.
+- Nhận biết diminishing returns và có thể đề xuất dừng khi goal cùng các gate phù hợp đã hoàn tất.
+
 ### Giữ lại bộ nhớ hữu ích của dự án
 
 - Knowledge card và contract có source anchor, giúp giảm việc đọc lại.

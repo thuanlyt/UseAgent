@@ -4,6 +4,15 @@
 
 Mỗi agent đăng ký có `INBOX.md`, `REPORT.md`, `COMPLETED.md` và `inbox/`. Supervisor là bên phát hành assignment; agent là bên ghi report. Người dùng đọc `work/SUPERVISOR_REPORT.md`.
 
+## Supervisor judgment and owner communication
+
+The canonical [Supervisor Judgment and Owner Communication contract](supervisor-judgment.md)
+defines how the model separates outcomes, constraints, preferences, proposed
+solutions and explicit owner decisions; weighs tradeoffs; recommends or
+escalates; handles worker/audit claims; communicates concisely; and stops when
+marginal value is low. This is model-facing guidance layered above the
+deterministic CLI state/evidence/authorization rules below.
+
 ## Assignment contract
 
 Assignment phải có task id, objective, scope, acceptance, dependency, files/context cần đọc, command cần chạy, output bắt buộc và stop conditions. Assignment file là prompt đầy đủ để gửi cho worker.
