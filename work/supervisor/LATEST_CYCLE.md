@@ -1,16 +1,16 @@
-<!-- useagent-report: registry_sha256=989f7dcbccaba9a0e0d656f7a8fe4fcad644393efd8bf3d939bc744ff202f327 -->
+<!-- useagent-report: registry_sha256=752377f894f578db33aecf0e24bd33a8f3da7ecfbabbed0bba9b0813d71b5e7f -->
 # UseAgent supervisor report
 
-- **Cycle:** `manual-20260906T031628Z`
-- **Generated:** 2026-09-06T03:16:28Z
-- **Registry revision:** sha256:989f7dcbccaba9a0e0d656f7a8fe4fcad644393efd8bf3d939bc744ff202f327
-- **Next action:** QA_STALE: run `python tools/useagent.py supervisor qa` before the production release gate.
-- **Production snapshot:** `not_ready`
+- **Cycle:** `manual-20260906T203549Z`
+- **Generated:** 2026-09-06T20:35:49Z
+- **Registry revision:** sha256:752377f894f578db33aecf0e24bd33a8f3da7ecfbabbed0bba9b0813d71b5e7f
+- **Next action:** Run the production release gate and obtain explicit deploy approval.
+- **Production snapshot:** `ready`
 
 ## Status counts
 
-- `cancelled`: 3
-- `done`: 49
+- `cancelled`: 4
+- `done`: 55
 
 ## Reports ingested this cycle
 
@@ -75,27 +75,66 @@
 - `UA-0050` — Make takeover lineage first-class — evidence: 7
 - `UA-0051` — Make runner and QA output evidence-safe — evidence: 10
 - `UA-0052` — Bind QA and release gates to source state — evidence: 8
+- `UA-0053` — Add Git release durability gate and provenance — evidence: 10
+- `UA-0054` — Add explicit safe QA execution contract — evidence: 17
+- `UA-0055` — Add worker runtime readiness and failure classification — evidence: 10
+- `UA-0057` — Finalize bilingual README and documentation consistency — evidence: 14
+- `UA-0058` — Add supervisor judgment and owner communication contract — evidence: 10
+- `UA-0059` — Add provider-neutral usage telemetry and execution summaries — evidence: 10
 - none
 
 ## Blocked work
 
 - none
 
+## Usage
+
+- wall_time: `0s` (measured)
+- aggregate_worker_runtime: `unavailable` (unavailable)
+- tokens: `unavailable (runtime did not expose authoritative usage)`
+- participants: `supervisor (1 task)`
+- tasks_completed: `1`; attempts: `1`; failed_attempts: `0`
+- retries: `0`; takeovers: `0`
+- privacy: prompts, responses, credentials and raw provider logs are not stored in telemetry
+
+
 ## QA
 
 - status: `pass`
-- source_state: `QA_STALE`
-- source_reason: `QA result has no source fingerprint`
-- evidence: `work/evidence/cycle-20260904T180551Z-7c3648-qa.md`
+- source_state: `valid`
+- source_reason: `none`
+- evidence: `work/evidence/manual-20260906T195147Z-qa.md`
+
+## Release source
+
+- vcs: `git`
+- head_sha: `2af701c1df3dbbea328ecb64d27acbec91f4a2a0`
+- branch: `main`
+- source_fingerprint: `7070afe5ef0710850daec181a64f7b81a3f104d30b3af04c1cd18dc33277a271`
+- source_dirty_state: `clean`
+- source_dirty_path_count: `0`
+- source_untracked_path_count: `0`
+- qa_source_state: `valid`
+- qa_source_fingerprint: `7070afe5ef0710850daec181a64f7b81a3f104d30b3af04c1cd18dc33277a271`
+- qa_recorded_head_sha: `2af701c1df3dbbea328ecb64d27acbec91f4a2a0`
+- qa_config_fingerprint: `5a9f76565a0f73d402ee0ee2d267f349177a270072fa6e10ff94f02385086c08`
+- local_durability: `pass`
+- durability_reason: `release source is committed, clean and QA-bound`
+- upstream: `origin/main`
+- upstream_state: `known`
+- upstream_relation: `up_to_date`
+- ahead: `0`
+- behind: `0`
 
 ## Production gates
 
 - [x] `all_tasks_done`: `pass`
-- [ ] `qa`: `fail`
-- [ ] `qa_source_state`: `QA_STALE`
+- [x] `qa`: `pass`
+- [x] `qa_source_state`: `pass`
+- [x] `release_source_durability`: `pass`
 - [x] `no_blocked_tasks`: `pass`
 - [x] `operational_rollback_notes`: `pass`
 
 ## Resume instruction
 
-QA_STALE: run `python tools/useagent.py supervisor qa` before the production release gate.
+Run the production release gate and obtain explicit deploy approval.

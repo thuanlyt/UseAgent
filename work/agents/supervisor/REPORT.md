@@ -335,3 +335,59 @@ Implemented source-bound QA and release evidence. QA now records a deterministic
 
 - Report: `work/reports/inbox/UA-0052-20260906T031551Z-0e32f2.md`
 - Next: Run the independent stale-state/self-invalidation review, then close UA-0052 and create its durable checkpoint; do not start P1 or polish README.
+
+## 2026-09-06T05:19:48Z - UA-0053 (completed)
+
+Implemented a separate local Git release-source durability gate and provenance snapshot. Task completion and development QA validity remain independent from strong release readiness; dirty/staged/non-ignored untracked source fails durability, volatile control-plane writes remain exempt, commit transitions require QA rerun, non-Git workspaces are explicit filesystem/manual degraded mode, and local upstream metadata is observational only.
+
+- Report: `work/reports/inbox/UA-0053-20260906T051948Z-de8e9e.md`
+- Next: Run independent review of the durability gate, source-bound QA interaction, non-Git behavior and upstream metadata before the durable commit.
+
+## 2026-09-06T15:48:41Z - UA-0054 (completed)
+
+Implemented an argv-first QA execution contract with explicit trusted-local shell opt-in, migrated repository QA config, preserved bounded evidence and source-bound provenance, and added cross-platform argument/security regressions.
+
+- Report: `work/reports/inbox/UA-0054-20260906T154841Z-223793.md`
+- Next: Independent security review, then move through review gate and create one durable local commit before final real QA.
+
+## 2026-09-06T15:53:42Z - UA-0054 (completed)
+
+Migrated both in-scope demo temporary QA configurations to explicit argv specs after full discovery exposed legacy compatibility fallout. Final full discovery now passes and the safe QA contract remains unchanged.
+
+- Report: `work/reports/inbox/UA-0054-20260906T155342Z-28cedb.md`
+- Next: Perform final independent review, then close review gate, create one durable local commit, rerun real QA and release durability gate.
+
+## 2026-09-06T16:59:46Z - UA-0055 (completed)
+
+Implemented bounded worker runtime readiness and provider-neutral failure classification. Static dispatch now skips malformed or unavailable configured runners; optional argv-only preflight runs before assigned-to-in_progress and accepts only explicit readiness JSON; configured-preflight ambiguity stays assigned with sanitized evidence. Started runner failures carry normalized classes and finite dispositions, with quota/auth accepted only from authoritative machine-readable envelopes. Existing no-runner/manual and no-preflight compatibility remains.
+
+- Report: `work/reports/inbox/UA-0055-20260906T165946Z-32655c.md`
+- Next: Independent review passed; add review evidence, commit safe source/test/contracts/docs, rerun QA and release gate.
+
+## 2026-09-06T18:19:16Z - UA-0057 (completed)
+
+Final bilingual README and public documentation pass completed. README.md is canonical English, README-vi.md is a complete Vietnamese counterpart, current trust/release/QA contracts are documented, stale public case-study and docs-site wording was reconciled, and OSBlog remains a Vercel-only dogfood case study.
+
+- Report: `work/reports/inbox/UA-0057-20260906T181916Z-9accd1.md`
+- Next: Independent documentation review, then stage only safe docs, commit locally, rerun final QA and release gate, and push main if all gates pass.
+
+## 2026-09-06T18:31:04Z - UA-0057 (completed)
+
+Addressed independent review findings in the same bounded documentation task: corrected stale case-study shipped-vs-proposed wording and synchronized six-route sitemap counts, including Vietnamese /vi documentation. Final README/docs review now passes with no actionable findings; no application source or OSBlog files changed.
+
+- Report: `work/reports/inbox/UA-0057-20260906T183104Z-d0d5dc.md`
+- Next: Accept review evidence, create a safe docs-only commit, rerun final QA/release gate on the commit, and push main if all gates pass.
+
+## 2026-09-06T19:13:27Z - UA-0058 (completed)
+
+Implemented the bounded Supervisor Intelligence + Owner Communication upgrade. Added one canonical judgment contract and ADR, concise front-door enforcement, aligned supervisor/orchestrator/autopilot/review/protocol references, deterministic structural conformance tests for J01-J12, and factual bilingual README capability notes. No CLI architecture, provider, sandbox, stale-lock or OSBlog changes.
+
+- Report: `work/reports/inbox/UA-0058-20260906T191327Z-617ba0.md`
+- Next: Run independent review, then close the review gate, create a safe local contract/docs/test commit, rerun QA and release gate on the exact commit, and push only if all gates pass.
+
+## 2026-09-06T19:48:46Z - UA-0059 (completed)
+
+Implemented provider-neutral usage telemetry with volatile JSON event storage, lifecycle hooks, idempotent aggregation, explicit adapter usage envelopes, safe metadata filtering, bounded owner Usage summaries, and bilingual contract/operations guidance. No OSBlog changes.
+
+- Report: `work/reports/inbox/UA-0059-20260906T194846Z-11e08f.md`
+- Next: Complete the independent review gate, then run source-bound QA and the production release gate.

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-09-06T03:16:00Z",
+  "updated_at": "2026-09-06T19:53:08Z",
   "items": {
     "UA-0001": {
       "id": "UA-0001",
@@ -4057,6 +4057,934 @@
       "attempts": 1,
       "created_at": "2026-09-06T02:59:07Z",
       "updated_at": "2026-09-06T03:16:00Z",
+      "supersedes": null,
+      "superseded_by": null,
+      "takeover_reason": null,
+      "last_result": "completed"
+    },
+    "UA-0053": {
+      "id": "UA-0053",
+      "title": "Add Git release durability gate and provenance",
+      "objective": "Distinguish task completion, QA validity, local Git-backed release durability and optional upstream publication readiness; make the production/release snapshot fail closed for non-durable Git source while preserving local-first and non-Git behavior.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "useagent.config.json",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "Clean committed Git source with matching source-bound QA passes the local durability gate.",
+        "Dirty tracked, staged, or non-ignored untracked release-source state fails strong durability without silently invalidating development QA semantics.",
+        "Configured volatile control-plane writes do not fail local durability; historical evidence is not deleted or rewritten.",
+        "A commit after QA changes source identity and requires QA rerun before strong release readiness; no smart reuse.",
+        "Branch ahead/behind, upstream-known/unknown, and no-upstream cases are explicit metadata and do not couple readiness to origin/main or require network mutation.",
+        "Non-Git workspaces have explicit degraded behavior and never claim strong Git durability.",
+        "Regression coverage preserves UA-0051 evidence hygiene and UA-0052 source-bound QA semantics."
+      ],
+      "verification": [
+        "python -m unittest tests.test_useagent -v",
+        "python -m unittest discover -s tests -v",
+        "python tools/useagent.py validate",
+        "python -m py_compile tools/useagent.py tests/test_useagent.py",
+        "git diff --check"
+      ],
+      "files": [
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "worker-report",
+          "value": "work/reports/inbox/UA-0053-20260906T051948Z-de8e9e.md",
+          "provenance": "local",
+          "source": "local working tree and temporary Git fixture repositories",
+          "recorded_at": "2026-09-06T05:19:48Z"
+        },
+        {
+          "kind": "check",
+          "value": "focused durability regression tests: 12 passed",
+          "provenance": "local",
+          "source": "local working tree and temporary Git fixture repositories",
+          "recorded_at": "2026-09-06T05:19:48Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 89 passed",
+          "provenance": "local",
+          "source": "local working tree and temporary Git fixture repositories",
+          "recorded_at": "2026-09-06T05:19:48Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "provenance": "local",
+          "source": "local working tree and temporary Git fixture repositories",
+          "recorded_at": "2026-09-06T05:19:48Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py: pass",
+          "provenance": "local",
+          "source": "local working tree and temporary Git fixture repositories",
+          "recorded_at": "2026-09-06T05:19:48Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "provenance": "local",
+          "source": "local working tree and temporary Git fixture repositories",
+          "recorded_at": "2026-09-06T05:19:48Z"
+        },
+        {
+          "kind": "review",
+          "value": "Independent review PASS: local release durability is separate from task done and development QA validity; Git dirty/staged/non-ignored untracked source fails strong readiness, volatile control-plane writes remain exempt, commit transitions require QA rerun, non-Git mode is explicit manual/degraded, and upstream metadata is local-only without origin equality or network mutation. No actionable P0/P1 finding.",
+          "provenance": "local",
+          "source": "source diff plus focused/full tests and validator",
+          "recorded_at": "2026-09-06T05:20:34Z"
+        },
+        {
+          "kind": "qa",
+          "value": "Post-commit QA PASS on HEAD 355e87f71b5834a53013ea657193dccefdf04b19; source fingerprint 134e9bbc5868f9b3e08b279d8bd3e35be5efaf261f475110198d21bc31c289d0; configured QA completed successfully.",
+          "provenance": "local",
+          "source": "work/evidence/manual-20260906T052550Z-qa.md",
+          "recorded_at": "2026-09-06T05:27:23Z"
+        },
+        {
+          "kind": "regression",
+          "value": "Convenience supervisor report write remains excluded from release identity; QA remains valid and release durability remains pass after report refresh.",
+          "provenance": "local",
+          "source": "tests/test_useagent.py::test_convenience_supervisor_report_is_volatile_for_release_durability",
+          "recorded_at": "2026-09-06T05:27:23Z"
+        },
+        {
+          "kind": "qa",
+          "value": "Final post-anchor QA PASS on HEAD 788cc9bd7bde4abf74540a076a883d4447459764; source fingerprint ce08806be1a387412fa4ebefbe38f51a32469665c7fdabfbbadaa19a05ff5a8c; release gate remained source-bound after the knowledge-card commit.",
+          "provenance": "local",
+          "source": "work/evidence/manual-20260906T052913Z-qa.md",
+          "recorded_at": "2026-09-06T05:30:12Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0053-20260906T051948Z-de8e9e.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-06T05:02:33Z",
+      "updated_at": "2026-09-06T05:30:12Z",
+      "supersedes": null,
+      "superseded_by": null,
+      "takeover_reason": null,
+      "last_result": "completed"
+    },
+    "UA-0054": {
+      "id": "UA-0054",
+      "title": "Add explicit safe QA execution contract",
+      "objective": "Add explicit safe QA execution contract",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "docs/operations.md",
+        "examples/multi-agent-demo/run_demo.py",
+        "examples/multi-runtime-conformance/run_conformance.py",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py",
+        "useagent.config.json"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Structured argv QA is safe"
+      ],
+      "verification": [],
+      "files": [
+        "docs/operations.md",
+        "examples/multi-agent-demo/run_demo.py",
+        "examples/multi-runtime-conformance/run_conformance.py",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py",
+        "useagent.config.json"
+      ],
+      "evidence": [
+        {
+          "kind": "worker-report",
+          "value": "work/reports/inbox/UA-0054-20260906T154841Z-223793.md",
+          "provenance": "local",
+          "source": "python -m unittest tests.test_useagent -v",
+          "recorded_at": "2026-09-06T15:48:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "Focused QA execution tests: 9 passed",
+          "provenance": "local",
+          "source": "python -m unittest tests.test_useagent -v",
+          "recorded_at": "2026-09-06T15:48:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.test_useagent -v: 88 passed",
+          "provenance": "local",
+          "source": "python -m unittest tests.test_useagent -v",
+          "recorded_at": "2026-09-06T15:48:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "provenance": "local",
+          "source": "python -m unittest tests.test_useagent -v",
+          "recorded_at": "2026-09-06T15:48:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py: pass",
+          "provenance": "local",
+          "source": "python -m unittest tests.test_useagent -v",
+          "recorded_at": "2026-09-06T15:48:41Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "provenance": "local",
+          "source": "python -m unittest tests.test_useagent -v",
+          "recorded_at": "2026-09-06T15:48:41Z"
+        },
+        {
+          "kind": "review",
+          "value": "Independent security review: no actionable finding. normalize_qa_command rejects legacy/ambiguous/malformed specs before execution; run_qa uses shell=False for argv and shell=True only for explicit mode=shell; no shell parsing or hardcoded platform shell; UA-0051 bounded sanitized evidence and local spool remain; existing UA-0052 fingerprint covers argv, mode, timeout and QA configuration.",
+          "provenance": "local",
+          "source": "rg shell=True|shell=False tools/useagent.py; focused QA regression suite",
+          "recorded_at": "2026-09-06T15:49:57Z"
+        },
+        {
+          "kind": "worker-report",
+          "value": "work/reports/inbox/UA-0054-20260906T155342Z-28cedb.md",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T15:53:42Z"
+        },
+        {
+          "kind": "check",
+          "value": "Focused QA and demo tests: pass",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T15:53:42Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.test_useagent -v: 88 passed",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T15:53:42Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -v: 97 passed",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T15:53:42Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T15:53:42Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m py_compile scoped files: pass",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T15:53:42Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v",
+          "recorded_at": "2026-09-06T15:53:42Z"
+        },
+        {
+          "kind": "review",
+          "value": "Final independent security review: no actionable finding. Full discovery and demo/conformance regressions pass after migrating both temporary QA configs. Static review shows shell=False for argv and shell=True only in explicit mode branch; no shlex or platform-shell hardcoding; malformed and legacy specs are rejected; output evidence retains UA-0051 budget/redaction/local spool; UA-0052 fingerprint includes complete QA configuration.",
+          "provenance": "local",
+          "source": "python -m unittest discover -s tests -v; rg shell=True|shell=False|shlex",
+          "recorded_at": "2026-09-06T15:54:20Z"
+        },
+        {
+          "kind": "qa",
+          "value": "Post-commit real supervisor QA PASS on HEAD eb68af378f10c9c4fe4f5fc933c95cfd1ead4aab; all 3 configured checks returned zero; execution modes argv, argv, argv; source fingerprint ee3464d93b9cd233a43e4d09878014a855e8960db756df403fe4f46edc983460; evidence work/evidence/manual-20260906T155511Z-qa.md.",
+          "provenance": "local",
+          "source": "python tools/useagent.py supervisor qa",
+          "recorded_at": "2026-09-06T15:56:54Z"
+        },
+        {
+          "kind": "release-gate",
+          "value": "Production snapshot ready: all_tasks_done, qa, qa_source_state, release_source_durability, no_blocked_tasks and operational_rollback_notes passed; supervisor report freshness is fresh; no deploy performed.",
+          "provenance": "local",
+          "source": "python tools/useagent.py supervisor report --check; production_snapshot_details",
+          "recorded_at": "2026-09-06T15:56:55Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0054-20260906T154841Z-223793.md",
+        "work/reports/inbox/UA-0054-20260906T155342Z-28cedb.md"
+      ],
+      "attempts": 2,
+      "created_at": "2026-09-06T15:41:09Z",
+      "updated_at": "2026-09-06T15:56:55Z",
+      "supersedes": null,
+      "superseded_by": null,
+      "takeover_reason": null,
+      "last_result": "completed"
+    },
+    "UA-0055": {
+      "id": "UA-0055",
+      "title": "Add worker runtime readiness and failure classification",
+      "objective": "Add a provider-neutral, bounded worker runtime readiness contract and normalized dispatch/start failure classification so UseAgent avoids clearly unavailable runner dispatch, preserves truthful ownership and failure history, and gives supervisors safe retry/reassign/needs-input dispositions without guessing quota.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "tools/useagent.py",
+        "tests/test_useagent.py",
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "knowledge/decisions/0006-optional-runner-bridge.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "Malformed or unavailable configured runners are classified before pull/dispatch and do not create ghost ownership or blind dispatch; manual/no-runner and legacy no-preflight behavior remain compatible.",
+        "Optional argv-only adapter preflight returns normalized ready, unavailable, misconfigured/no_target, or unknown states with bounded timeout and sanitized/local-only diagnostics; readiness never claims quota certainty.",
+        "Runner start failures use a provider-neutral machine-readable result contract; quota_limited and auth_error require authoritative adapter evidence, while ambiguous text is never classified as quota_limited.",
+        "Pre-start failures preserve assigned task truth, runtime evidence, retry/reassign/takeover/needs-input disposition, and do not strand the workflow in unowned in_progress or report-wait dead ends.",
+        "Existing runner/report, timeout, output hygiene, UA-0050 lineage, UA-0052 fingerprint, validator, and release behavior remain non-regressed.",
+        "Document the runtime topology boundary, readiness/failure contract, ownership lifecycle, bounded retry policy, and provider adapter responsibilities."
+      ],
+      "verification": [
+        "Run focused runtime readiness and failure-classification tests.",
+        "Run python -m unittest tests.test_useagent -v.",
+        "Run python -m unittest discover -s tests -v.",
+        "Run python tools/useagent.py validate and python -m py_compile tools/useagent.py tests/test_useagent.py.",
+        "Run git diff --check and an independent security/review pass."
+      ],
+      "files": [
+        "docs/operations.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/work-registry.md",
+        "knowledge/decisions/0006-optional-runner-bridge.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_useagent.py",
+        "tools/useagent.py"
+      ],
+      "evidence": [
+        {
+          "kind": "worker-report",
+          "value": "work/reports/inbox/UA-0055-20260906T165946Z-32655c.md",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0055-20260906T165946Z-32655c.md",
+          "recorded_at": "2026-09-06T16:59:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "Focused runtime readiness/classification tests: 13 passed",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0055-20260906T165946Z-32655c.md",
+          "recorded_at": "2026-09-06T16:59:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.test_useagent -q: 100 passed",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0055-20260906T165946Z-32655c.md",
+          "recorded_at": "2026-09-06T16:59:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "python examples/multi-runtime-conformance/run_conformance.py: PASS",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0055-20260906T165946Z-32655c.md",
+          "recorded_at": "2026-09-06T16:59:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0055-20260906T165946Z-32655c.md",
+          "recorded_at": "2026-09-06T16:59:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py: pass",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0055-20260906T165946Z-32655c.md",
+          "recorded_at": "2026-09-06T16:59:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0055-20260906T165946Z-32655c.md",
+          "recorded_at": "2026-09-06T16:59:46Z"
+        },
+        {
+          "kind": "review",
+          "value": "Independent review: no actionable P0/P1 finding. Static dispatch checks configured runner and preflight executables without execution; runner and preflight subprocess paths use shell=False; only complete machine-readable envelopes are parsed; quota_limited/auth_error require authoritative=true; ambiguous text downgrades safely; preflight failure preserves assigned state and bounded local evidence; no infinite retry/successor; existing manual/no-preflight/no-report/timeout/UA-0050/UA-0052 behavior covered.",
+          "provenance": "local",
+          "source": "python -m unittest tests.test_useagent -q; rg shell=False|authoritative tools/useagent.py",
+          "recorded_at": "2026-09-06T16:59:54Z"
+        },
+        {
+          "kind": "qa",
+          "value": "Post-commit supervisor QA PASS on HEAD 7d13a24425a92e34c35cbf270e9f2482f036ac57; source fingerprint a0d0051c12d382aca1f2231e44c25624390c4ccd3371c9a9d287c28d5b8c8354; source clean; all 3 configured argv checks returned zero; evidence work/evidence/manual-20260906T170015Z-qa.md.",
+          "provenance": "local",
+          "source": "python tools/useagent.py supervisor qa",
+          "recorded_at": "2026-09-06T17:02:15Z"
+        },
+        {
+          "kind": "release-gate",
+          "value": "Post-commit production snapshot PASS: all_tasks_done, qa, qa_source_state, release_source_durability, no_blocked_tasks and operational_rollback_notes; no deploy or push performed.",
+          "provenance": "local",
+          "source": "python -c production_snapshot_details",
+          "recorded_at": "2026-09-06T17:02:16Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0055-20260906T165946Z-32655c.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-06T16:43:05Z",
+      "updated_at": "2026-09-06T17:02:16Z",
+      "supersedes": null,
+      "superseded_by": null,
+      "takeover_reason": null,
+      "last_result": "completed"
+    },
+    "UA-0056": {
+      "id": "UA-0056",
+      "title": "Finalize bilingual README and documentation consistency",
+      "objective": "Make README.md the canonical English product overview, create a complete Vietnamese counterpart, and reconcile public documentation with the current UseAgent release contracts without changing application architecture or reopening OSBlog work.",
+      "level": "L2",
+      "status": "cancelled",
+      "owner": "supervisor",
+      "assigned_to": null,
+      "scope": [
+        "README.md",
+        "README-vi.md",
+        "docs/getting-started.md",
+        "docs/operations.md",
+        "docs/autopilot.md",
+        "docs/case-study-osblog.md",
+        "docs/evidence/osblog-dogfood-capture-manifest.md",
+        "docs-site/README.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [
+        "documentation"
+      ],
+      "acceptance": [
+        "README.md is concise canonical English documentation with clear product positioning, current capabilities, trusted-local limitations, quick start, workflow, case study, support and license links.",
+        "README-vi.md is a complete natural Vietnamese counterpart with matching structure, factual claims, limitations and language navigation.",
+        "All README examples use the current structured QA and runtime contracts; no stale string qa_commands or sandbox/authentication claims remain.",
+        "Public docs and docs-site references have no factual contradiction or broken navigation introduced by the split."
+      ],
+      "verification": [
+        "python -m unittest tests.docs_site.test_docs_site -v",
+        "python docs-site/build.py --check-only",
+        "python tools/useagent.py validate",
+        "git diff --check"
+      ],
+      "files": [],
+      "evidence": [],
+      "reports": [],
+      "attempts": 0,
+      "created_at": "2026-09-06T18:03:01Z",
+      "updated_at": "2026-09-06T18:03:29Z",
+      "supersedes": null,
+      "superseded_by": null,
+      "takeover_reason": null
+    },
+    "UA-0057": {
+      "id": "UA-0057",
+      "title": "Finalize bilingual README and documentation consistency",
+      "objective": "Make README.md the canonical English product overview, create a complete Vietnamese counterpart, and reconcile public documentation with the current UseAgent release contracts without changing application architecture or reopening OSBlog work.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "README-vi.md",
+        "README.md",
+        "docs-site/DEPLOYMENT.md",
+        "docs-site/README.md",
+        "docs-site/case-study.html",
+        "docs-site/getting-started.html",
+        "docs-site/operations.html",
+        "docs-site/vi.html",
+        "docs/autopilot.md",
+        "docs/case-study-osblog.md",
+        "docs/evidence/osblog-dogfood-capture-manifest.md",
+        "docs/getting-started.md",
+        "docs/operations.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "README.md is concise canonical English documentation with clear product positioning, current capabilities, trusted-local limitations, quick start, workflow, case study, support and license links.",
+        "README-vi.md is a complete natural Vietnamese counterpart with matching structure, factual claims, limitations and language navigation.",
+        "All README examples use the current structured QA and runtime contracts; no stale string qa_commands or sandbox/authentication claims remain.",
+        "Public docs and docs-site references have no factual contradiction or broken navigation introduced by the split."
+      ],
+      "verification": [
+        "python -m unittest tests.docs_site.test_docs_site -v",
+        "python docs-site/build.py --check-only",
+        "python tools/useagent.py validate",
+        "git diff --check"
+      ],
+      "files": [
+        "README-vi.md",
+        "README.md",
+        "docs-site/DEPLOYMENT.md",
+        "docs-site/README.md",
+        "docs-site/case-study.html",
+        "docs-site/getting-started.html",
+        "docs-site/operations.html",
+        "docs-site/vi.html",
+        "docs/autopilot.md",
+        "docs/case-study-osblog.md",
+        "docs/getting-started.md"
+      ],
+      "evidence": [
+        {
+          "kind": "worker-report",
+          "value": "work/reports/inbox/UA-0057-20260906T181916Z-9accd1.md",
+          "provenance": "local",
+          "source": "Final documentation verification sequence on current working tree",
+          "recorded_at": "2026-09-06T18:19:16Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.docs_site.test_docs_site -v: pass (7 tests)",
+          "provenance": "local",
+          "source": "Final documentation verification sequence on current working tree",
+          "recorded_at": "2026-09-06T18:19:16Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: pass (17 static files)",
+          "provenance": "local",
+          "source": "Final documentation verification sequence on current working tree",
+          "recorded_at": "2026-09-06T18:19:16Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "provenance": "local",
+          "source": "Final documentation verification sequence on current working tree",
+          "recorded_at": "2026-09-06T18:19:16Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py docs-site/build.py: pass",
+          "provenance": "local",
+          "source": "Final documentation verification sequence on current working tree",
+          "recorded_at": "2026-09-06T18:19:16Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "provenance": "local",
+          "source": "Final documentation verification sequence on current working tree",
+          "recorded_at": "2026-09-06T18:19:16Z"
+        },
+        {
+          "kind": "worker-report",
+          "value": "work/reports/inbox/UA-0057-20260906T183104Z-d0d5dc.md",
+          "provenance": "local",
+          "source": "Final documentation correction and verification sequence",
+          "recorded_at": "2026-09-06T18:31:04Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -q: pass (109 tests)",
+          "provenance": "local",
+          "source": "Final documentation correction and verification sequence",
+          "recorded_at": "2026-09-06T18:31:04Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.docs_site.test_docs_site -v: pass (7 tests)",
+          "provenance": "local",
+          "source": "Final documentation correction and verification sequence",
+          "recorded_at": "2026-09-06T18:31:04Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: pass (17 static files)",
+          "provenance": "local",
+          "source": "Final documentation correction and verification sequence",
+          "recorded_at": "2026-09-06T18:31:04Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "provenance": "local",
+          "source": "Final documentation correction and verification sequence",
+          "recorded_at": "2026-09-06T18:31:04Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py docs-site/build.py: pass",
+          "provenance": "local",
+          "source": "Final documentation correction and verification sequence",
+          "recorded_at": "2026-09-06T18:31:04Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "provenance": "local",
+          "source": "Final documentation correction and verification sequence",
+          "recorded_at": "2026-09-06T18:31:04Z"
+        },
+        {
+          "kind": "review",
+          "value": "PASS: independent documentation/release review found no actionable findings after correcting shipped-vs-proposed case-study wording and six-route sitemap counts; README language split, current QA/trust contract, OSBlog boundary and local links/anchors are consistent. Docs tests/build/validator/diff checks pass; no application or OSBlog source paths changed.",
+          "provenance": "local",
+          "source": "Independent docs review after final factual corrections",
+          "recorded_at": "2026-09-06T18:31:12Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0057-20260906T181916Z-9accd1.md",
+        "work/reports/inbox/UA-0057-20260906T183104Z-d0d5dc.md"
+      ],
+      "attempts": 2,
+      "created_at": "2026-09-06T18:03:29Z",
+      "updated_at": "2026-09-06T18:31:19Z",
+      "supersedes": null,
+      "superseded_by": null,
+      "takeover_reason": null,
+      "last_result": "completed",
+      "assignment_path": "work/agents/supervisor/inbox/UA-0057.md",
+      "dispatched_at": "2026-09-06T18:27:36Z"
+    },
+    "UA-0058": {
+      "id": "UA-0058",
+      "title": "Add supervisor judgment and owner communication contract",
+      "objective": "Make Supervisor Intelligence + Owner Communication durable through one canonical judgment contract, concise front-door enforcement, aligned orchestration/review/autopilot guidance, deterministic contract/conformance tests, one architecture decision record and factual bilingual README capability notes. Preserve trusted-local boundaries and do not change CLI architecture, provider integration, sandbox, stale-lock, or OSBlog.",
+      "level": "L2",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        "knowledge/contracts/supervisor-judgment.md",
+        "knowledge/decisions/0009-supervisor-judgment-and-owner-communication.md",
+        ".agents/skills/useagent/SKILL.md",
+        ".agents/skills/useagent/references/supervisor-contract.md",
+        ".agents/skills/useagent-orchestrator/SKILL.md",
+        ".agents/skills/useagent-autopilot/SKILL.md",
+        ".agents/skills/useagent-review/SKILL.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "tests/test_supervisor_contract.py",
+        "README.md",
+        "README-vi.md"
+      ],
+      "depends_on": [],
+      "preferred_agents": [
+        "supervisor"
+      ],
+      "capabilities": [],
+      "acceptance": [
+        "A canonical Supervisor Judgment / Owner Communication contract distinguishes outcome, constraint, preference, proposed solution and explicit owner decisions, with source anchors and progressive disclosure.",
+        "The front-door supervisor skill requires critical evaluation, recommendation with tradeoffs, high-value questions only, autonomy/escalation rules, diminishing-return stop decisions, worker/audit claim verification and owner override respect.",
+        "Orchestrator, autopilot, review and supervisor protocol references align to the canonical contract without duplicating a long doctrine or weakening trusted-local authorization boundaries.",
+        "Deterministic contract/conformance tests cover the twelve required scenarios structurally without pretending to test LLM intelligence through brittle prose matching.",
+        "README.md and README-vi.md document judgment-aware supervision with factual parity and no unsupported capability claims.",
+        "No sandbox, authenticated identity, provider quota manager, infinite planning, UI redesign or OSBlog changes are introduced."
+      ],
+      "verification": [
+        "python -m unittest tests.test_supervisor_contract -v",
+        "python -m unittest discover -s tests -q",
+        "python tools/useagent.py validate",
+        "python -m py_compile tools/useagent.py tests/test_useagent.py tests/test_supervisor_contract.py",
+        "git diff --check"
+      ],
+      "files": [
+        ".agents/skills/useagent-autopilot/SKILL.md",
+        ".agents/skills/useagent-orchestrator/SKILL.md",
+        ".agents/skills/useagent-review/SKILL.md",
+        ".agents/skills/useagent/SKILL.md",
+        ".agents/skills/useagent/references/supervisor-contract.md",
+        "README-vi.md",
+        "README.md",
+        "knowledge/contracts/supervisor-judgment.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/decisions/0009-supervisor-judgment-and-owner-communication.md",
+        "tests/test_supervisor_contract.py"
+      ],
+      "evidence": [
+        {
+          "kind": "worker-report",
+          "value": "work/reports/inbox/UA-0058-20260906T191327Z-617ba0.md",
+          "provenance": "local",
+          "source": "UA-0058 implementation verification sequence",
+          "recorded_at": "2026-09-06T19:13:27Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.test_supervisor_contract -v: pass (6 tests)",
+          "provenance": "local",
+          "source": "UA-0058 implementation verification sequence",
+          "recorded_at": "2026-09-06T19:13:27Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -q: pass (115 tests)",
+          "provenance": "local",
+          "source": "UA-0058 implementation verification sequence",
+          "recorded_at": "2026-09-06T19:13:27Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.docs_site.test_docs_site -v: pass (7 tests)",
+          "provenance": "local",
+          "source": "UA-0058 implementation verification sequence",
+          "recorded_at": "2026-09-06T19:13:27Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: pass (17 static files)",
+          "provenance": "local",
+          "source": "UA-0058 implementation verification sequence",
+          "recorded_at": "2026-09-06T19:13:27Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "provenance": "local",
+          "source": "UA-0058 implementation verification sequence",
+          "recorded_at": "2026-09-06T19:13:27Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py tests/test_supervisor_contract.py: pass",
+          "provenance": "local",
+          "source": "UA-0058 implementation verification sequence",
+          "recorded_at": "2026-09-06T19:13:27Z"
+        },
+        {
+          "kind": "check",
+          "value": "relative Markdown link scan: pass (40 links)",
+          "provenance": "local",
+          "source": "UA-0058 implementation verification sequence",
+          "recorded_at": "2026-09-06T19:13:27Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "provenance": "local",
+          "source": "UA-0058 implementation verification sequence",
+          "recorded_at": "2026-09-06T19:13:27Z"
+        },
+        {
+          "kind": "review",
+          "value": "PASS: independent review found no actionable P0/P1 finding. Canonical judgment contract, progressive disclosure references, intent taxonomy, autonomy/escalation, owner override, stop discipline, uncertainty, trusted-local authorization and J01-J12 structural tests are coherent; README English/Vietnamese notes align; no CLI, source, OSBlog, provider, sandbox or architecture changes.",
+          "provenance": "local",
+          "source": "Independent Supervisor Judgment contract review",
+          "recorded_at": "2026-09-06T19:16:39Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0058-20260906T191327Z-617ba0.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-06T19:05:00Z",
+      "updated_at": "2026-09-06T19:16:40Z",
+      "supersedes": null,
+      "superseded_by": null,
+      "takeover_reason": null,
+      "last_result": "completed"
+    },
+    "UA-0059": {
+      "id": "UA-0059",
+      "title": "Add provider-neutral usage telemetry and execution summaries",
+      "objective": "Implement bounded provider-neutral telemetry and execution summaries for task, cycle and phase workflows with factual timing, participants, usage provenance, idempotent aggregation, privacy-safe output, and source-fingerprint-safe volatile storage. Do not build billing, dashboard, provider-specific parsers, or change OSBlog.",
+      "level": "L1",
+      "status": "done",
+      "owner": "supervisor",
+      "assigned_to": "supervisor",
+      "scope": [
+        ".agents/skills/useagent-autopilot/SKILL.md",
+        ".agents/skills/useagent-autopilot/references/autopilot-cycle.md",
+        ".agents/skills/useagent/SKILL.md",
+        ".agents/skills/useagent/references/supervisor-contract.md",
+        ".gitignore",
+        "README-vi.md",
+        "README.md",
+        "docs/operations.md",
+        "knowledge/INDEX.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/usage-telemetry.md",
+        "knowledge/decisions/0010-usage-telemetry-and-execution-summary.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_usage_telemetry.py",
+        "tests/test_useagent.py",
+        "tools/useagent.py",
+        "useagent.config.json"
+      ],
+      "depends_on": [],
+      "preferred_agents": [],
+      "capabilities": [],
+      "acceptance": [
+        "Normalize explicit provider-neutral usage envelopes with authoritative, measured, estimated and unavailable provenance without guessing tokens.",
+        "Record lifecycle duration, actual participants, retries and takeover lineage and aggregate without double-counting repeated events or parallel wall time.",
+        "Keep raw diagnostics local, bounded and private while rendering a concise deterministic Usage section for owner reports.",
+        "Keep telemetry writes outside release-source fingerprinting and preserve existing evidence freshness, runtime readiness, QA and release behavior.",
+        "Add regression coverage for the required timing, usage, aggregation, privacy, provenance and non-regression scenarios.",
+        "Document the contract and integration without claiming universal token tracking, billing or provider coupling."
+      ],
+      "verification": [
+        "python -m unittest tests.test_usage_telemetry -v",
+        "python -m unittest tests.test_useagent -v",
+        "python -m unittest discover -s tests -q",
+        "python tools/useagent.py validate",
+        "python -m py_compile tools/useagent.py tests/test_useagent.py tests/test_usage_telemetry.py",
+        "python docs-site/build.py --check-only",
+        "git diff --check"
+      ],
+      "files": [
+        ".agents/skills/useagent-autopilot/SKILL.md",
+        ".agents/skills/useagent-autopilot/references/autopilot-cycle.md",
+        ".agents/skills/useagent/SKILL.md",
+        ".agents/skills/useagent/references/supervisor-contract.md",
+        ".gitignore",
+        "README-vi.md",
+        "README.md",
+        "docs/operations.md",
+        "knowledge/INDEX.md",
+        "knowledge/contracts/supervisor-protocol.md",
+        "knowledge/contracts/usage-telemetry.md",
+        "knowledge/decisions/0010-usage-telemetry-and-execution-summary.md",
+        "knowledge/modules/useagent-control-plane.md",
+        "tests/test_usage_telemetry.py",
+        "tests/test_useagent.py",
+        "tools/useagent.py",
+        "useagent.config.json"
+      ],
+      "evidence": [
+        {
+          "kind": "worker-report",
+          "value": "work/reports/inbox/UA-0059-20260906T194846Z-11e08f.md",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0059-20260906T194846Z-11e08f.md",
+          "recorded_at": "2026-09-06T19:48:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest tests.test_usage_telemetry -v: pass (17 tests)",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0059-20260906T194846Z-11e08f.md",
+          "recorded_at": "2026-09-06T19:48:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m unittest discover -s tests -q: pass (132 tests)",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0059-20260906T194846Z-11e08f.md",
+          "recorded_at": "2026-09-06T19:48:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "python tools/useagent.py validate: VALID",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0059-20260906T194846Z-11e08f.md",
+          "recorded_at": "2026-09-06T19:48:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "python -m py_compile tools/useagent.py tests/test_useagent.py tests/test_usage_telemetry.py: pass",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0059-20260906T194846Z-11e08f.md",
+          "recorded_at": "2026-09-06T19:48:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "python docs-site/build.py --check-only: VALIDATED 17 static files",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0059-20260906T194846Z-11e08f.md",
+          "recorded_at": "2026-09-06T19:48:46Z"
+        },
+        {
+          "kind": "check",
+          "value": "git diff --check: pass",
+          "provenance": "local",
+          "source": "work/reports/inbox/UA-0059-20260906T194846Z-11e08f.md",
+          "recorded_at": "2026-09-06T19:48:46Z"
+        },
+        {
+          "kind": "review",
+          "value": "Independent review: explicit marker-only usage ingestion; invalid/ambiguous/plain prose is unavailable; event identity and usage_id deduplicate; task assignment excluded from attempts; parallel wall duration uses timestamp envelope while runner runtime remains separate; event allowlist drops prompts/responses/credentials/raw logs; telemetry path is Git-ignored and release-fingerprint volatile. Focused/full tests, validator, py_compile, docs check and diff check pass.",
+          "provenance": "local",
+          "source": "tools/useagent.py",
+          "recorded_at": "2026-09-06T19:48:53Z"
+        },
+        {
+          "kind": "qa",
+          "value": "Source-bound QA PASS on HEAD 2af701c1df3dbbea328ecb64d27acbec91f4a2a0; fingerprint 7070afe5ef0710850daec181a64f7b81a3f104d30b3af04c1cd18dc33277a271; all configured unittest, validator and docs gates passed.",
+          "provenance": "local",
+          "source": "work/evidence/manual-20260906T195147Z-qa.md",
+          "recorded_at": "2026-09-06T19:53:08Z"
+        },
+        {
+          "kind": "release-gate",
+          "value": "Read-only production snapshot PASS: all six gates pass; QA source valid; release source clean; telemetry path volatile; no deploy performed.",
+          "provenance": "local",
+          "source": "tools/useagent.py",
+          "recorded_at": "2026-09-06T19:53:08Z"
+        }
+      ],
+      "reports": [
+        "work/reports/inbox/UA-0059-20260906T194846Z-11e08f.md"
+      ],
+      "attempts": 1,
+      "created_at": "2026-09-06T19:29:23Z",
+      "updated_at": "2026-09-06T19:53:08Z",
       "supersedes": null,
       "superseded_by": null,
       "takeover_reason": null,
