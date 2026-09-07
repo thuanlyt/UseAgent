@@ -32,13 +32,15 @@ không cố trở thành coding runtime.
 
 ## Phiên bản hiện tại
 
-**v0.1.0 — Initial Public Release / Bản phát hành công khai đầu tiên**
+**v0.1.1 — Distribution & Positioning Maintenance / Bảo trì phân phối và định vị**
 
-v0.1.0 là bản phát hành công khai hiện tại. Feature set đã được freeze sau
-maintenance pass về release-assurance: thay đổi tương lai cần bug cụ thể, vấn
-đề bảo mật, evidence từ user bên ngoài hoặc quyết định rõ ràng của owner.
+v0.1.1 là bản phát hành bảo trì công khai hiện tại. Bản này không thêm
+feature set mới: nó làm sạch distribution public và đồng bộ dự án với định vị
+release-assurance. Feature set đã được freeze; thay đổi tương lai cần bug cụ
+thể, vấn đề bảo mật, evidence từ user bên ngoài hoặc quyết định rõ ràng của
+owner.
 
-- [Release notes](https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.0) · [Tất cả bản phát hành](https://github.com/thuanlyt/UseAgent/releases)
+- [Release notes](https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.1) · [Tất cả bản phát hành](https://github.com/thuanlyt/UseAgent/releases)
 - [CHANGELOG](CHANGELOG.md) · [Tài liệu](https://useagent.thuanlyt.id.vn/) · [Hướng dẫn bắt đầu](docs/getting-started.md)
 
 Repository public không đóng gói runtime history của maintainer. `work/` được

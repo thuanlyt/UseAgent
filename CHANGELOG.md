@@ -2,6 +2,19 @@
 
 All notable changes to UseAgent are documented here.
 
+## [0.1.1] - 2026-09-08
+
+Maintenance-only release for a clean public distribution and assurance-first
+positioning:
+
+- Removed maintainer runtime history from the distributed source.
+- Made runtime `work/` local/generated after `init`.
+- Corrected external-project onboarding.
+- Repositioned the project around evidence and release assurance.
+- Retained lightweight supervision as an optional capability.
+- Switched the hero asset to WebP.
+- Made clean-checkout CI initialize the runtime scaffold before tests.
+
 ## [0.1.0] - 2026-09-07
 
 Initial public release of UseAgent, a file-first multi-agent control plane for coordinating coding agents and humans in one repository.
@@ -28,4 +41,5 @@ Initial public release of UseAgent, a file-first multi-agent control plane for c
 - Practical Codex, Claude Code and Antigravity-style onboarding and conformance documentation.
 - Operations, autopilot, release-integrity and OSBlog dogfood case-study documentation.
 
+[0.1.1]: https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.1
 [0.1.0]: https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.0

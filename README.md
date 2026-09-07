@@ -31,13 +31,15 @@ runtime rather than trying to become one.
 
 ## Current Release
 
-**v0.1.0 — Initial Public Release**
+**v0.1.1 — Distribution & Positioning Maintenance**
 
-v0.1.0 is the current public release. The feature set is now frozen after the
-release-assurance maintenance pass: future changes require a concrete bug,
-security issue, real external-user evidence or an explicit owner decision.
+v0.1.1 is the current public maintenance release. It adds no new feature set:
+it cleans the public distribution and aligns the project with its
+release-assurance positioning. The feature set is now frozen; future changes
+require a concrete bug, security issue, real external-user evidence or an
+explicit owner decision.
 
-- [Release notes](https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.0) · [All releases](https://github.com/thuanlyt/UseAgent/releases)
+- [Release notes](https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.1) · [All releases](https://github.com/thuanlyt/UseAgent/releases)
 - [CHANGELOG](CHANGELOG.md) · [Documentation](https://useagent.thuanlyt.id.vn/) · [Getting started](docs/getting-started.md)
 
 The public repository does not ship a maintainer's runtime history. `work/`

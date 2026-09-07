@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "useagent"
-version = "0.1.0"
-description = "File-first supervisor control plane for coordinating multiple AI agents"
+version = "0.1.1"
+description = "Repo-local evidence and release-assurance layer for AI coding workflows"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
