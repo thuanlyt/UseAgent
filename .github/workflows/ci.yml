@@ -27,6 +27,9 @@ jobs:
       - name: Compile Python sources
         run: python -m py_compile tools/useagent.py tests/test_useagent.py
 
+      - name: Initialize local runtime scaffold
+        run: python tools/useagent.py init
+
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
 
