@@ -13,7 +13,7 @@ case study, capture manifest and docs-site case-study route.
 | `.codex/agents/` | Vai trò agent | Spawn/custom agent |
 | `knowledge/` | Context ledger | Trước khi đọc code |
 | `knowledge/project-brief.md` | Goal/DOD/constraints/stack assumptions | Bootstrap supervisor |
-| `work/` | Task/evidence/checkpoint | Lập kế hoạch hoặc handover |
+| `work/` | Runtime task/evidence/checkpoint được `init` tạo local | Bật optional supervision trong project |
 | `useagent.config.json` | Roster, mailbox path, QA và production gates | Setup supervisor |
 | `tools/useagent.py` | State CLI/validator | Tạo claim/update/checkpoint |
 | `pyproject.toml`, `tools/__init__.py` | Installable `useagent` console package | Cài CLI hoặc kiểm tra release |
@@ -42,7 +42,7 @@ case study, capture manifest and docs-site case-study route.
 - `docs/getting-started.md`: hands-on onboarding, provider/runtime matrix and Codex + Claude Code + Antigravity walkthrough.
 - `docs/case-study-osblog.md`: evidence-frozen OSBlog dogfood timeline, findings and UseAgent improvement priorities.
 - `docs/evidence/osblog-dogfood-capture-manifest.md`: curated/local/blocked media classification and privacy checklist.
-- `docs-site/assets/*.svg` / `useagent-control-plane-hero.{webp,png}`: source-owned diagrams and optimized/fallback hero visuals; keep alt text/dimensions in consuming HTML.
+- `docs-site/assets/*.svg` / `useagent-control-plane-hero.webp`: source-owned diagrams and optimized hero visual; keep alt text/dimensions in consuming HTML.
 
 ## Code ownership hiện tại
 

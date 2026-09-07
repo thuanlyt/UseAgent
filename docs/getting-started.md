@@ -1,6 +1,8 @@
 # UseAgent hands-on onboarding
 
-This is the practical guide for a first-time user. It answers four questions:
+This is the practical guide for a first-time user. UseAgent is primarily a
+repo-local evidence and release-assurance layer; its lightweight supervisor
+workflow is optional. It answers four questions:
 
 1. Which agents can participate?
 2. What must be registered in `useagent.config.json`?
@@ -81,11 +83,11 @@ Official runtime references: [Claude Code setup](https://docs.anthropic.com/en/d
 [Antigravity Projects and agents](https://antigravity.google/docs/home), and
 [Antigravity skills](https://antigravity.google/docs/sdk/tools/).
 
-## 2. Put the control plane in the target repository
+## 2. Put the control plane around the target repository
 
-`tools/useagent.py` resolves its root from the repository that contains it. For
-the simplest setup, the target application and these UseAgent files live in the
-same Git repository root:
+The canonical setup keeps the UseAgent source checkout or installed CLI
+separate from the application repository. `--root` points the generated
+evidence and optional coordination state at the target project:
 
 ```text
 F:\dev\DemoStore\
@@ -97,11 +99,13 @@ F:\dev\DemoStore\
 └── work\
 ```
 
-For a new project, clone UseAgent and build the application in that repository.
-For an existing project, copy or merge the control-plane files from this
-repository into the application repository. Preserve the application's
-existing `AGENTS.md`, `knowledge/`, `work/` and `useagent.config.json` content;
+Clone or install UseAgent once. For an existing project, copy or merge the
+control-plane files from this repository into the application repository when
+you need the full optional workflow. Preserve the application's existing
+`AGENTS.md`, `knowledge/`, generated `work/` and `useagent.config.json` content;
 merge instructions and configuration instead of blindly overwriting them.
+`work/` is local runtime state and is intentionally not inherited from this
+public repository.
 
 Then run these commands from the target repository root:
 
@@ -111,8 +115,9 @@ python tools/useagent.py validate
 ```
 
 If the UseAgent CLI lives in a central checkout, pass the target repository
-explicitly. The target directory must already exist; the CLI rebinds the
-registry, config, lock and every configured Markdown path to that root:
+explicitly. The target directory must already exist; `init` creates empty
+runtime state there and the CLI rebinds the registry, config, lock and every
+configured Markdown path to that root:
 
 ```powershell
 python F:\dev\UseAgent\tools\useagent.py --root F:\dev\DemoStore init
@@ -441,6 +446,11 @@ Do not make a worker write directly to another worker's mailbox. Use
 `task report`; the CLI fans the report out to the configured Markdown files.
 
 ## 5. Shared folder or Git worktree?
+
+UseAgent is not a worktree manager or multi-branch concurrency engine. An
+external orchestrator may own branches, worktrees and parallel execution;
+UseAgent can verify the resulting repository state. The choice below applies
+only when you enable its optional shared-folder supervision workflow.
 
 ### Recommended first setup: one shared folder
 

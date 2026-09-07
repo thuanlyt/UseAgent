@@ -1,4 +1,9 @@
-# Long-running autopilot
+# Optional bounded autopilot
+
+UseAgent's primary product surface is repository-local evidence and release
+assurance. Autopilot is an optional supervision capability for projects that
+want a model to coordinate bounded work around those gates; it is not an
+infinite multi-agent orchestrator.
 
 ## Mô hình
 

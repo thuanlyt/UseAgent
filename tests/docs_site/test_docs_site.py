@@ -173,7 +173,7 @@ class DocsSiteTests(unittest.TestCase):
                 self.assertTrue(meta_by_property.get("og:image", "").strip(), page.name)
                 self.assertEqual(
                     meta_by_property.get("og:image"),
-                    f"{PRIMARY_ORIGIN}/assets/useagent-control-plane-hero.png",
+                    f"{PRIMARY_ORIGIN}/assets/useagent-control-plane-hero.webp",
                     page.name,
                 )
                 self.assertTrue(meta_by_name.get("twitter:image", "").strip(), page.name)
@@ -277,18 +277,15 @@ class DocsSiteTests(unittest.TestCase):
     def test_visual_asset_contract(self) -> None:
         assets = SITE / "assets"
         expected_assets = {
-            "useagent-control-plane-hero.png",
             "useagent-control-plane-hero.webp",
             "useagent-supervisor-loop.svg",
             "useagent-shared-ledger.svg",
             "useagent-runtime-handoff.svg",
         }
         self.assertEqual({path.name for path in assets.iterdir() if path.is_file()}, expected_assets)
-        hero = assets / "useagent-control-plane-hero.png"
-        self.assertLess(hero.stat().st_size, 3_000_000)
         webp_hero = assets / "useagent-control-plane-hero.webp"
         self.assertLess(webp_hero.stat().st_size, 100_000)
-        svg_assets = expected_assets - {hero.name, webp_hero.name}
+        svg_assets = expected_assets - {webp_hero.name}
         for filename in svg_assets:
             root = ElementTree.parse(assets / filename).getroot()
             self.assertEqual(root.tag, "{http://www.w3.org/2000/svg}svg", filename)
@@ -311,9 +308,8 @@ class DocsSiteTests(unittest.TestCase):
                 target = SITE / image["src"].lstrip("/")
                 self.assertTrue(target.is_file(), f"{page.name} -> {image['src']}")
             if page.name == "index.html":
-                sources = parser.images
                 homepage = page.read_text(encoding="utf-8")
-                self.assertIn('<source srcset="assets/useagent-control-plane-hero.webp" type="image/webp"', homepage)
+                self.assertIn('<img src="assets/useagent-control-plane-hero.webp"', homepage)
             if page.name != "index.html":
                 self.assertTrue(any(image.get("loading") == "lazy" for image in parser.images), page.name)
 

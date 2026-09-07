@@ -7,276 +7,222 @@ English | [Tiếng Việt](README-vi.md)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> A file-first multi-agent control plane that turns one project goal into scoped work, inspectable handovers and bounded release progress.
+> A repo-local evidence and release-assurance layer for AI coding workflows.
+> Lightweight supervision is available when a project benefits from it.
 
-UseAgent gives one capable model the role of supervisor. Other coding agents and humans join through the same repository-local protocol: shared context, explicit work items, mailboxes, evidence, review gates and checkpoints.
-
-![UseAgent supervisor coordinating workers, reports and production gates](docs-site/assets/useagent-control-plane-hero.png)
+![UseAgent release-assurance workflow for AI coding projects](docs-site/assets/useagent-control-plane-hero.webp)
 
 ## What UseAgent is
 
-UseAgent is a provider-neutral supervisor workflow for trusted local agents working in one prepared repository. The supervisor reads a lightweight goal and roster, builds a roadmap/DAG, dispatches ready tasks, reviews worker reports, runs configured QA and chooses the next bounded action.
+UseAgent keeps the proof around AI-assisted coding in the repository that is
+being changed. It records evidence provenance, bounds and sanitizes durable
+output, binds QA to a source snapshot, verifies review evidence and checks Git
+release durability before a release decision.
+
+The result is a compact, inspectable trail for the questions that matter:
+
+- What changed, and which source state was checked?
+- Which evidence is local, live, simulated or blocked?
+- Did review and QA verify the same source that is ready to ship?
+- Is the repository clean and durable enough for the next release gate?
+
+UseAgent is provider-neutral and trusted-local. It complements the coding
+runtime rather than trying to become one.
 
 ## Current Release
 
 **v0.1.0 — Initial Public Release**
 
-UseAgent v0.1.0 is the first public release of a Beta, trusted-local, file-first multi-agent control plane. It brings scoped work, evidence/review/QA gates, runtime resilience and judgment-aware supervision into one repository-local workflow.
+v0.1.0 is the current public release. The feature set is now frozen after the
+release-assurance maintenance pass: future changes require a concrete bug,
+security issue, real external-user evidence or an explicit owner decision.
 
 - [Release notes](https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.0) · [All releases](https://github.com/thuanlyt/UseAgent/releases)
 - [CHANGELOG](CHANGELOG.md) · [Documentation](https://useagent.thuanlyt.id.vn/) · [Getting started](docs/getting-started.md)
 
-The repository is the shared memory:
-
-```text
-User goal
-    ↓
-UseAgent supervisor
-    ├─ project brief, knowledge ledger and task DAG
-    ├─ scoped assignments in worker mailboxes
-    └─ reports, evidence, review, QA and checkpoints
-    ↓
-Codex · Claude Code · Antigravity · other workers · humans
-    ↓
-UseAgent supervisor → next safe action or an explicit blocker
-```
-
-The Python CLI owns deterministic state transitions and validation. The model owns planning, judgment and coordination. Markdown keeps handovers readable; JSON keeps the registry machine-checkable.
+The public repository does not ship a maintainer's runtime history. `work/`
+is generated locally by `init` in the project being assured.
 
 ## Why teams use it
 
-| Coordination problem | UseAgent response |
+| Release-assurance problem | UseAgent response |
 | --- | --- |
-| Every agent rereads the repository | A compact, source-anchored `knowledge/` ledger |
-| Work disappears in chat | A durable registry, assignment mailboxes and reports |
-| Workers edit the same area | One active writer per path/subtree with scope checks |
-| “Done” has no proof | Acceptance criteria, review evidence and repeatable checks |
-| A long run loses direction | Bounded cycles, checkpoints and explicit stop conditions |
-| QA or reports become stale | Provenance, report freshness and source-bound release evidence |
+| AI output is hard to audit later | Typed evidence provenance and source-anchored handovers |
+| A green check may belong to an older tree | Source-bound QA and explicit freshness checks |
+| Raw runner output can contain secrets | Bounded sanitized summaries plus a local diagnostic spool |
+| “Done” is confused with “ready to release” | Separate review, QA and Git durability gates |
+| Long work loses its durable context | Compact knowledge cards, reports and checkpoints |
+| Different coding runtimes use different workflows | One repository-local contract around their output |
 
-## Capabilities in the current release
+## Why UseAgent if I already use Claude Code, Codex, Beads or worktrees?
 
-### Plan and coordinate
+Those tools plan and execute work. UseAgent verifies the evidence and release
+state around the resulting repository. It can sit beside them without asking
+them to surrender their native planning, subagents, branches or worktree
+management:
 
-- Supervisor front door through `$useagent`.
-- Work levels from L0 discovery to L4 production/release.
-- Dependency-aware task DAGs with scope, owner, capability and capacity checks.
-- Per-agent `INBOX.md`, assignment inbox, `REPORT.md` and `COMPLETED.md`.
-- Automatic dispatch to eligible workers; one writer owns a scope at a time.
+```text
+Claude Code / Codex / Beads / worktrees
+        plan and execute
+                ↓
+UseAgent verifies evidence, source identity and release durability
+```
 
-### Judgment-aware supervision
+UseAgent is a complement, not a replacement for Beads, Spec Kit, native Claude
+or Codex subagents, Git worktree managers or a project's CI system.
 
-- Separates project outcomes, hard constraints, flexible preferences and proposed solutions.
-- Challenges materially weak plans, weighs relevant tradeoffs and recommends one default with clear confidence.
-- Asks only decision-critical owner questions, escalates irreversible/external actions and respects valid owner overrides.
-- Recognizes diminishing returns and can recommend stopping when the goal and appropriate gates are complete.
+## What it verifies
 
-### Preserve useful project memory
+- Evidence is labeled with controlled provenance and repeatable source anchors.
+- Durable runner and QA summaries are bounded and sanitized; raw diagnostics
+  remain local by default.
+- QA is bound to Git HEAD, source content, dirty-state provenance and QA
+  configuration.
+- Review evidence is required before a work item is considered done.
+- Release durability checks the relevant Git cleanliness, untracked files and
+  current QA validity separately from task completion.
+- Configured quality gates remain explicit and deployment authority stays with
+  the project owner.
 
-- Source-anchored knowledge cards and contracts that reduce rereading.
-- Typed evidence provenance: `local`, `live`, `simulation`, `blocked`, `operator-confirmed` and compatible `legacy` history.
-- Report freshness markers so `work/SUPERVISOR_REPORT.md` cannot silently look current when the registry moved on.
-- First-class takeover lineage with `supersedes`, `superseded_by` and a preserved failure history.
-- Bounded cycles and resumable checkpoints; no unbounded supervisor loop.
+## Optional lightweight supervision
 
-### Verify and release safely
+When a project wants a supervisor, `$useagent` can turn a short goal into a
+bounded workflow: record assumptions, create dependency-aware work items,
+dispatch assignments, ingest reports, inspect evidence, run QA and checkpoint
+the next action. The DAG, mailbox, role and telemetry machinery remains
+available, but it is an optional coordination capability—not the product's
+primary identity.
 
-- Sanitized, bounded durable summaries for runner and QA output.
-- Local redacted diagnostic spool at `work/.runtime-output/`; raw runtime output is not repository evidence by default.
-- Source-bound QA with Git HEAD, dirty-state, source-content and QA configuration fingerprints.
-- Git release durability gate: clean release-relevant source, no non-ignored untracked release files and valid current QA.
-- Structured QA `argv` execution with `shell=False` by default; shell syntax is an explicit trusted-local opt-in.
-- Optional bounded worker runtime readiness and provider-neutral failure classification.
-- Provider-neutral usage telemetry for measured timing, actual participants and authoritative token usage when a runtime exposes it; missing usage stays partial or unavailable.
-- Credential-free conformance coverage for Codex-, Claude Code- and Antigravity-style identities.
-- No third-party Python runtime dependencies.
-
-## Supported runtimes and roles
-
-UseAgent does not require a particular model vendor. Codex, Claude Code, Google Antigravity, another compatible runtime or a human can work in the same repository when they can read the Markdown contract, run the CLI and respect the claimed scope.
-
-Runtimes are execution surfaces; roles are workflow responsibilities:
+Workflow roles are personas, not vendor identities:
 
 | Role | Responsibility |
 | --- | --- |
-| `supervisor` | Understand the goal, plan the DAG, dispatch, review evidence, run QA and choose the next action |
-| `explorer` | Read-only discovery, constraints and source anchors |
-| `planner` | Decompose milestones into scoped work items |
-| `worker` | Pull one assignment, implement within scope and report checks |
-| `reviewer` | Inspect diff, regressions, security and evidence gaps |
-| `release_gate` | Check acceptance, operations, rollback and release readiness |
+| `supervisor` | Plan bounded work, review evidence and choose the next safe action |
+| `explorer` | Read-only discovery and source anchors |
+| `planner` | Decompose a goal into scoped work items |
+| `worker` | Implement one claimed scope and report checks |
+| `reviewer` | Verify diff, regressions, security and evidence |
+| `release_gate` | Check release readiness and operational evidence |
 
-The repository includes a practical [Codex + Claude Code + Antigravity onboarding guide](docs/getting-started.md). The conformance harness proves the shared protocol and routing; it does not claim that it called vendor APIs.
+Codex, Claude Code, Google Antigravity and other coding agents can be workers
+when they can read the repository contract, run the CLI and respect scope.
+See the [practical runtime guide](docs/getting-started.md).
 
-## Quick start
+## Judgment-aware supervision
 
-Requirements: Python 3.11+, Git, and a prepared project repository. UseAgent can live in the target repository or operate on an existing repository through `--root`.
+The optional supervisor records the decision boundary, not a hidden chain of
+thought. For each bounded cycle it should state the intent, tradeoff, owner,
+evidence anchors and next action or stop condition. When the marginal value is
+low or the evidence is ambiguous, it should stop and ask the owner instead of
+creating more work. This keeps coordination useful while respecting
+diminishing returns and the trusted-local boundary.
 
-```powershell
-git clone https://github.com/thuanlyt/UseAgent.git
-Set-Location UseAgent
+## Quick start for an external project
 
-python tools/useagent.py init
-python tools/useagent.py validate
-python examples/multi-agent-demo/run_demo.py
-python examples/multi-runtime-conformance/run_conformance.py
-```
+UseAgent is normally cloned or installed once, then pointed at the repository
+you want to assure. Do not use the UseAgent source checkout as the default
+application workspace.
 
-For a separate prepared project:
-
-```powershell
-python F:\dev\UseAgent\tools\useagent.py --root F:\dev\MyProject init
-python F:\dev\UseAgent\tools\useagent.py --root F:\dev\MyProject validate
-```
-
-`--root` comes before the subcommand. It makes the selected project the boundary for the registry, mailboxes, reports and configured paths. A configured path that escapes that boundary is rejected. See [getting started](docs/getting-started.md) for the copy-in and central-checkout choices.
-
-`main` is the current development branch. To reproduce the published v0.1.0 snapshot, check out the immutable release tag after cloning:
+Requirements: Python 3.11+, Git, and an existing target repository.
 
 ```powershell
-git checkout v0.1.0
+git clone https://github.com/thuanlyt/UseAgent.git F:\tools\UseAgent
+python F:\tools\UseAgent\tools\useagent.py --root F:\dev\MyProject init
 ```
 
-Register the real worker sessions that will actually work on the project:
+`init` creates empty local state under `F:\dev\MyProject\work`. It does not
+copy skills or overwrite project files. For the full workflow, copy or merge
+the UseAgent control-plane files (`AGENTS.md`, `.agents/skills/`, `knowledge/`,
+`tools/useagent.py` and configuration) into the target repository, preserving
+the target project's own instructions and source. Then run:
 
 ```powershell
-python tools/useagent.py agent register `
-  --id claude-frontend `
-  --role worker `
-  --scope src/frontend `
-  --scope tests/frontend `
-  --capability web `
-  --max-active 1
+python F:\tools\UseAgent\tools\useagent.py --root F:\dev\MyProject validate
 ```
 
-Then give the supervisor a light prompt:
+The `--root` boundary covers the registry, reports, evidence, checkpoints and
+all configured paths. Paths that escape it are rejected. If the CLI has been
+installed, the equivalent form is:
+
+```powershell
+python -m pip install --no-deps F:\tools\UseAgent
+useagent --root F:\dev\MyProject init
+useagent --root F:\dev\MyProject validate
+```
+
+Read [getting started](docs/getting-started.md) before registering workers.
+
+## The assurance loop
+
+The core path is useful with one agent or many:
 
 ```text
-Use $useagent in F:\dev\MyProject.
-Goal: build a production-ready inventory API with authentication and tests.
-Agents: codex-supervisor, claude-frontend, antigravity-reviewer.
-Constraints: keep scopes non-overlapping; do not deploy or change secrets without approval.
-Create the roadmap and scoped tasks, dispatch ready work, inspect reports, run QA,
-review evidence and continue in bounded cycles until the release gate passes or I
-need to decide a blocker.
+implement → report evidence → review → source-bound QA → Git durability gate
 ```
 
-The supervisor writes the full worker prompts to `work/outbox/`. Workers do not need a second hand-written assignment.
-
-## The worker loop
-
-The normal manual path is portable across runtimes:
+If supervision is enabled, the optional loop adds:
 
 ```powershell
-# supervisor: ingest reports, dispatch ready work and write the next checkpoint
-python tools/useagent.py supervisor cycle
-
-# worker: pull only after the supervisor assigned the task
-python tools/useagent.py worker pull --agent claude-frontend
-
-# worker: report the result through the CLI
-python tools/useagent.py task report UA-0001 `
-  --agent claude-frontend `
-  --result completed `
-  --summary "Frontend slice implemented and checked" `
-  --next-action "Reviewer inspects the diff and accessibility evidence" `
-  --file src/frontend/app.tsx `
-  --check "npm test: pass"
-
-# supervisor: ingest the report, review and run configured QA
 python tools/useagent.py supervisor cycle --run-qa
 python tools/useagent.py supervisor report --check
 ```
 
-`reported` means that a worker submitted a handover. It is not `done`; a supervisor or reviewer must accept the evidence first. If a worker is blocked, it reports the concrete blocker instead of guessing or silently changing scope.
+Workers can use the generated mailbox/report protocol, but a project may also
+use UseAgent around work planned by an external orchestrator. A worker report
+is not a release decision; the reviewer, QA and durability gates remain
+separate.
 
-## Optional automatic worker intake
+## Trust model and concurrency boundary
 
-Automatic execution is opt-in. Configure a project-owned adapter as an argv list containing `{assignment_path}`:
+UseAgent is designed for a **trusted-local / trusted-repository** threat model.
+Its scope and role checks are workflow controls, not an OS sandbox, authenticated
+distributed lock or authenticated agent identity system.
 
-```powershell
-python tools/useagent.py agent register `
-  --id codex-api `
-  --role worker `
-  --scope src/api `
-  --scope tests/api `
-  --capability python `
-  --runner-arg=python `
-  --runner-arg=tools/codex_worker_adapter.py `
-  --runner-arg=--assignment `
-  --runner-arg={assignment_path} `
-  --runner-timeout 3600
+UseAgent does not own:
 
-python tools/useagent.py worker run --agent codex-api --max-tasks 1 --wait-seconds 300
-```
+- branches, worktrees or parallel process isolation;
+- provider accounts, quotas or vendor API launch flags;
+- a project's task graph when another orchestrator already owns it;
+- deployment or external mutations.
 
-The runner is bounded by task count, idle wait and timeout. An optional argv-only preflight can return an explicit `ready`, `unavailable`, `misconfigured`, `no_target` or `unknown` state before the task becomes `in_progress`. A missing report becomes a failed report; UseAgent does not retry forever or invent quota/auth facts from provider prose.
-
-### Current QA configuration shape
-
-QA commands are structured objects. The safe default passes literal arguments without a shell:
-
-```json
-{
-  "supervisor": {
-    "qa_timeout_seconds": 900,
-    "qa_commands": [
-      {
-        "mode": "argv",
-        "argv": ["python", "-m", "unittest", "discover", "-s", "tests", "-v"]
-      }
-    ]
-  }
-}
-```
-
-If shell composition is genuinely required, use an explicit `{ "mode": "shell", "command": "..." }` entry only in a trusted local repository. Shell mode is an execution capability, not a sandbox or authentication boundary. See [operations](docs/operations.md) for preflight, evidence, QA and release details.
-
-## Autopilot and release integrity
-
-One `supervisor cycle` is finite. It ingests reports, evaluates dependencies and review state, dispatches ready work, runs configured QA when requested and records a checkpoint. A scheduler may invoke another cycle later, but UseAgent does not create an infinite self-loop and never deploys by itself.
-
-The release path keeps separate decisions separate:
-
-1. A worker report says what was attempted.
-2. Review accepts or rejects the work and evidence.
-3. QA records bounded summaries and binds the result to the current source fingerprint.
-4. The release durability gate checks Git HEAD, non-volatile cleanliness, untracked release files and QA validity.
-5. Deployment remains an explicit operator-authorized action.
-
-Generated control-plane state under the configured `release_source.volatile_paths` does not self-invalidate QA. Durable evidence contains sanitized summaries and provenance; detailed redacted diagnostics stay in the ignored `work/.runtime-output/` spool. Historical tracked evidence is preserved and is not automatically rewritten.
-
-## Trust model and boundaries
-
-UseAgent is designed for a **trusted-local / trusted-repository** threat model. Scope ownership is a workflow boundary, not an OS sandbox. The CLI cannot stop a non-compliant external process from writing outside its declared scope unless the project uses an additional isolation mechanism such as Git worktrees or CI-enforced diff checks.
-
-UseAgent also does not authenticate agent identity, manage provider accounts or quotas, launch vendor APIs by guessing flags, or promise an autonomous infinite agent swarm. Stronger remote identity, sandboxing and provider integration belong in a project-owned adapter or execution environment.
-
-## Real-world dogfood: OSBlog
-
-UseAgent was dogfooded on OSBlog, a real open-source blog workload. The run covered multi-agent planning and dispatch, independent review/QA, Vercel release activity, worker quota interruption, checkpoint recovery, takeover lineage and human resume decisions. Those findings directly drove the UseAgent hardening shipped through UA-0048–UA-0055.
-
-OSBlog is evidence for the control plane, not the product being documented here. Its live workload was Vercel-only; VPS, Netlify and local Node were documented targets, not claimed live environments. Read the [source-anchored case study](docs/case-study-osblog.md) and [capture manifest](docs/evidence/osblog-dogfood-capture-manifest.md) for the evidence boundary.
+External orchestrators may manage branches, worktrees, parallel execution and
+task graphs. UseAgent can verify the resulting repository state. The shared
+folder and mailbox workflow documented in the optional supervision guide is
+deliberately lightweight and trusted-local.
 
 ## Repository and documentation map
 
 | Path | Purpose |
 | --- | --- |
-| `.agents/skills/` | Supervisor, context, orchestration, worker, review and bounded autopilot skills |
+| `.agents/skills/` | Optional supervisor, context, worker, review and autopilot skills |
 | `.codex/agents/` | Optional role-specific Codex profiles |
-| `knowledge/` | Compact project brief, architecture, module cards, contracts and decisions |
-| `work/` | Registry, assignments, reports, evidence and checkpoints |
-| `tools/useagent.py` | Dependency-free state CLI and validator |
-| `useagent.config.json` | Paths, roster, QA and production-readiness configuration |
-| `docs/` | Hands-on, operations, autopilot and dogfood documentation |
+| `knowledge/` | Compact project brief, architecture, contracts and decisions |
+| `tools/useagent.py` | Dependency-free assurance CLI and validator |
+| `useagent.config.json` | Paths, QA and production-readiness configuration |
+| `work/` | Generated local registry, reports, evidence and checkpoints after `init` |
+| `docs/` | Canonical hands-on, operations, architecture and case-study docs |
 | `docs-site/` | Crawlable bilingual static documentation site |
 | `tests/` | Standard-library regression and docs-site tests |
 
-Start with [getting started](docs/getting-started.md), then read [operations](docs/operations.md), [autopilot](docs/autopilot.md) and [architecture](docs/architecture.md). The public documentation site is at [useagent.thuanlyt.id.vn](https://useagent.thuanlyt.id.vn/).
+The [OSBlog dogfooding case study](docs/case-study-osblog.md) shows how a real
+workload used evidence, QA and recovery boundaries. OSBlog is a workload and
+evidence source, not the product being positioned here.
+
+## Packaging note
+
+The current package intentionally keeps the stable public entry point
+`useagent = tools.useagent:main` and `packages = ["tools"]`. The generic
+top-level `tools` package can collide with another application's package when
+both are imported in one Python environment, although the installed CLI and
+wheel smoke path are usable. A namespace migration is a compatibility change
+and is outside this frozen pass; it should only be reconsidered with concrete
+install evidence and an explicit maintenance-release decision.
 
 ## Contributing and license
 
-Contributions follow the [work-item and review contract](CONTRIBUTING.md). For security reports, read [SECURITY.md](SECURITY.md). The project is released under the [MIT License](LICENSE).
+Contributions follow the [work-item and review contract](CONTRIBUTING.md). For
+security reports, read [SECURITY.md](SECURITY.md). The project is released under
+the [MIT License](LICENSE).
 
 ---
 

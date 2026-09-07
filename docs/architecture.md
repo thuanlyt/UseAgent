@@ -2,7 +2,10 @@
 
 ## English
 
-UseAgent is a repository-local coordination layer. It does not replace the model that plans work or the runtime that executes a worker. It makes their shared state explicit, durable and reviewable.
+UseAgent is a repository-local evidence and release-assurance layer for AI
+coding workflows. It does not replace the model, runtime or external
+orchestrator that plans and executes work. Lightweight supervision is an
+optional capability that makes relevant shared state explicit and reviewable.
 
 ![UseAgent supervisor loop from user goal to worker evidence and checkpoint](../docs-site/assets/useagent-supervisor-loop.svg)
 
@@ -11,22 +14,35 @@ reports, QA and checkpoints to choose the next safe cycle.*
 
 ### Layers
 
-1. **Supervisor skill** — interprets the user's goal, records assumptions, derives milestones and decides the next bounded action.
-2. **Specialist skills** — context, orchestration, worker implementation, review and autopilot provide narrow operating instructions.
-3. **Control-plane CLI** — `tools/useagent.py` validates transitions, claims, scope ownership, dispatches assignments, ingests reports and runs configured QA.
+1. **Assurance CLI** — `tools/useagent.py` validates evidence, review transitions, source-bound QA and Git release durability.
+2. **Optional supervision skills** — context, orchestration, worker implementation, review and autopilot provide narrow operating instructions when a project wants coordination.
+3. **Evidence ledger** — `knowledge/` and generated `work/` state keep provenance, handovers and checkpoints inspectable.
 4. **Knowledge ledger** — `knowledge/` stores compact, source-anchored context so agents do not reread unrelated files.
-5. **Work ledger** — `work/` stores registry state, work items, mailboxes, reports, evidence and checkpoints.
-6. **Repository rules** — `AGENTS.md` defines the safety boundary: explicit scope, one writer, evidence-backed handover and no unapproved side effects.
+5. **Optional work ledger** — `work/` is generated in the assured project after `init`; it stores registry state, work items, mailboxes, reports, evidence and checkpoints when coordination is enabled.
+6. **Repository rules** — `AGENTS.md` defines the safety boundary: explicit scope, evidence-backed handover and no unapproved side effects.
 
 ### State ownership
 
-`work/registry.json` is the machine-readable source of truth for task state. Each task also has `work/items/<task-id>.md` for readable acceptance criteria and handover. Markdown reports are append-oriented communication artifacts; they do not silently override the registry.
+When optional supervision is enabled, `work/registry.json` is the machine-readable
+source of truth for task state. Each task also has
+`work/items/<task-id>.md` for readable acceptance criteria and handover. Markdown
+reports are append-oriented communication artifacts; they do not silently
+override the registry. A fresh UseAgent clone intentionally has no maintainer
+task history; `init` creates empty local state in the project being assured.
 
-The CLI uses atomic replacement for files and a short-lived exclusive lock for state transitions. The lock is released before worker code, tests or external processes run. Paths from configuration are resolved and rejected if they leave the repository root.
+The CLI uses atomic replacement for files and a short-lived exclusive lock for
+state transitions. The lock is released before worker code, tests or external
+processes run. Paths from configuration are resolved and rejected if they leave
+the repository root. These are trusted-local workflow controls, not a sandbox or
+authenticated distributed concurrency service.
 
 ### Scheduling model
 
-The supervisor selects tasks that are `planned` and whose dependencies are complete. A worker is eligible when it is available, below `max_active`, matches the task's preferred agent/capability constraints, and has no overlapping active writer scope. A dispatch writes both a mailbox assignment and an outbox prompt, then marks the task `assigned`.
+If supervision is enabled, the supervisor selects tasks that are `planned` and
+whose dependencies are complete. A worker is eligible when it is available,
+below `max_active`, matches the task's preferred agent/capability constraints,
+and has no overlapping active writer scope. A dispatch writes both a mailbox
+assignment and an outbox prompt, then marks the task `assigned`.
 
 The worker claims through `worker pull` or `task claim`, which changes `assigned` to `in_progress`. It may report through `task report` only after that activation; the command writes the report inbox, per-agent report/completed files, global completed log, report index and task handover metadata.
 
@@ -43,7 +59,10 @@ Deployment remains outside the CLI. A supervisor may recommend a release only af
 
 ## Tiếng Việt
 
-UseAgent là lớp điều phối nằm trong repository. Nó không thay thế model lập kế hoạch hoặc runtime thực thi worker; nó làm cho state chung trở nên rõ ràng, bền vững và có thể review.
+UseAgent là lớp evidence và release-assurance nằm trong repository. Nó không
+thay thế model, runtime hay orchestrator bên ngoài lập kế hoạch và thực thi
+work. Supervisor nhẹ là capability tùy chọn để state cần thiết rõ ràng và có
+thể review.
 
 ![Sơ đồ vòng lặp supervisor của UseAgent](../docs-site/assets/useagent-supervisor-loop.svg)
 
@@ -52,22 +71,32 @@ UseAgent là lớp điều phối nằm trong repository. Nó không thay thế 
 
 ### Các lớp kiến trúc
 
-1. **Supervisor skill** hiểu goal, ghi assumption, lập milestone và chọn hành động hữu hạn tiếp theo.
-2. **Specialist skills** gồm context, orchestrator, worker, review và autopilot.
-3. **CLI control plane** kiểm tra transition, claim, ownership scope, dispatch, ingest report và QA.
+1. **Assurance CLI** kiểm tra evidence, review transition, source-bound QA và Git release durability.
+2. **Supervisor skill tùy chọn** gồm context, orchestrator, worker, review và autopilot khi project cần điều phối.
+3. **Evidence ledger** trong `knowledge/` và state `work/` local giữ provenance, handover và checkpoint.
 4. **Knowledge ledger** trong `knowledge/` lưu ngữ cảnh cô đọng có source anchor.
-5. **Work ledger** trong `work/` lưu registry, work item, mailbox, report, evidence và checkpoint.
-6. **Repository rules** trong `AGENTS.md` áp dụng scope rõ ràng, một writer, handover có bằng chứng và cấm side effect chưa được phép.
+5. **Work ledger tùy chọn** trong `work/` được `init` tạo rỗng tại project cần assurance.
+6. **Repository rules** trong `AGENTS.md` áp dụng scope rõ ràng, handover có bằng chứng và cấm side effect chưa được phép.
 
 ### Giao thức file
 
-`work/registry.json` là nguồn sự thật dạng máy cho trạng thái task. Mỗi task có thêm `work/items/<task-id>.md` để người và model đọc acceptance criteria. Report Markdown là artifact giao tiếp; không được dùng để âm thầm ghi đè registry.
+Khi bật supervision, `work/registry.json` là nguồn sự thật dạng máy cho trạng
+thái task. Mỗi task có thêm `work/items/<task-id>.md` để người và model đọc
+acceptance criteria. Report Markdown là artifact giao tiếp; không được dùng để
+âm thầm ghi đè registry. Clone UseAgent mới không chứa task history của
+maintainer; `init` tạo state local rỗng trong project được assurance.
 
-CLI ghi file theo cách atomic, dùng exclusive lock ngắn cho transition, giải phóng lock trước khi chạy code/test, và từ chối mọi path cấu hình đi ra ngoài repository.
+CLI ghi file theo cách atomic, dùng exclusive lock ngắn cho transition, giải
+phóng lock trước khi chạy code/test, và từ chối mọi path cấu hình đi ra ngoài
+repository. Đây là workflow control trusted-local, không phải sandbox hay hệ
+thống concurrency phân tán có authentication.
 
 ### Mô hình dispatch
 
-Supervisor chọn task `planned` đã hoàn tất dependency. Worker phải available, chưa vượt `max_active`, khớp agent/capability và không trùng active writer scope. Dispatch ghi assignment vào mailbox và prompt vào outbox, rồi chuyển task thành `assigned`.
+Nếu bật supervision, supervisor chọn task `planned` đã hoàn tất dependency.
+Worker phải available, chưa vượt `max_active`, khớp agent/capability và không
+trùng active writer scope. Dispatch ghi assignment vào mailbox và prompt vào
+outbox, rồi chuyển task thành `assigned`.
 
 Worker dùng `worker pull` hoặc `task claim` để chuyển sang `in_progress`, chỉ sửa trong scope đã claim và chỉ nộp bằng `task report` sau khi activation. Lệnh report cập nhật report inbox, file của agent, completed log toàn cục, report index và handover của task.
 

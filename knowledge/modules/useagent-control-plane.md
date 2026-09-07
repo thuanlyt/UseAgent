@@ -2,7 +2,7 @@
 
 - `freshness`: verified (2026-09-06)
 - `owner`: orchestrator
-- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:validate_relative_scope`, `tools/useagent.py:scope_overlaps`, `tools/useagent.py:scope_within`, `tools/useagent.py:append_markdown`, `tools/useagent.py:agent_claim_blocker`, `tools/useagent.py:cmd_task_new`, `tools/useagent.py:cmd_task_claim`, `tools/useagent.py:cmd_task_update`, `tools/useagent.py:cmd_task_report`, `tools/useagent.py:cmd_worker_pull`, `tools/useagent.py:ingest_reports_locked`, `tools/useagent.py:choose_next_action`, `tools/useagent.py:normalize_evidence_provenance`, `tools/useagent.py:normalize_evidence_source`, `tools/useagent.py:parse_evidence`, `tools/useagent.py:registry_revision`, `tools/useagent.py:release_source_fingerprint`, `tools/useagent.py:git_upstream_snapshot`, `tools/useagent.py:release_durability_snapshot`, `tools/useagent.py:validate_qa_source`, `tools/useagent.py:supervisor_report_freshness`, `tools/useagent.py:build_supervisor_report`, `tools/useagent.py:cmd_supervisor_report`, `tools/useagent.py:cmd_context`, `tools/useagent.py:validate_registry`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot_details`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`, `tools/useagent.py:runner_settings`, `tools/useagent.py:runner_preflight_settings`, `tools/useagent.py:static_runner_readiness`, `tools/useagent.py:probe_runtime_readiness`, `tools/useagent.py:classify_runner_failure`, `tools/useagent.py:record_runtime_event`
+- `source_anchor`: `tools/useagent.py:default_root`, `tools/useagent.py:configure_root`, `tools/useagent.py:validate_relative_scope`, `tools/useagent.py:scope_overlaps`, `tools/useagent.py:scope_within`, `tools/useagent.py:append_markdown`, `tools/useagent.py:agent_claim_blocker`, `tools/useagent.py:cmd_task_new`, `tools/useagent.py:cmd_task_claim`, `tools/useagent.py:cmd_task_update`, `tools/useagent.py:cmd_task_report`, `tools/useagent.py:cmd_worker_pull`, `tools/useagent.py:ingest_reports_locked`, `tools/useagent.py:choose_next_action`, `tools/useagent.py:normalize_evidence_provenance`, `tools/useagent.py:normalize_evidence_source`, `tools/useagent.py:parse_evidence`, `tools/useagent.py:registry_revision`, `tools/useagent.py:release_source_fingerprint`, `tools/useagent.py:git_upstream_snapshot`, `tools/useagent.py:release_durability_snapshot`, `tools/useagent.py:validate_qa_source`, `tools/useagent.py:supervisor_report_freshness`, `tools/useagent.py:build_supervisor_report`, `tools/useagent.py:cmd_supervisor_report`, `tools/useagent.py:cmd_context`, `tools/useagent.py:validate_registry`, `tools/useagent.py:ensure_layout`, `tools/useagent.py:main`, `tools/useagent.py:production_snapshot_details`, `tools/useagent.py:production_snapshot`, `tools/useagent.py:run_qa`, `tools/useagent.py:runner_settings`, `tools/useagent.py:runner_preflight_settings`, `tools/useagent.py:static_runner_readiness`, `tools/useagent.py:probe_runtime_readiness`, `tools/useagent.py:classify_runner_failure`, `tools/useagent.py:record_runtime_event`
 
 ## Responsibility
 
@@ -101,7 +101,8 @@ or infinite retry is created.
 
 ## Operator onboarding
 
-`docs/getting-started.md` is the public hands-on guide. It defines the portable
+`init` creates the empty registry and required mailbox/report scaffolding
+without copying maintainer history. `docs/getting-started.md` is the public hands-on guide. It defines the portable
 runtime boundary: Codex, Claude Code and Google Antigravity are execution
 surfaces, while `supervisor`, `worker`, `reviewer` and the other names are
 workflow roles. It also documents the shared-folder default, the worktree

@@ -1962,6 +1962,10 @@ class UseAgentCliTests(unittest.TestCase):
         self.assertEqual(useagent.ROOT, target_root.resolve())
         self.assertTrue((target_root / "work" / "registry.json").exists())
         self.assertTrue((target_root / "useagent.config.json").exists())
+        self.assertTrue((target_root / "work" / "INDEX.md").exists())
+        self.assertTrue((target_root / "work" / "completed" / "COMPLETED.md").exists())
+        self.assertEqual(list((target_root / "work" / "items").glob("*.md")), [])
+        self.assertEqual(list((target_root / "work" / "evidence").iterdir()), [])
 
         code, task_id, error = self.invoke(
             "--root",
@@ -1983,6 +1987,34 @@ class UseAgentCliTests(unittest.TestCase):
         task_id = task_id.strip()
         self.assertTrue((target_root / "work" / "items" / f"{task_id}.md").exists())
         self.assertFalse((Path(self.temp_dir.name) / "work" / "items" / f"{task_id}.md").exists())
+
+    def test_init_scaffolds_configured_agent_mailbox_without_history(self) -> None:
+        target_root = Path(self.temp_dir.name) / "prepared-project"
+        target_root.mkdir()
+        config = copy.deepcopy(useagent.DEFAULT_CONFIG)
+        config["agents"] = [
+            {
+                "id": "supervisor",
+                "role": "supervisor",
+                "status": "available",
+                "directory": "work/agents/supervisor",
+                "scope": ["."],
+                "capabilities": ["orchestration"],
+                "max_active": 1,
+            }
+        ]
+        (target_root / "useagent.config.json").write_text(json.dumps(config), encoding="utf-8")
+
+        code, _, error = self.invoke("--root", str(target_root), "init")
+        self.assertEqual((code, error), (0, ""))
+        supervisor = target_root / "work" / "agents" / "supervisor"
+        self.assertTrue((target_root / "work" / "INDEX.md").exists())
+        self.assertTrue((supervisor / "INBOX.md").exists())
+        self.assertTrue((supervisor / "REPORT.md").exists())
+        self.assertTrue((supervisor / "COMPLETED.md").exists())
+        self.assertTrue((supervisor / "inbox").is_dir())
+        self.assertEqual(list((target_root / "work" / "items").glob("*.md")), [])
+        self.assertEqual(list((target_root / "work" / "evidence").iterdir()), [])
 
     def test_explicit_root_rejects_paths_outside_selected_root(self) -> None:
         target_root = Path(self.temp_dir.name) / "selected-project"

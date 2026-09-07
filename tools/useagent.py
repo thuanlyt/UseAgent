@@ -1148,6 +1148,13 @@ def release_durability_snapshot(config: dict[str, Any], state: dict[str, Any]) -
     }
 
 
+def ensure_text_file(path: Path, content: str) -> None:
+    """Create a required empty scaffold file without overwriting runtime data."""
+
+    if not path.exists():
+        atomic_write(path, content)
+
+
 def ensure_layout() -> None:
     for directory in (
         ROOT / ".agents" / "skills",
@@ -1165,6 +1172,50 @@ def ensure_layout() -> None:
         atomic_write(REGISTRY, json.dumps({"version": 1, "updated_at": None, "items": {}}, indent=2) + "\n")
     if not CONFIG.exists():
         save_config(config)
+
+    ensure_text_file(
+        ROOT / "work" / "INDEX.md",
+        (
+            "# Work ledger\n\n"
+            "`work/registry.json` is the machine-readable task ledger. Generated\n"
+            "state in this directory is local to the project and starts empty after\n"
+            "`init`; maintainer task history is never inherited from the UseAgent\n"
+            "source checkout.\n\n"
+            "Use `context`, `task`, `worker` and `supervisor` commands to opt into\n"
+            "the coordination workflow. Evidence and checkpoints are runtime\n"
+            "artifacts; review and release gates remain explicit.\n"
+        ),
+    )
+    ensure_text_file(path_for(config, "completed_tasks"), "# Completed tasks\n\n")
+    ensure_text_file(path_for(config, "reports_index"), "# Reports\n\n")
+    ensure_text_file(
+        path_for(config, "supervisor_report"),
+        "# Supervisor report\n\nNo supervisor cycle has run.\n",
+    )
+    ensure_text_file(
+        path_for(config, "supervisor_cycle"),
+        "# Latest supervisor cycle\n\nNo supervisor cycle has run.\n",
+    )
+    ensure_text_file(
+        path_for(config, "supervisor_state"),
+        json.dumps({"version": 1, "cycle": 0, "ingested_reports": [], "last_qa": None}, indent=2) + "\n",
+    )
+
+    configured_agents = config.get("agents", [])
+    if isinstance(configured_agents, list):
+        for agent in configured_agents:
+            if not isinstance(agent, dict):
+                continue
+            try:
+                paths = agent_paths(config, agent)
+            except (TypeError, ValueError, UseAgentError):
+                continue
+            paths["directory"].mkdir(parents=True, exist_ok=True)
+            paths["inbox_dir"].mkdir(parents=True, exist_ok=True)
+            agent_id = str(agent.get("id", "agent"))
+            ensure_text_file(paths["inbox"], f"# INBOX - {agent_id}\n\n")
+            ensure_text_file(paths["report"], f"# REPORTS - {agent_id}\n\n")
+            ensure_text_file(paths["completed"], f"# COMPLETED - {agent_id}\n\n")
 
 
 def load_registry() -> dict[str, Any]:

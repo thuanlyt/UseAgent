@@ -145,7 +145,7 @@ not reopen OSBlog implementation work.
 | Shipped | Sanitized bounded evidence with an ignored local runtime spool (`UA-0051`). | Prevents raw runner/QA output from becoming repository evidence by default. |
 | Shipped | Source-bound QA and Git release durability (`UA-0052`–`UA-0053`). | Prevents a passing or completed state from being mistaken for verification of a different source snapshot. |
 | Shipped | Safe QA argv execution and bounded worker runtime readiness/failure classification (`UA-0054`–`UA-0055`). | Reduces shell ambiguity, blind dispatch and unsupported quota/auth guesses. |
-| Residual | Filesystem sandboxing, authenticated remote identity, stale-lock recovery, CI action SHA pinning, capture verification and cycle metrics remain backlog. | These are useful higher-assurance or operational improvements, but none is required to claim the trusted-local UseAgent dogfood closeout. |
+| Out of frozen scope | Filesystem sandboxing, authenticated remote identity, stale-lock recovery, CI action SHA pinning, capture verification and cycle metrics are not part of the frozen product surface. | These are higher-assurance or operational capabilities for a future owner-approved change, not promises of the current release. |
 
 ## OSBlog handover after closeout
 
@@ -156,8 +156,9 @@ backlog:
   release evidence, SSR/SEO/feed/media routes, local tests/build/typecheck/lint,
   audit, conformance replay, worker reports, reviews, quota failure and
   takeover history.
-- **Residual:** UA-0092 is planned, non-blocking documented-VPS portability
-  hardening. No live VPS is required for the case study.
+- **Boundary:** documented-VPS portability hardening was not required for the
+  Vercel-only production workload and is outside the frozen product surface.
+  No live VPS is required for the case study.
 - **Residual:** UA-0080 does not claim a positive historical `308` fixture
   because no production content was created solely for testing.
 - **Residual:** UA-0086 does not claim a fresh Cap capture; existing committed
@@ -220,10 +221,10 @@ trường live của OSBlog.
 
 Report freshness, evidence provenance, takeover lineage, evidence hygiene,
 source-bound QA, Git durability, safe QA và runtime readiness đã được đưa vào
-UseAgent qua UA-0048–UA-0055. Các khoảng trống còn lại gồm sandbox/diff
-enforcement, identity xác thực, stale-lock recovery, CI action SHA, capture
-verification và cycle metrics. Đây là backlog của UseAgent, không phải lý do để
-mở rộng lại OSBlog.
+UseAgent qua UA-0048–UA-0055. Các capability ngoài trust model hiện tại như
+sandbox/diff enforcement, identity xác thực, stale-lock recovery, CI action SHA,
+capture verification và cycle metrics không thuộc product surface đã freeze.
+Đây không phải lý do để mở rộng lại OSBlog.
 
 ## Source anchors
 
