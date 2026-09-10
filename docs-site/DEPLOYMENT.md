@@ -35,12 +35,17 @@ and [Cloudflare DNS records](https://developers.cloudflare.com/dns/manage-dns-re
 
 ## Search and sharing gate
 
-The confirmed primary origin is `https://useagent.thuanlyt.id.vn/`. Indexable
+The confirmed primary origin is `https://relwit.thuanlyt.id.vn/`. Indexable
 pages publish absolute canonical and language-alternate links for that origin;
 `robots.txt` points crawlers to `sitemap.xml`, which lists the six indexable
 routes, including the Vietnamese `/vi` entry point. Treat the primary origin as
 the only SEO source of truth and keep the
 `vercel.app` hostname as a deployment fallback.
+
+`https://useagent.thuanlyt.id.vn/` is the former UseAgent hostname, retained
+as a legacy compatibility endpoint. It may redirect to the canonical RelWit
+documentation origin above; treat it as a compatibility alias, never as a
+second SEO source of truth.
 
 ## Rollback
 
@@ -75,8 +80,13 @@ Không đoán domain, không lưu token trong repository. Khi có lỗi, promote
 deployment Vercel cuối cùng còn tốt hoặc revert commit, rồi ghi URL/SHA/evidence
 vào `work/SUPERVISOR_REPORT.md`.
 
-Hostname SEO chính đã xác nhận là `https://useagent.thuanlyt.id.vn/`. Các trang
+Hostname SEO chính đã xác nhận là `https://relwit.thuanlyt.id.vn/`. Các trang
 được index dùng canonical tuyệt đối và alternate EN/VI về hostname này;
 `robots.txt` trỏ tới `sitemap.xml` gồm sáu route indexable, trong đó có entry
 tiếng Việt `/vi`. Hostname
 `vercel.app` chỉ là fallback của deployment.
+
+`https://useagent.thuanlyt.id.vn/` là hostname UseAgent trước đây, được giữ
+lại như compatibility endpoint. Hostname này có thể redirect về canonical
+origin RelWit ở trên; coi đây là alias tương thích, không phải SEO source of
+truth thứ hai.

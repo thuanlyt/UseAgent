@@ -11,7 +11,7 @@ from xml.etree import ElementTree
 
 ROOT = Path(__file__).resolve().parents[2]
 SITE = ROOT / "docs-site"
-PRIMARY_ORIGIN = "https://useagent.thuanlyt.id.vn"
+PRIMARY_ORIGIN = "https://relwit.thuanlyt.id.vn"
 INDEXABLE_URLS = {
     "index.html": f"{PRIMARY_ORIGIN}/",
     "getting-started.html": f"{PRIMARY_ORIGIN}/getting-started",

@@ -25,7 +25,7 @@ search/menu enhancement, and Vercel can serve the output directly from its
 edge cache. This keeps the critical path small while preserving deep links,
 keyboard navigation and graceful behavior when JavaScript is unavailable.
 
-The confirmed SEO origin is `https://useagent.thuanlyt.id.vn/`. The six
+The confirmed SEO origin is `https://relwit.thuanlyt.id.vn/`. The six
 indexable pages publish absolute canonical and EN/VI alternate metadata;
 `robots.txt` references `sitemap.xml`. The `vercel.app` hostname remains a
 deployment fallback rather than a second SEO source of truth.

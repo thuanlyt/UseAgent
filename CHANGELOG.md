@@ -1,6 +1,33 @@
 # Changelog
 
-All notable changes to UseAgent are documented here.
+All notable changes to ReleaseWitness are documented here.
+
+## [0.2.0] - 2026-09-10
+
+Rebrand / identity migration release. ReleaseWitness is the renamed
+continuation of UseAgent; no orchestration feature milestone is introduced.
+
+- Renamed the project from UseAgent to **ReleaseWitness**; the short
+  developer-facing identity is **RelWit**.
+- Repository moved to `thuanlyt/releasewitness` (same repository, history,
+  stars, issues/PRs and historical tags/releases preserved; the previous
+  `thuanlyt/UseAgent` URL redirects).
+- CLI renamed from `useagent` to `relwit`; the Python package/module is now
+  `relwit` (`relwit.cli:main`, `python -m relwit`), replacing the former
+  `tools`-namespaced entry point.
+- Agent Skill renamed from `$useagent` to `$relwit` (and the paired
+  orchestrator/context/worker/review/autopilot skills).
+- Config file renamed from `useagent.config.json` to `relwit.config.json`.
+- Canonical docs hostname is now `https://relwit.thuanlyt.id.vn/`; the former
+  `https://useagent.thuanlyt.id.vn/` hostname is retained as a legacy
+  compatibility endpoint.
+- New generated work-item IDs use the `RW-####` prefix; existing historical
+  `UA-####` references (audit snapshots, the OSBlog case study) are
+  preserved unchanged.
+- Evidence provenance, source-bound QA, review verification, Git release
+  durability and provider-neutral telemetry behavior are unchanged.
+  Lightweight supervision remains an optional capability, not the product's
+  primary identity.
 
 ## [0.1.1] - 2026-09-08
 
@@ -41,5 +68,6 @@ Initial public release of UseAgent, a file-first multi-agent control plane for c
 - Practical Codex, Claude Code and Antigravity-style onboarding and conformance documentation.
 - Operations, autopilot, release-integrity and OSBlog dogfood case-study documentation.
 
+[0.2.0]: https://github.com/thuanlyt/releasewitness/releases/tag/v0.2.0
 [0.1.1]: https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.1
 [0.1.0]: https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.0

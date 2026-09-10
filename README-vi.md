@@ -36,16 +36,16 @@ runtime, không cố trở thành coding runtime.
 
 ## Phiên bản hiện tại
 
-**v0.1.1 — Distribution & Positioning Maintenance / Bảo trì phân phối và định vị**
-
-v0.1.1 là bản phát hành bảo trì công khai hiện tại, phát hành dưới tên
-UseAgent trước đây. Bản này không thêm feature set mới: nó làm sạch
-distribution public và đồng bộ dự án với định vị release-assurance. Feature
-set đã được freeze; thay đổi tương lai cần bug cụ thể, vấn đề bảo mật,
+**Phiên bản trong source hiện tại: v0.2.0 — Release Assurance, Rebranded.**
+v0.2.0 là rename/identity migration từ UseAgent sang ReleaseWitness/RelWit,
+không phải feature set mới; xem [CHANGELOG](CHANGELOG.md) để biết nội dung
+chính xác. Để xem bản phát hành công khai mới nhất, xem
+[GitHub Releases](https://github.com/thuanlyt/releasewitness/releases).
+Feature set vẫn freeze; thay đổi tương lai cần bug cụ thể, vấn đề bảo mật,
 evidence từ user bên ngoài hoặc quyết định rõ ràng của owner.
 
-- [Release notes](https://github.com/thuanlyt/releasewitness/releases/tag/v0.1.1) · [Tất cả bản phát hành](https://github.com/thuanlyt/releasewitness/releases)
-- [CHANGELOG](CHANGELOG.md) · [Tài liệu](https://useagent.thuanlyt.id.vn/) · [Hướng dẫn bắt đầu](docs/getting-started.md)
+- [Tất cả bản phát hành](https://github.com/thuanlyt/releasewitness/releases) · [CHANGELOG](CHANGELOG.md)
+- [Tài liệu](https://relwit.thuanlyt.id.vn/) · [Hướng dẫn bắt đầu](docs/getting-started.md)
 
 Repository public không đóng gói runtime history của maintainer. `work/` được
 `init` tạo local trong project đang được assurance.
@@ -239,7 +239,7 @@ ReleaseWitness là **miễn phí và mã nguồn mở**. Nếu dự án giúp b�
 </a>
 
 ### 🤝 Cộng đồng & Hỗ trợ
-- 📖 [Đọc tài liệu](https://useagent.thuanlyt.id.vn/)
+- 📖 [Đọc tài liệu](https://relwit.thuanlyt.id.vn/)
 - 🐛 [Báo lỗi](https://github.com/thuanlyt/releasewitness/issues)
 - 🌐 [Website ThuanLYT](https://thuanlyt.id.vn)
 

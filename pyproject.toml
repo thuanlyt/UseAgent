@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "relwit"
-version = "0.1.1"
+version = "0.2.0"
 description = "Source-bound evidence and release assurance for AI-written code"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -28,7 +28,7 @@ classifiers = [
 Homepage = "https://github.com/thuanlyt/releasewitness"
 Repository = "https://github.com/thuanlyt/releasewitness"
 Issues = "https://github.com/thuanlyt/releasewitness/issues"
-Documentation = "https://useagent.thuanlyt.id.vn/"
+Documentation = "https://relwit.thuanlyt.id.vn/"
 Changelog = "https://github.com/thuanlyt/releasewitness/blob/main/CHANGELOG.md"
 Releases = "https://github.com/thuanlyt/releasewitness/releases"
 

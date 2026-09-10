@@ -35,16 +35,15 @@ coding runtime rather than trying to become one.
 
 ## Current Release
 
-**v0.1.1 — Distribution & Positioning Maintenance**
+**Version in current source: v0.2.0 — Release Assurance, Rebranded.** v0.2.0
+is a rename/identity migration from UseAgent to ReleaseWitness/RelWit, not a
+new feature set; see [CHANGELOG](CHANGELOG.md) for its exact contents. For
+the latest published release, see [GitHub Releases](https://github.com/thuanlyt/releasewitness/releases).
+The feature set remains frozen; future changes require a concrete bug,
+security issue, real external-user evidence or an explicit owner decision.
 
-v0.1.1 is the current public maintenance release, published under the former
-UseAgent name. It adds no new feature set: it cleans the public distribution
-and aligns the project with its release-assurance positioning. The feature
-set is frozen; future changes require a concrete bug, security issue, real
-external-user evidence or an explicit owner decision.
-
-- [Release notes](https://github.com/thuanlyt/releasewitness/releases/tag/v0.1.1) · [All releases](https://github.com/thuanlyt/releasewitness/releases)
-- [CHANGELOG](CHANGELOG.md) · [Documentation](https://useagent.thuanlyt.id.vn/) · [Getting started](docs/getting-started.md)
+- [All releases](https://github.com/thuanlyt/releasewitness/releases) · [CHANGELOG](CHANGELOG.md)
+- [Documentation](https://relwit.thuanlyt.id.vn/) · [Getting started](docs/getting-started.md)
 
 The public repository does not ship a maintainer's runtime history. `work/`
 is generated locally by `init` in the project being assured.
@@ -246,7 +245,7 @@ us a ⭐ **Star** — it keeps the project alive and helps us ship more skills.
 </a>
 
 ### 🤝 Community & Support
-- 📖 [Read the Docs](https://useagent.thuanlyt.id.vn/)
+- 📖 [Read the Docs](https://relwit.thuanlyt.id.vn/)
 - 🐛 [Report an Issue](https://github.com/thuanlyt/releasewitness/issues)
 - 🌐 [ThuanLYT Website](https://thuanlyt.id.vn)
 
