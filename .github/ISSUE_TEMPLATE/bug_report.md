@@ -19,7 +19,7 @@ labels: bug
 
 - OS:
 - Python:
-- UseAgent commit/version:
+- ReleaseWitness commit/version:
 
 ## Logs and evidence
 

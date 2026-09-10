@@ -1,0 +1,4 @@
+interface:
+  display_name: "RelWit Worker"
+  short_description: "Implement one scoped work item"
+  default_prompt: "Use $relwit-worker to implement the assigned work item."

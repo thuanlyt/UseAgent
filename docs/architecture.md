@@ -1,20 +1,20 @@
-# UseAgent architecture / Kiến trúc UseAgent
+# ReleaseWitness architecture / Kiến trúc ReleaseWitness
 
 ## English
 
-UseAgent is a repository-local evidence and release-assurance layer for AI
+ReleaseWitness is a repository-local evidence and release-assurance layer for AI
 coding workflows. It does not replace the model, runtime or external
 orchestrator that plans and executes work. Lightweight supervision is an
 optional capability that makes relevant shared state explicit and reviewable.
 
-![UseAgent supervisor loop from user goal to worker evidence and checkpoint](../docs-site/assets/useagent-supervisor-loop.svg)
+![ReleaseWitness supervisor loop from user goal to worker evidence and checkpoint](../docs-site/assets/relwit-supervisor-loop.svg)
 
 *The visual summary: the supervisor turns one goal into scoped work, then uses
 reports, QA and checkpoints to choose the next safe cycle.*
 
 ### Layers
 
-1. **Assurance CLI** — `tools/useagent.py` validates evidence, review transitions, source-bound QA and Git release durability.
+1. **Assurance CLI** — `relwit/cli.py` validates evidence, review transitions, source-bound QA and Git release durability.
 2. **Optional supervision skills** — context, orchestration, worker implementation, review and autopilot provide narrow operating instructions when a project wants coordination.
 3. **Evidence ledger** — `knowledge/` and generated `work/` state keep provenance, handovers and checkpoints inspectable.
 4. **Knowledge ledger** — `knowledge/` stores compact, source-anchored context so agents do not reread unrelated files.
@@ -27,7 +27,7 @@ When optional supervision is enabled, `work/registry.json` is the machine-readab
 source of truth for task state. Each task also has
 `work/items/<task-id>.md` for readable acceptance criteria and handover. Markdown
 reports are append-oriented communication artifacts; they do not silently
-override the registry. A fresh UseAgent clone intentionally has no maintainer
+override the registry. A fresh ReleaseWitness clone intentionally has no maintainer
 task history; `init` creates empty local state in the project being assured.
 
 The CLI uses atomic replacement for files and a short-lived exclusive lock for
@@ -59,12 +59,12 @@ Deployment remains outside the CLI. A supervisor may recommend a release only af
 
 ## Tiếng Việt
 
-UseAgent là lớp evidence và release-assurance nằm trong repository. Nó không
+ReleaseWitness là lớp evidence và release-assurance nằm trong repository. Nó không
 thay thế model, runtime hay orchestrator bên ngoài lập kế hoạch và thực thi
 work. Supervisor nhẹ là capability tùy chọn để state cần thiết rõ ràng và có
 thể review.
 
-![Sơ đồ vòng lặp supervisor của UseAgent](../docs-site/assets/useagent-supervisor-loop.svg)
+![Sơ đồ vòng lặp supervisor của ReleaseWitness](../docs-site/assets/relwit-supervisor-loop.svg)
 
 *Sơ đồ chỉ để định hướng nhanh; contract và state thực tế vẫn nằm trong
 `knowledge/`, `work/` và CLI.*
@@ -83,7 +83,7 @@ thể review.
 Khi bật supervision, `work/registry.json` là nguồn sự thật dạng máy cho trạng
 thái task. Mỗi task có thêm `work/items/<task-id>.md` để người và model đọc
 acceptance criteria. Report Markdown là artifact giao tiếp; không được dùng để
-âm thầm ghi đè registry. Clone UseAgent mới không chứa task history của
+âm thầm ghi đè registry. Clone ReleaseWitness mới không chứa task history của
 maintainer; `init` tạo state local rỗng trong project được assurance.
 
 CLI ghi file theo cách atomic, dùng exclusive lock ngắn cho transition, giải

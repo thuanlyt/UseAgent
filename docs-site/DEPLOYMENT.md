@@ -1,11 +1,11 @@
-# UseAgent Docs hosting runbook
+# ReleaseWitness Docs hosting runbook
 
 This site is a static output under `docs-site/`. Hosting is deliberately a
 separate gate from local content work.
 
 ## Vercel preview
 
-1. Import `thuanlyt/UseAgent` into Vercel.
+1. Import `thuanlyt/releasewitness` into Vercel.
 2. Set the project root directory to `docs-site`.
 3. Use the Other/static framework preset. The checked-in `vercel.json` uses
    `python3 build.py --output dist` and publishes `dist`.
@@ -52,7 +52,7 @@ the only SEO source of truth and keep the
 - Record the deployment URL, commit SHA, issue and rollback decision in the
   supervisor report before continuing autopilot.
 
-No environment secret is needed for this static site. UseAgent must not store
+No environment secret is needed for this static site. ReleaseWitness must not store
 Cloudflare or Vercel tokens in the repository.
 
 ## Local preview evidence

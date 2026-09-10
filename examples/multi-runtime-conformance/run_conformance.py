@@ -2,7 +2,7 @@
 """Run a credential-free conformance check across three runtime identities.
 
 The identities model Codex, Claude Code and Google Antigravity sessions, but
-the harness deliberately calls only the public UseAgent CLI. This proves the
+the harness deliberately calls only the public ReleaseWitness CLI. This proves the
 shared-folder protocol and routing rules without pretending to test a vendor
 API or launch an external model.
 """
@@ -17,7 +17,7 @@ from pathlib import Path
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-CLI = REPOSITORY_ROOT / "tools" / "useagent.py"
+CLI = REPOSITORY_ROOT / "relwit" / "cli.py"
 
 RUNTIMES = (
     {
@@ -90,9 +90,9 @@ def simulated_runner_args(runtime: dict[str, str]) -> list[str]:
 
 def main() -> int:
     if not CLI.is_file():
-        raise RuntimeError(f"cannot find UseAgent CLI: {CLI}")
+        raise RuntimeError(f"cannot find ReleaseWitness CLI: {CLI}")
 
-    with tempfile.TemporaryDirectory(prefix="useagent-multi-runtime-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="relwit-multi-runtime-") as temporary:
         project_root = Path(temporary)
         run_cli(project_root, "init")
 
@@ -101,7 +101,7 @@ def main() -> int:
             source.parent.mkdir(parents=True, exist_ok=True)
             source.write_text(f"# simulated {runtime['label']} scope\n", encoding="utf-8")
 
-        config_path = project_root / "useagent.config.json"
+        config_path = project_root / "relwit.config.json"
         config = json.loads(config_path.read_text(encoding="utf-8"))
         config["supervisor"]["qa_commands"] = [
             {"mode": "argv", "argv": [sys.executable, "-c", "print('multi-runtime-qa-pass')"]}

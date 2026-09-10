@@ -1,8 +1,8 @@
-# UseAgent architecture
+# ReleaseWitness architecture
 
 ## Ý tưởng trung tâm
 
-UseAgent không cố biến nhiều agent thành nhiều process cùng ghi tự do. Nó cung cấp một control plane nhỏ gồm instruction, skill, knowledge ledger, work ledger và checkpoint. Shared folder là nơi các agent nhìn cùng một nguồn sự thật; quyền ghi được phân phối theo work item và scope.
+ReleaseWitness không cố biến nhiều agent thành nhiều process cùng ghi tự do. Nó cung cấp một control plane nhỏ gồm instruction, skill, knowledge ledger, work ledger và checkpoint. Shared folder là nơi các agent nhìn cùng một nguồn sự thật; quyền ghi được phân phối theo work item và scope.
 
 ```text
 User goal

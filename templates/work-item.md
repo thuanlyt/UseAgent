@@ -30,7 +30,7 @@ reports: []
 
 ## Worker report
 
-Use `python tools/useagent.py task report <id> --agent <agent> --result completed ...` so the designated Markdown mailbox and completed log are updated automatically.
+Use `python relwit/cli.py task report <id> --agent <agent> --result completed ...` so the designated Markdown mailbox and completed log are updated automatically.
 
 ## Blockers
 

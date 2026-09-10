@@ -1,0 +1,4 @@
+interface:
+  display_name: "RelWit Orchestrator"
+  short_description: "Decompose and coordinate multi-agent work"
+  default_prompt: "Use $relwit-orchestrator to decompose and coordinate this work."

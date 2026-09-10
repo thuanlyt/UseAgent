@@ -24,7 +24,7 @@ capture; this closeout does not claim a new Brave or Cap invocation.
 
 ## Local-only candidates
 
-These files were found in the OSBlog worktree but are not copied into UseAgent
+These files were found in the OSBlog worktree but are not copied into ReleaseWitness
 or promoted as public media:
 
 | Candidate | Classification | Handling |
@@ -48,7 +48,7 @@ performed. Do not infer content from filenames.
 - Screenshots whose visible content has not been reviewed.
 - Any file containing an admin email, password, session token, environment
   value, database URL or private customer data.
-- The UseAgent workflow animation under `draft/`: it is a labeled simulation,
+- The ReleaseWitness workflow animation under `draft/`: it is a labeled simulation,
   not OSBlog evidence.
 
 ## Re-capture checklist

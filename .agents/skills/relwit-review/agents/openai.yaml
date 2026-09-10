@@ -1,0 +1,4 @@
+interface:
+  display_name: "RelWit Review"
+  short_description: "Verify changes with evidence"
+  default_prompt: "Use $relwit-review to review and verify this work item."

@@ -5,7 +5,7 @@
 
 ## Decision
 
-UseAgent phát hành task vào mailbox Markdown cấu hình trong `useagent.config.json`, nhận report qua `task report`, rồi gom vào report trung tâm và completed log.
+ReleaseWitness phát hành task vào mailbox Markdown cấu hình trong `relwit.config.json`, nhận report qua `task report`, rồi gom vào report trung tâm và completed log.
 
 ## Why
 

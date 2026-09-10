@@ -1,5 +1,5 @@
 const docsIndex = [
-  { title: "Get started", description: "Set up UseAgent and run your first supervisor-to-worker handover.", href: "/getting-started" },
+  { title: "Get started", description: "Set up ReleaseWitness and run your first supervisor-to-worker handover.", href: "/getting-started" },
   { title: "Runtime roster", description: "Connect Codex, Claude Code, Antigravity or another compatible runtime.", href: "/getting-started#runtimes" },
   { title: "Architecture", description: "Understand the knowledge ledger, registry, mailbox and production gate.", href: "/architecture" },
   { title: "Worker loop", description: "Pull one task, implement in scope, report checks and continue the cycle.", href: "/operations#worker-loop" },

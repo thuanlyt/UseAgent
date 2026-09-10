@@ -1,6 +1,6 @@
-# UseAgent documentation site
+# ReleaseWitness documentation site
 
-This is a dependency-light static site for the UseAgent public documentation.
+This is a dependency-light static site for the ReleaseWitness public documentation.
 It intentionally uses plain HTML, CSS and browser JavaScript so the first
 preview is fast, inspectable and deployable to Vercel as static output.
 
@@ -34,10 +34,10 @@ deployment fallback rather than a second SEO source of truth.
 
 The local `assets/` directory contains the visual layer used by the site:
 
-- `useagent-control-plane-hero.webp` — optimized text-free hero and social image;
-- `useagent-supervisor-loop.svg` — goal → supervisor → worker → QA loop;
-- `useagent-shared-ledger.svg` — knowledge, work, evidence and checkpoint memory;
-- `useagent-runtime-handoff.svg` — Codex, Claude Code and Antigravity on one protocol.
+- `relwit-control-plane-hero.webp` — optimized text-free hero and social image;
+- `relwit-supervisor-loop.svg` — goal → supervisor → worker → QA loop;
+- `relwit-shared-ledger.svg` — knowledge, work, evidence and checkpoint memory;
+- `relwit-runtime-handoff.svg` — Codex, Claude Code and Antigravity on one protocol.
 
 Every page image has explicit `alt`, `width` and `height` attributes. The
 homepage hero is eager because it is above the fold; article diagrams are
@@ -48,7 +48,7 @@ is [ADR-0007](../knowledge/decisions/0007-visual-documentation-system.md).
 ## Design contract
 
 The persisted source of truth is
-`../design-system/useagent-docs/MASTER.md`, generated with the UI/UX Pro Max
+`../design-system/relwit-docs/MASTER.md`, generated with the UI/UX Pro Max
 design-system workflow. The current direction is Minimalism/Swiss: a system
 sans stack for body copy, a system mono stack for headings and code, a
 slate/blue high-contrast palette, restrained motion, visible keyboard focus

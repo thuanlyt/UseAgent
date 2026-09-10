@@ -1,21 +1,21 @@
-# UseAgent hands-on onboarding
+# ReleaseWitness hands-on onboarding
 
-This is the practical guide for a first-time user. UseAgent is primarily a
+This is the practical guide for a first-time user. ReleaseWitness is primarily a
 repo-local evidence and release-assurance layer; its lightweight supervisor
 workflow is optional. It answers four questions:
 
 1. Which agents can participate?
-2. What must be registered in `useagent.config.json`?
+2. What must be registered in `relwit.config.json`?
 3. What does the user actually type in Codex, Claude Code or Antigravity?
 4. Which Markdown files prove that work was assigned, reported and verified?
 
-> **Vietnamese / Tiếng Việt:** Nếu đây là lần đầu bạn dùng UseAgent, hãy làm đúng
+> **Vietnamese / Tiếng Việt:** Nếu đây là lần đầu bạn dùng ReleaseWitness, hãy làm đúng
 > ví dụ từ đầu đến cuối. Bạn không cần tự thiết kế DAG hoặc viết prompt task dài;
 > supervisor sẽ tạo assignment trong `work/outbox/`.
 
 ## 1. The mental model
 
-UseAgent has two kinds of identity:
+ReleaseWitness has two kinds of identity:
 
 - **Role**: what an agent does in the workflow: supervisor, explorer, planner,
   worker, reviewer or release gate.
@@ -26,7 +26,7 @@ The vendor is not the identity. A Codex session and a Claude Code session are
 both just workers if they are assigned implementation work. The supervisor uses
 the runtime identity to route a task to the right mailbox.
 
-![Codex, Claude Code and Antigravity sharing one assignment and report protocol](../docs-site/assets/useagent-runtime-handoff.svg)
+![Codex, Claude Code and Antigravity sharing one assignment and report protocol](../docs-site/assets/relwit-runtime-handoff.svg)
 
 *Different runtimes can join the same repository because the assignment,
 scope and report contract stays provider-neutral.*
@@ -63,16 +63,16 @@ register the worker sessions that really exist in your project.
 
 ### Runtime compatibility
 
-UseAgent is file-first and provider-neutral. A runtime is compatible when it can
+ReleaseWitness is file-first and provider-neutral. A runtime is compatible when it can
 open the same repository, read Markdown, run the CLI and write code only inside
 its assigned scope.
 
 | Runtime | How it fits | What the user must do |
 | --- | --- | --- |
-| Codex | Tightest integration. It can use `$useagent` / `$useagent-worker` and the optional `.codex/agents` profiles. | Open the repository as the workspace, give the worker its registered id, and let it pull/report through the CLI. |
-| Claude Code | Compatible through the same `AGENTS.md`, skills and Markdown protocol. UseAgent does not call the Anthropic API. | Start `claude` in the same control-plane root; explicitly tell it to read the UseAgent worker skill and pull its id. |
+| Codex | Tightest integration. It can use `$relwit` / `$relwit-worker` and the optional `.codex/agents` profiles. | Open the repository as the workspace, give the worker its registered id, and let it pull/report through the CLI. |
+| Claude Code | Compatible through the same `AGENTS.md`, skills and Markdown protocol. ReleaseWitness does not call the Anthropic API. | Start `claude` in the same control-plane root; explicitly tell it to read the ReleaseWitness worker skill and pull its id. |
 | Google Antigravity | Compatible through a local Project, shared files and the repository `.agents/skills` directory. | Add the repository as a Project, choose local/shared-folder mode for the simple setup, then give the agent the same worker prompt. |
-| Any other coding agent | Compatible if it has repository file access and a shell or equivalent way to run `tools/useagent.py`. | Use the generated `work/outbox/*-to-<agent-id>.md` prompt and preserve the report contract. |
+| Any other coding agent | Compatible if it has repository file access and a shell or equivalent way to run `relwit/cli.py`. | Use the generated `work/outbox/*-to-<agent-id>.md` prompt and preserve the report contract. |
 
 Claude.ai chat without local file and shell access is not a worker runtime. An
 Antigravity or other UI that cannot access the repository is also not enough;
@@ -85,7 +85,7 @@ Official runtime references: [Claude Code setup](https://docs.anthropic.com/en/d
 
 ## 2. Put the control plane around the target repository
 
-The canonical setup keeps the UseAgent source checkout or installed CLI
+The canonical setup keeps the ReleaseWitness source checkout or installed CLI
 separate from the application repository. `--root` points the generated
 evidence and optional coordination state at the target project:
 
@@ -94,15 +94,15 @@ F:\dev\DemoStore\
 ├── AGENTS.md
 ├── .agents\skills\
 ├── knowledge\
-├── tools\useagent.py
-├── useagent.config.json
+├── relwit\cli.py
+├── relwit.config.json
 └── work\
 ```
 
-Clone or install UseAgent once. For an existing project, copy or merge the
+Clone or install ReleaseWitness once. For an existing project, copy or merge the
 control-plane files from this repository into the application repository when
 you need the full optional workflow. Preserve the application's existing
-`AGENTS.md`, `knowledge/`, generated `work/` and `useagent.config.json` content;
+`AGENTS.md`, `knowledge/`, generated `work/` and `relwit.config.json` content;
 merge instructions and configuration instead of blindly overwriting them.
 `work/` is local runtime state and is intentionally not inherited from this
 public repository.
@@ -110,48 +110,48 @@ public repository.
 Then run these commands from the target repository root:
 
 ```powershell
-python tools/useagent.py init
-python tools/useagent.py validate
+relwit init
+relwit validate
 ```
 
-If the UseAgent CLI lives in a central checkout, pass the target repository
+If the ReleaseWitness CLI lives in a central checkout, pass the target repository
 explicitly. The target directory must already exist; `init` creates empty
 runtime state there and the CLI rebinds the registry, config, lock and every
 configured Markdown path to that root:
 
 ```powershell
-python F:\dev\UseAgent\tools\useagent.py --root F:\dev\DemoStore init
-python F:\dev\UseAgent\tools\useagent.py --root F:\dev\DemoStore validate
+python F:\dev\RelWit\relwit\cli.py --root F:\dev\DemoStore init
+python F:\dev\RelWit\relwit\cli.py --root F:\dev\DemoStore validate
 ```
 
 `--root` is accepted before the subcommand. Relative configured paths are
 resolved under the selected root and are rejected if they escape it. This is
-useful for a central CLI, but the target project still needs the UseAgent
+useful for a central CLI, but the target project still needs the ReleaseWitness
 control-plane files before `validate` can pass.
 
 If `validate` fails, fix the layout before registering workers. Do not start
 coding against a half-initialized registry.
 
-You can also install the CLI from a UseAgent checkout and invoke it from the
+You can also install the CLI from a ReleaseWitness checkout and invoke it from the
 target project:
 
 ```powershell
 python -m pip install --no-deps .
-useagent validate
+relwit validate
 ```
 
 The installed command uses the current directory as its default root. For a
-central CLI, use `useagent --root F:\dev\DemoStore validate`.
+central CLI, use `relwit --root F:\dev\DemoStore validate`.
 
-> **Tiếng Việt:** UseAgent hiện là control plane nằm trong repository. Vì vậy
-> hãy đặt `tools/useagent.py`, `.agents/skills/`, `knowledge/`, `work/`,
-> `AGENTS.md` và `useagent.config.json` trong thư mục gốc của dự án cần làm.
+> **Tiếng Việt:** ReleaseWitness hiện là control plane nằm trong repository. Vì vậy
+> hãy đặt `relwit/cli.py`, `.agents/skills/`, `knowledge/`, `work/`,
+> `AGENTS.md` và `relwit.config.json` trong thư mục gốc của dự án cần làm.
 > Nếu dự án đã có các file này, hãy merge nội dung; không ghi đè mù.
-> Nếu CLI nằm ở checkout trung tâm, dùng `python F:\dev\UseAgent\tools\useagent.py
+> Nếu CLI nằm ở checkout trung tâm, dùng `python F:\dev\RelWit\relwit\cli.py
 > --root F:\dev\DemoStore init`. Root phải tồn tại và mọi path cấu hình phải nằm
 > bên trong root đã chọn.
-> Có thể cài lệnh `useagent` bằng `python -m pip install --no-deps .`, sau đó
-> chạy `useagent validate` tại root dự án.
+> Có thể cài lệnh `relwit` bằng `python -m pip install --no-deps .`, sau đó
+> chạy `relwit validate` tại root dự án.
 
 ## 3. Complete example: Codex + Claude Code + Antigravity
 
@@ -169,7 +169,7 @@ The following example assumes:
 Run these commands once from `F:\dev\DemoStore`:
 
 ```powershell
-python tools/useagent.py agent register `
+relwit agent register `
   --id codex-api `
   --role worker `
   --scope src/backend `
@@ -177,7 +177,7 @@ python tools/useagent.py agent register `
   --capability python `
   --max-active 1
 
-python tools/useagent.py agent register `
+relwit agent register `
   --id claude-web `
   --role worker `
   --scope src/frontend `
@@ -185,7 +185,7 @@ python tools/useagent.py agent register `
   --capability web `
   --max-active 1
 
-python tools/useagent.py agent register `
+relwit agent register `
   --id antigravity-qa `
   --role worker `
   --scope tests/qa `
@@ -197,7 +197,7 @@ python tools/useagent.py agent register `
 Check the roster:
 
 ```powershell
-python tools/useagent.py agent list
+relwit agent list
 ```
 
 The names are arbitrary, but they must be unique and must match the session
@@ -210,7 +210,7 @@ worker its own id.
 Open the supervisor runtime in the target repository and send only this:
 
 ```text
-Use $useagent in F:\dev\DemoStore.
+Use $relwit in F:\dev\DemoStore.
 
 Goal: build a production-ready DemoStore web application with a Python backend,
 a web frontend, automated tests and operational documentation.
@@ -227,7 +227,7 @@ deploy, change secrets or delete data without my explicit approval.
 The supervisor should create work items and then run:
 
 ```powershell
-python tools/useagent.py supervisor cycle --run-qa
+relwit supervisor cycle --run-qa
 ```
 
 Inspect what was generated:
@@ -238,16 +238,16 @@ Get-Content work\SUPERVISOR_REPORT.md
 ```
 
 There should be one copyable prompt such as
-`work/outbox/UA-0001-to-codex-api.md` for every dispatched worker. The task id
+`work/outbox/RW-0001-to-codex-api.md` for every dispatched worker. The task id
 and exact acceptance criteria are in that file; do not invent a second prompt.
 
 ### Step B.5 — optionally automate the worker handoff
 
 Manual sessions can follow Step C. If a worker runtime has a local CLI or an
-adapter, configure it once so UseAgent can pull and invoke it automatically:
+adapter, configure it once so ReleaseWitness can pull and invoke it automatically:
 
 ```powershell
-python tools/useagent.py agent register --id codex-api --role worker `
+relwit agent register --id codex-api --role worker `
   --scope src/backend --scope tests/backend `
   --runner-arg=python `
   --runner-arg=tools/codex_worker_adapter.py `
@@ -255,12 +255,12 @@ python tools/useagent.py agent register --id codex-api --role worker `
   --runner-arg={assignment_path} `
   --runner-timeout 3600
 
-python tools/useagent.py worker run --agent codex-api --max-tasks 1
+relwit worker run --agent codex-api --max-tasks 1
 ```
 
 The runner is an argv list, not a shell string, and must contain the
 `{assignment_path}` placeholder. The adapter runs from the project root, reads
-the assignment, performs the work and submits `task report`. UseAgent records
+the assignment, performs the work and submits `task report`. ReleaseWitness records
 bounded sanitized runner evidence with a local diagnostic spool reference and
 creates a failed report if the adapter exits without one. An optional argv-only
 preflight can return `ready`, `unavailable`, `misconfigured`, `no_target` or
@@ -274,10 +274,10 @@ permission boundary. Keep `--max-tasks` and `--wait-seconds` finite.
 Open a separate Codex session in `F:\dev\DemoStore` and send:
 
 ```text
-Use $useagent-worker in F:\dev\DemoStore.
+Use $relwit-worker in F:\dev\DemoStore.
 You are the worker session codex-api. Read AGENTS.md, knowledge/INDEX.md and
 the generated assignment in work/agents/codex-api/inbox/.
-Run `python tools/useagent.py worker pull --agent codex-api`, implement only the
+Run `relwit worker pull --agent codex-api`, implement only the
 claimed scope, run every requested check, and report with `task report`.
 Do not edit another worker's scope. If the assignment is ambiguous or blocked,
 report `blocked` with the concrete reason instead of guessing.
@@ -288,7 +288,7 @@ The worker pull command changes the assigned task from `assigned` to
 the task id shown in that assignment:
 
 ```powershell
-python tools/useagent.py task report UA-XXXX `
+relwit task report RW-XXXX `
   --agent codex-api `
   --result completed `
   --summary "Backend slice implemented and verified" `
@@ -315,20 +315,20 @@ Send this prompt:
 ```text
 You are the worker session claude-web in this repository.
 Read AGENTS.md, knowledge/INDEX.md, and
-.agents/skills/useagent-worker/SKILL.md. Read the assignment in
+.agents/skills/relwit-worker/SKILL.md. Read the assignment in
 work/agents/claude-web/inbox/, then run:
 
-python tools/useagent.py worker pull --agent claude-web
+relwit worker pull --agent claude-web
 
 Implement only the claimed frontend scope. Run the requested checks and submit
-the result with `python tools/useagent.py task report <task-id> --agent claude-web ...`.
+the result with `relwit task report <task-id> --agent claude-web ...`.
 Never mark a task done by editing JSON; if blocked, report blocked with evidence.
 ```
 
 If Claude Code is not loading project instructions automatically, keep the
 explicit `AGENTS.md` and `SKILL.md` paths in the prompt. A project-level
 `CLAUDE.md` can also import the repository instructions, but it is an adapter
-convenience; the UseAgent source of truth remains `AGENTS.md`, the registry and
+convenience; the ReleaseWitness source of truth remains `AGENTS.md`, the registry and
 the Markdown contracts.
 
 ### Step E — start the Antigravity worker
@@ -343,10 +343,10 @@ In Antigravity 2.0 or the Antigravity IDE/CLI:
 ```text
 You are the worker session antigravity-qa in the attached project.
 Read AGENTS.md, knowledge/INDEX.md, and
-.agents/skills/useagent-worker/SKILL.md. Open and follow the assignment in
+.agents/skills/relwit-worker/SKILL.md. Open and follow the assignment in
 work/agents/antigravity-qa/inbox/. Then run:
 
-python tools/useagent.py worker pull --agent antigravity-qa
+relwit worker pull --agent antigravity-qa
 
 Work only inside the claimed tests/qa and docs/qa scope. Use browser evidence
 only when the assignment requests it. Run the requested checks and report with
@@ -355,7 +355,7 @@ the exact task id using `task report`. Do not deploy or change permissions.
 
 Antigravity can also load a skill directory through its SDK `skills_paths`; if
 you build a custom Antigravity runner, point it at
-`.agents/skills/useagent-worker` and keep the same CLI/report contract. The
+`.agents/skills/relwit-worker` and keep the same CLI/report contract. The
 runtime-specific tool surface may differ, but the mailbox protocol does not.
 
 ### Step F — let the supervisor close the loop
@@ -363,9 +363,9 @@ runtime-specific tool surface may differ, but the mailbox protocol does not.
 After workers report, return to the supervisor session and run:
 
 ```powershell
-python tools/useagent.py supervisor cycle --run-qa
+relwit supervisor cycle --run-qa
 Get-Content work\SUPERVISOR_REPORT.md
-python tools/useagent.py task list
+relwit task list
 ```
 
 The supervisor ingests reports, checks acceptance and evidence, runs configured
@@ -398,7 +398,7 @@ and checkpoint. It does not call Codex, Claude, Antigravity or any external
 service. A successful run prints:
 
 ```text
-PASS: UA-0001 assignment -> pull -> report -> ingest -> QA -> checkpoint
+PASS: RW-0001 assignment -> pull -> report -> ingest -> QA -> checkpoint
 ```
 
 This is a protocol smoke test, not a substitute for application tests or a
@@ -447,9 +447,9 @@ Do not make a worker write directly to another worker's mailbox. Use
 
 ## 5. Shared folder or Git worktree?
 
-UseAgent is not a worktree manager or multi-branch concurrency engine. An
+ReleaseWitness is not a worktree manager or multi-branch concurrency engine. An
 external orchestrator may own branches, worktrees and parallel execution;
-UseAgent can verify the resulting repository state. The choice below applies
+ReleaseWitness can verify the resulting repository state. The choice below applies
 only when you enable its optional shared-folder supervision workflow.
 
 ### Recommended first setup: one shared folder
@@ -478,8 +478,8 @@ use the shared folder and narrow scopes.
 ### `NO_TASK`
 
 The id has no assigned task. Return to the supervisor and run
-`python tools/useagent.py supervisor cycle`, then check
-`work/outbox/` and `python tools/useagent.py agent list`.
+`relwit supervisor cycle`, then check
+`work/outbox/` and `relwit agent list`.
 
 ### Scope conflict
 
@@ -496,9 +496,9 @@ Only a registered `supervisor`, `reviewer` or `release_gate` identity may record
 review evidence or move a reported task through the release gate:
 
 ```powershell
-python tools/useagent.py task evidence UA-0001 --kind review --agent reviewer --value "Diff and QA pass"
-python tools/useagent.py task update UA-0001 --status needs_review --agent reviewer
-python tools/useagent.py task update UA-0001 --status done --agent reviewer
+relwit task evidence RW-0001 --kind review --agent reviewer --value "Diff and QA pass"
+relwit task update RW-0001 --status needs_review --agent reviewer
+relwit task update RW-0001 --status done --agent reviewer
 ```
 
 The assigned worker can report completion and test evidence, but cannot
@@ -531,12 +531,12 @@ updates require a review-capable identity. Claims and pulls also require the
 agent to be `available`, below `max_active`, and eligible for the task scope
 and capabilities.
 
-### The runtime cannot find `$useagent-worker`
+### The runtime cannot find `$relwit-worker`
 
 Use the direct path instead:
 
 ```text
-Read .agents/skills/useagent-worker/SKILL.md and follow it.
+Read .agents/skills/relwit-worker/SKILL.md and follow it.
 ```
 
 The skill name is a convenience; the Markdown file and CLI protocol are the
@@ -544,7 +544,7 @@ portable contract.
 
 ### The automatic path is opt-in
 
-UseAgent does not guess how to launch arbitrary external models from a
+ReleaseWitness does not guess how to launch arbitrary external models from a
 filesystem. By default it creates durable assignments for a native Codex
 subagent, Claude Code session, Antigravity agent, another runner or a human to
 execute. If you explicitly configure an argv runner for an agent, bounded
@@ -555,8 +555,8 @@ must submit the report through the CLI.
 ## 7. First-run checklist
 
 ```text
-[ ] UseAgent control-plane files are in the target repository root.
-[ ] `python tools/useagent.py validate` returns VALID.
+[ ] ReleaseWitness control-plane files are in the target repository root.
+[ ] `relwit validate` returns VALID.
 [ ] Supervisor has a light goal and the real worker roster.
 [ ] Each worker has a unique id, role, capability and non-overlapping scope.
 [ ] Supervisor has run one bounded `supervisor cycle`.
@@ -570,9 +570,9 @@ must submit the report through the CLI.
 
 ## Hướng dẫn thao tác thực tế bằng tiếng Việt
 
-### UseAgent hỗ trợ những agent nào?
+### ReleaseWitness hỗ trợ những agent nào?
 
-UseAgent không khóa vào một nhà cung cấp model. Nó hỗ trợ mọi runtime có thể
+ReleaseWitness không khóa vào một nhà cung cấp model. Nó hỗ trợ mọi runtime có thể
 truy cập cùng repository, đọc/ghi Markdown, chạy lệnh và tuân thủ scope. Các
 role chuẩn là:
 
@@ -591,7 +591,7 @@ Code làm frontend worker và Antigravity làm QA worker trong cùng một dự 
 
 ### Người dùng phải làm gì?
 
-1. Đặt control plane của UseAgent trong root của repository dự án.
+1. Đặt control plane của ReleaseWitness trong root của repository dự án.
 2. Chạy `init` và `validate`.
 3. Đăng ký từng session thật bằng một id duy nhất.
 4. Gửi một goal ngắn cho supervisor.
@@ -605,7 +605,7 @@ Code làm frontend worker và Antigravity làm QA worker trong cùng một dự 
 Bạn không cần tự viết lại prompt assignment. Prompt đầy đủ nằm trong
 `work/outbox/`; phần prompt mẫu ở trên chỉ là “bootstrap” để runtime biết phải
 đọc file nào và dùng worker id nào. Với runner đã cấu hình, adapter nhận
-`{assignment_path}`. UseAgent tự ghi runner summary đã sanitize, kèm local spool
+`{assignment_path}`. ReleaseWitness tự ghi runner summary đã sanitize, kèm local spool
 reference, và tạo failed report nếu adapter không report. Preflight argv-only tùy
 chọn phải trả về trạng thái rõ ràng; chỉ `ready` mới cho task chuyển sang
 `in_progress`.
@@ -646,17 +646,17 @@ trong `work/outbox/` và để session thật chạy cùng chu trình pull/repor
 ### Nếu dùng cả Codex, Claude và Antigravity
 
 - **Codex:** mở hai session trở lên trong cùng project: một supervisor và các
-  worker. Dùng `$useagent` cho supervisor, `$useagent-worker` cho worker. Các
+  worker. Dùng `$relwit` cho supervisor, `$relwit-worker` cho worker. Các
   profile role mẫu nằm trong `.codex/agents/`.
 - **Claude Code:** mở `claude` trong đúng repository local, không dùng Claude.ai
   chat làm worker. Nếu skill alias không được nhận, yêu cầu đọc trực tiếp
-  `.agents/skills/useagent-worker/SKILL.md`, rồi chạy CLI.
+  `.agents/skills/relwit-worker/SKILL.md`, rồi chạy CLI.
 - **Antigravity:** tạo Project trỏ đến đúng thư mục repository, chọn local mode
   cho mô hình shared-folder đơn giản, mở agent và đưa prompt worker trực tiếp.
   Với SDK, cấu hình `skills_paths` trỏ vào thư mục skill.
 
 Tất cả runtime phải dùng chung các file `work/`. Không cho hai worker cùng sửa
-một file; UseAgent sẽ từ chối active-writer scope bị chồng lấn.
+một file; ReleaseWitness sẽ từ chối active-writer scope bị chồng lấn.
 
 ### Khi nào người dùng cần can thiệp?
 
@@ -668,10 +668,10 @@ hữu hạn và luôn ghi lại next action trong `work/SUPERVISOR_REPORT.md`.
 ### Lệnh kiểm tra tối thiểu
 
 ```powershell
-python tools/useagent.py validate
-python tools/useagent.py agent list
-python tools/useagent.py supervisor cycle --run-qa
-python tools/useagent.py task list
+relwit validate
+relwit agent list
+relwit supervisor cycle --run-qa
+relwit task list
 Get-Content work\SUPERVISOR_REPORT.md
 ```
 

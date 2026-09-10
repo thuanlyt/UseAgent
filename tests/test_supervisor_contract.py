@@ -6,13 +6,13 @@ from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = REPOSITORY_ROOT / "knowledge" / "contracts" / "supervisor-judgment.md"
-FRONT_DOOR = REPOSITORY_ROOT / ".agents" / "skills" / "useagent" / "SKILL.md"
+FRONT_DOOR = REPOSITORY_ROOT / ".agents" / "skills" / "relwit" / "SKILL.md"
 SUPERVISOR_REFERENCE = (
-    REPOSITORY_ROOT / ".agents" / "skills" / "useagent" / "references" / "supervisor-contract.md"
+    REPOSITORY_ROOT / ".agents" / "skills" / "relwit" / "references" / "supervisor-contract.md"
 )
-ORCHESTRATOR = REPOSITORY_ROOT / ".agents" / "skills" / "useagent-orchestrator" / "SKILL.md"
-AUTOPILOT = REPOSITORY_ROOT / ".agents" / "skills" / "useagent-autopilot" / "SKILL.md"
-REVIEW = REPOSITORY_ROOT / ".agents" / "skills" / "useagent-review" / "SKILL.md"
+ORCHESTRATOR = REPOSITORY_ROOT / ".agents" / "skills" / "relwit-orchestrator" / "SKILL.md"
+AUTOPILOT = REPOSITORY_ROOT / ".agents" / "skills" / "relwit-autopilot" / "SKILL.md"
+REVIEW = REPOSITORY_ROOT / ".agents" / "skills" / "relwit-review" / "SKILL.md"
 PROTOCOL = REPOSITORY_ROOT / "knowledge" / "contracts" / "supervisor-protocol.md"
 README_EN = REPOSITORY_ROOT / "README.md"
 README_VI = REPOSITORY_ROOT / "README-vi.md"

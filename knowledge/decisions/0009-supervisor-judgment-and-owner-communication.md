@@ -7,7 +7,7 @@
 
 ## Context
 
-The existing UseAgent supervisor contract covered planning, dispatch, evidence,
+The existing ReleaseWitness supervisor contract covered planning, dispatch, evidence,
 review, QA and release gates, but treated owner proposals, preferences,
 constraints, tradeoffs and stop decisions implicitly. That encouraged checklist
 completion and made it harder to preserve decision quality across cycles.

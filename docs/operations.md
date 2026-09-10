@@ -1,21 +1,21 @@
-# UseAgent operations
+# ReleaseWitness operations
 
 ## Install the CLI
 
-UseAgent can run directly from a checkout, or as an installed console command:
+ReleaseWitness can run directly from a checkout, or as an installed console command:
 
 ```powershell
 python -m pip install --no-deps .
-useagent --help
-useagent validate
+relwit --help
+relwit validate
 ```
 
 The installed command uses the current directory as its default project root.
 To operate on another prepared repository, pass the root before the command:
 
 ```powershell
-useagent --root F:\dev\DemoStore validate
-useagent --root F:\dev\DemoStore supervisor cycle --run-qa
+relwit --root F:\dev\DemoStore validate
+relwit --root F:\dev\DemoStore supervisor cycle --run-qa
 ```
 
 The package has no runtime dependencies. Python 3.11 or newer is required;
@@ -24,7 +24,7 @@ the build backend is used only during installation.
 ## Tạo task
 
 ```powershell
-python tools/useagent.py task new `
+relwit task new `
   --title "Implement feature X" `
   --level L1 `
   --owner worker `
@@ -38,14 +38,14 @@ Task được tạo ở `planned`. Planner nên tách dependency trước khi gi
 ## Đăng ký worker và tự dispatch
 
 ```powershell
-python tools/useagent.py agent register --id backend --role worker --scope src/backend --scope tests --capability python
-python tools/useagent.py agent register --id frontend --role worker --scope src/frontend --scope tests --capability web
-python tools/useagent.py supervisor cycle
+relwit agent register --id backend --role worker --scope src/backend --scope tests --capability python
+relwit agent register --id frontend --role worker --scope src/frontend --scope tests --capability web
+relwit supervisor cycle
 ```
 
 `supervisor cycle` tìm task ready, tự chọn worker còn rảnh theo scope/capability, ghi assignment vào `work/agents/<id>/inbox/`, cập nhật `INBOX.md`, và tạo prompt gửi ngoài phiên tại `work/outbox/`. Nếu Codex có subagent runtime, supervisor nên spawn worker trực tiếp; nếu không, gửi file outbox cho agent tương ứng.
 
-![UseAgent shared repository ledger for knowledge, work and evidence](../docs-site/assets/useagent-shared-ledger.svg)
+![ReleaseWitness shared repository ledger for knowledge, work and evidence](../docs-site/assets/relwit-shared-ledger.svg)
 
 *The repository is the shared memory: agents read compact context before code,
 then leave reports, evidence and checkpoints for the next supervisor cycle.*
@@ -53,7 +53,7 @@ then leave reports, evidence and checkpoints for the next supervisor cycle.*
 Có thể chỉ định file Markdown riêng cho từng worker:
 
 ```powershell
-python tools/useagent.py agent register --id qaagent --directory work/qaagent `
+relwit agent register --id qaagent --directory work/qaagent `
   --inbox-file work/mail/qa-inbox.md `
   --report-file work/mail/qa-report.md `
   --completed-file work/mail/qa-completed.md
@@ -64,7 +64,7 @@ python tools/useagent.py agent register --id qaagent --directory work/qaagent `
 For a runtime that has a local CLI or adapter, register an argv-only runner once:
 
 ```powershell
-python tools/useagent.py agent register --id codex-api --role worker `
+relwit agent register --id codex-api --role worker `
   --scope src/backend --scope tests/backend `
   --runner-arg=python `
   --runner-arg=tools/codex_worker_adapter.py `
@@ -76,24 +76,24 @@ python tools/useagent.py agent register --id codex-api --role worker `
 Then run a bounded intake window:
 
 ```powershell
-python tools/useagent.py worker run --agent codex-api --max-tasks 3 --wait-seconds 300
+relwit worker run --agent codex-api --max-tasks 3 --wait-seconds 300
 ```
 
 The runner receives the generated assignment path and runs with the project
-root as its working directory. It must use `task report`; UseAgent writes a
+root as its working directory. It must use `task report`; ReleaseWitness writes a
 bounded, sanitized summary to `work/evidence/`, while a separate bounded,
 redacted local diagnostic spool is stored under `work/.runtime-output/`. The
 durable summary records `local_spool`, `provenance`, stream sizes, redaction
 counts and an explicit truncation flag. The spool is ignored by Git and is the
 place to inspect bounded diagnostic output; raw runtime output is never
-treated as committable evidence by default. UseAgent automatically writes a
+treated as committable evidence by default. ReleaseWitness automatically writes a
 failed worker report if the process exits without reporting. `worker pull`
 remains the manual path. No command is executed unless a runner is explicitly
 configured; the command is an argv list and is never passed through a shell.
 
 The adapter is the provider-specific boundary. Codex can wrap its installed
 CLI, Claude Code can wrap `claude` from a local checkout, and Antigravity can
-wrap an SDK/local Project runner. UseAgent intentionally does not guess vendor
+wrap an SDK/local Project runner. ReleaseWitness intentionally does not guess vendor
 flags or call vendor APIs. Test the adapter with one task before increasing
 `--max-tasks`; `worker run` defaults to one task and never runs forever.
 
@@ -124,12 +124,12 @@ An adapter can add a bounded argv-only preflight to its runner configuration:
 The preflight must print one complete JSON object, for example:
 
 ```json
-{"useagent_preflight":1,"state":"ready","reason":"local prerequisites available"}
+{"relwit_preflight":1,"state":"ready","reason":"local prerequisites available"}
 ```
 
 Valid states are `ready`, `unavailable`, `misconfigured`, `no_target` and
 `unknown`. `ready` confirms only adapter prerequisites; it cannot prove model
-quota. UseAgent runs the probe with `shell=False` and a bounded timeout before
+quota. ReleaseWitness runs the probe with `shell=False` and a bounded timeout before
 pulling the task into `in_progress`. A failed probe keeps the task `assigned`,
 records sanitized metadata plus a local diagnostic spool reference, and prints
 a finite disposition such as `retry`, `reassign` or `needs_input`.
@@ -138,20 +138,20 @@ After a runner starts, an adapter may provide authoritative machine-readable
 failure metadata:
 
 ```json
-{"useagent_runtime_result":1,"failure_class":"quota_limited","authoritative":true,"disposition":"needs_input"}
+{"relwit_runtime_result":1,"failure_class":"quota_limited","authoritative":true,"disposition":"needs_input"}
 ```
 
 Supported classes include `unavailable`, `no_target`, `misconfigured`,
 `auth_error`, `quota_limited`, `timeout`, `runtime_error` and `unknown`.
 `quota_limited` and `auth_error` require `authoritative: true`; human-readable
-provider text is never parsed as proof. UseAgent records the classification and
+provider text is never parsed as proof. ReleaseWitness records the classification and
 recommended disposition but does not retry forever or create a takeover task
 automatically. Raw stdout/stderr remains bounded and redacted in the ignored
 `work/.runtime-output/` spool; repository evidence contains only safe summaries.
 
 ### Usage telemetry and execution summaries
 
-UseAgent records metadata-only execution events in the Git-ignored
+ReleaseWitness records metadata-only execution events in the Git-ignored
 `work/telemetry/events.json`. Assignment, task attempt/report and supervisor
 cycle hooks record UTC timestamps, measured wall duration, runner execution
 duration (when an automatic runner exists), actual participants and retry/
@@ -164,7 +164,7 @@ Token usage is accepted only from a complete machine-readable adapter envelope:
 
 ```json
 {
-  "useagent_usage": 1,
+  "relwit_usage": 1,
   "authoritative": true,
   "provider": "provider-name",
   "runtime": "runtime-name",
@@ -186,10 +186,10 @@ Record an explicit event when an adapter has authoritative usage that is not
 available through the automatic runner:
 
 ```powershell
-python tools/useagent.py telemetry record --kind task --id UA-0001 `
-  --event-id task:UA-0001:attempt:1 --agent worker-a --outcome completed `
-  --usage-json '{"useagent_usage":1,"authoritative":true,"total_tokens":1400}'
-python tools/useagent.py telemetry summary
+relwit telemetry record --kind task --id RW-0001 `
+  --event-id task:RW-0001:attempt:1 --agent worker-a --outcome completed `
+  --usage-json '{"relwit_usage":1,"authoritative":true,"total_tokens":1400}'
+relwit telemetry summary
 ```
 
 The supervisor report renders a concise Usage section with wall time, worker
@@ -210,11 +210,11 @@ prose provider, không lưu prompt/response/credential. Thiếu hoặc mơ hồ 
 ## Claim và thực thi
 
 ```powershell
-python tools/useagent.py worker pull --agent backend
-python tools/useagent.py context --task UA-0001
-python tools/useagent.py task report UA-0001 --agent backend --result completed --summary "Implementation complete" --next-action "Review and QA" --file src/backend/x.py --check "python -m unittest: pass"
-python tools/useagent.py worker run --agent backend --max-tasks 1
-python tools/useagent.py supervisor cycle --run-qa
+relwit worker pull --agent backend
+relwit context --task RW-0001
+relwit task report RW-0001 --agent backend --result completed --summary "Implementation complete" --next-action "Review and QA" --file src/backend/x.py --check "python -m unittest: pass"
+relwit worker run --agent backend --max-tasks 1
+relwit supervisor cycle --run-qa
 ```
 
 Worker report tự ghi vào `work/agents/backend/REPORT.md`, `work/reports/inbox/`, `work/reports/REPORTS.md` và `work/completed/COMPLETED.md`. Reviewer kiểm tra diff và evidence, sau đó cập nhật `needs_review`/`done`. Chỉ identity có role `supervisor`, `reviewer` hoặc `release_gate` được làm review; worker không thể tự approve hoặc tự close task.
@@ -238,7 +238,7 @@ Evidence mới nên gắn nhãn để supervisor không nhầm bản replay ho�
 với quan sát production:
 
 ```powershell
-python tools/useagent.py task evidence UA-0001 `
+relwit task evidence RW-0001 `
   --kind smoke `
   --value "Vercel primary returned 200" `
   --provenance live `
@@ -246,7 +246,7 @@ python tools/useagent.py task evidence UA-0001 `
 ```
 
 ```powershell
-python tools/useagent.py task report UA-0001 --agent backend `
+relwit task report RW-0001 --agent backend `
   --result completed `
   --summary "Local implementation complete" `
   --next-action "Review and QA" `
@@ -270,13 +270,13 @@ Khi một lần thử đã `blocked` hoặc `cancelled`, supervisor có thể t�
 takeover mới mà không xóa failure history:
 
 ```powershell
-python tools/useagent.py task new `
+relwit task new `
   --title "Retry the blocked integration" `
   --level L2 `
   --owner supervisor `
   --scope src/integration.py `
   --acceptance "integration test passes" `
-  --supersedes UA-0042 `
+  --supersedes RW-0042 `
   --takeover-reason "Use a bounded fallback after the preserved blocker"
 ```
 
@@ -303,9 +303,9 @@ trong scope/capability đã đăng ký.
 Quy trình review tối thiểu:
 
 ```powershell
-python tools/useagent.py task evidence UA-0001 --kind review --agent reviewer --value "Diff, tests and security checks pass"
-python tools/useagent.py task update UA-0001 --status needs_review --agent reviewer
-python tools/useagent.py task update UA-0001 --status done --agent reviewer
+relwit task evidence RW-0001 --kind review --agent reviewer --value "Diff, tests and security checks pass"
+relwit task update RW-0001 --status needs_review --agent reviewer
+relwit task update RW-0001 --status done --agent reviewer
 ```
 
 `reviewer` phải là agent đã đăng ký trong roster và review value phải mô tả
@@ -322,14 +322,14 @@ báo xong, không phải production-ready.
 ## Supervisor cycle và QA
 
 ```powershell
-python tools/useagent.py supervisor ingest
-python tools/useagent.py supervisor report
-python tools/useagent.py supervisor qa
-python tools/useagent.py supervisor cycle --retry-blocked --run-qa
+relwit supervisor ingest
+relwit supervisor report
+relwit supervisor qa
+relwit supervisor cycle --retry-blocked --run-qa
 ```
 
 Khai báo `supervisor.qa_commands` dạng mảng command object trong
-`useagent.config.json`. Mặc định dùng `mode: "argv"`; mỗi phần tử trong `argv`
+`relwit.config.json`. Mặc định dùng `mode: "argv"`; mỗi phần tử trong `argv`
 là một argument thực, không được phân tích lại bằng shell:
 
 ```json
@@ -342,7 +342,7 @@ là một argument thực, không được phân tích lại bằng shell:
       },
       {
         "mode": "argv",
-        "argv": ["python", "tools/useagent.py", "validate"]
+        "argv": ["python", "relwit/cli.py", "validate"]
       }
     ]
   }
@@ -352,15 +352,15 @@ là một argument thực, không được phân tích lại bằng shell:
 Nếu thật sự cần shell syntax, phải ghi rõ capability trusted-local bằng object
 `{"mode": "shell", "command": "..."}`. Shell mode được chạy với
 `shell=True`, nên chỉ phù hợp với cấu hình do operator/repository tin cậy kiểm
-soát; UseAgent là control plane phối hợp, không phải sandbox OS. Không dùng
+soát; ReleaseWitness là control plane phối hợp, không phải sandbox OS. Không dùng
 chuỗi command legacy: validator sẽ từ chối chúng thay vì đoán cách tách quote,
 pipe, redirect hoặc metacharacter. Hãy migrate mỗi chuỗi sang `argv` (khuyến
 nghị) hoặc chuyển có chủ ý sang `mode: "shell"`.
 
 QA lưu execution mode trong kết quả và evidence. Thay đổi `argv`, `mode`,
 timeout hoặc QA/release configuration làm thay đổi fingerprint hiện có của
-UA-0052; QA cũ sẽ thành `QA_STALE` và phải chạy lại. Cả hai mode vẫn dùng
-budget, redaction và local spool của UA-0051.
+RW-0052; QA cũ sẽ thành `QA_STALE` và phải chạy lại. Cả hai mode vẫn dùng
+budget, redaction và local spool của RW-0051.
 
 QA output follows the same evidence boundary as runner output. Each stdout and
 stderr stream has a deterministic 4,000-character durable preview budget;
@@ -378,7 +378,7 @@ The configured `release_source.volatile_paths` are excluded so registry,
 reports, checkpoints, evidence, runtime spool and other control-plane updates
 do not invalidate a fresh QA result. A missing or mismatched fingerprint is
 `QA_STALE`; the production snapshot rejects it and does not rerun QA
-automatically. Run `python tools/useagent.py supervisor qa` again after a
+automatically. Run `relwit supervisor qa` again after a
 source, test or QA/release configuration change.
 
 ### Local release durability / Độ bền source local
@@ -409,13 +409,13 @@ chỉ là convenience view; mỗi report được sinh bởi CLI đều chứa r
 của registry snapshot đã dùng. Kiểm tra report hiện tại mà không ghi lại file:
 
 ```powershell
-python tools/useagent.py supervisor report --check
+relwit supervisor report --check
 ```
 
 Lệnh trả `freshness=fresh` và exit code `0` chỉ khi marker khớp registry hiện tại.
 `stale`, `unknown` (marker thiếu/hỏng) hoặc `missing` đều trả exit code `1`; khi đó
 không được dùng report như trạng thái hiện tại, hãy đọc registry/task evidence hoặc
-chạy lại `python tools/useagent.py supervisor report`.
+chạy lại `relwit supervisor report`.
 
 `context` cũng gắn nhãn freshness và cảnh báo khi report không còn hiện tại.
 
@@ -426,7 +426,7 @@ Tóm tắt bằng task id, trạng thái, file, command/evidence, blocker và ne
 ## Kiểm tra toàn hệ thống
 
 ```powershell
-python tools/useagent.py validate
+relwit validate
 python -m unittest discover -s tests -v
 ```
 

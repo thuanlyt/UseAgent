@@ -1,0 +1,4 @@
+interface:
+  display_name: "RelWit Autopilot"
+  short_description: "Continue long-running work safely"
+  default_prompt: "Use $relwit-autopilot to continue this project through its next safe checkpoint."

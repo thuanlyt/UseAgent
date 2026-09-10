@@ -1,1 +1,1 @@
-"""Tests for the UseAgent control plane."""
+"""Tests for the ReleaseWitness control plane."""

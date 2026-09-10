@@ -1,13 +1,13 @@
 # OSBlog dogfooding case study
 
-> Evidence-backed closeout of a real UseAgent run. Evidence freeze: 2026-09-06.
+> Evidence-backed closeout of a real ReleaseWitness run. Evidence freeze: 2026-09-06.
 > The source workload was `thuanlyt/osblog`; its local checkout was
 > `F:\dev\test-useagent` at commit `ea08ab3`. No secrets, credentials or raw
 > browser profiles were copied into this repository.
 
 ## Why this case study exists
 
-OSBlog was the real-world workload used to exercise UseAgent beyond a toy
+OSBlog was the real-world workload used to exercise ReleaseWitness beyond a toy
 fixture. The goal was an open-source, bilingual Markdown blog with a Vite +
 React + TypeScript application, Neon/Postgres persistence, Better Auth admin
 access, moderated email-only comments, SSR SEO, feeds, media and a Vercel
@@ -70,7 +70,7 @@ Each row points to the OSBlog artifact that supports the statement.
 | 2026-09-04 19:57–20:13 | Runtime unavailability and safe fallback | Antigravity/Claude were not callable in that environment. Failed fallback attempts were cancelled or preserved, then supervisor-local recovery created a real conformance replay with explicit simulation labels. [`UA-0010`](https://github.com/thuanlyt/osblog/blob/main/work/items/UA-0010.md), [`UA-0014`](https://github.com/thuanlyt/osblog/blob/main/work/items/UA-0014.md), [`UA-0016 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0016-20260904T201341Z-be5f48.md) |
 | 2026-09-04 20:20–21:17 | Local implementation wave | The scaffold, persistence boundary, admin auth, content API, comments, SSR/SEO and public flow were delivered as separate scoped items with local evidence. [`UA-0020`](https://github.com/thuanlyt/osblog/blob/main/work/items/UA-0020.md), [`UA-0024`](https://github.com/thuanlyt/osblog/blob/main/work/items/UA-0024.md), [`UA-0026`](https://github.com/thuanlyt/osblog/blob/main/work/items/UA-0026.md), [`UA-0028`](https://github.com/thuanlyt/osblog/blob/main/work/items/UA-0028.md), [`UA-0030`](https://github.com/thuanlyt/osblog/blob/main/work/items/UA-0030.md), [`UA-0033`](https://github.com/thuanlyt/osblog/blob/main/work/items/UA-0033.md), [`UA-0034`](https://github.com/thuanlyt/osblog/blob/main/work/items/UA-0034.md) |
 | 2026-09-05 06:51 | Independent correctness audit | Astra reproduced four application defects: partial PATCH unpublishing, malformed cover URL SSR failure, dropped renewed auth cookies and a chunked-body timeout. [`UA-0048 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0048-20260905T065104Z-9a279f.md) |
-| 2026-09-05 07:30–08:08 | Fix and independent re-review | Claude fixed the four findings with regressions; Astra re-ran runtime/lifecycle controls and preserved two UseAgent lifecycle P2 findings instead of declaring a clean slate. [`UA-0052 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0052-20260905T073012Z-f4a8c1.md), [`UA-0058 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0058-20260905T080830Z-07701a.md) |
+| 2026-09-05 07:30–08:08 | Fix and independent re-review | Claude fixed the four findings with regressions; Astra re-ran runtime/lifecycle controls and preserved two ReleaseWitness lifecycle P2 findings instead of declaring a clean slate. [`UA-0052 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0052-20260905T073012Z-f4a8c1.md), [`UA-0058 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0058-20260905T080830Z-07701a.md) |
 | 2026-09-05 08:46–09:13 | Release, Vercel and recovery evidence | A release report recorded local tests/build/audit, two compiled-browser tests, conformance replay and both Vercel host smoke checks. A reversible alias rollback rehearsal passed; the first Neon backup/restore attempt was correctly blocked by missing provider/tool access rather than guessed. [`UA-0040 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0040-20260905T084624Z-5b07cc.md), [`UA-0066 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0066-20260905T090716Z-e0114d.md), [`UA-0068 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0068-20260905T091307Z-511e92.md) |
 | 2026-09-05 14:45–15:23 | Slug-history takeover and live rollout | After a quota boundary, supervisor takeover completed the slug-history implementation, migration, redirect and current-route gates. The later rollout report records a disposable recovery rehearsal, production migration/replay, a READY Vercel deployment and both aliases' live smoke. A positive historical-308 fixture was not invented. [`UA-0077 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0077-20260905T144559Z-3f9ddf.md), [`UA-0080 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0080-20260905T150650Z-f528ba.md) |
 | 2026-09-05 15:40–16:03 | Capture boundary and Turnstile gate | Cap itself was healthy, but the requested Brave/Cap target was unavailable; the fresh recording could not be proven to contain OSBlog and was not promoted. Turnstile was later independently release-gated locally with secret scans and 125 passing tests. [`UA-0086 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0086-20260905T154011Z-61f28d.md), [`UA-0089 report`](https://github.com/thuanlyt/osblog/blob/main/work/reports/inbox/UA-0089-20260905T160343Z-22903a.md) |
@@ -133,10 +133,10 @@ for unavailable runtimes.
 | F-07 | The task ledger grew to 93 items, including 29 cancelled and 2 blocked states, across fallback, takeover and release work. | **P2 overhead** — history is valuable but current-state scanning becomes expensive. | OSBlog `work/registry.json` at evidence freeze. |
 | F-08 | The first UA-0092 topology pass over-scoped an undocumented VPS concern until the correction re-anchored OSBlog to Vercel-only production. | **Process finding** — environment assumptions can pull the supervisor away from the real goal. | UA-0092 topology checkpoint and re-anchor decision. |
 
-## What changed in UseAgent after dogfooding
+## What changed in ReleaseWitness after dogfooding
 
 The case study is now a record of the improvements it triggered, not a stale
-to-do list. These changes are shipped in the current UseAgent release; they do
+to-do list. These changes are shipped in the current ReleaseWitness release; they do
 not reopen OSBlog implementation work.
 
 | Status | Shipped change or residual | Why it follows from OSBlog |
@@ -166,7 +166,7 @@ backlog:
 - **Important boundary:** later local hardening (including UA-0093) must not be
   described as deployed unless a later Vercel deployment record proves it.
 
-The next useful work belongs in the UseAgent repository: choose from the
+The next useful work belongs in the ReleaseWitness repository: choose from the
 remaining higher-assurance backlog only when its threat model and evidence
 justify it. Do not reopen OSBlog implementation merely to drive its backlog to
 zero.
@@ -175,7 +175,7 @@ zero.
 
 ### Mục đích
 
-OSBlog là workload thật để kiểm chứng UseAgent. Mục tiêu là xây dựng blog
+OSBlog là workload thật để kiểm chứng ReleaseWitness. Mục tiêu là xây dựng blog
 Markdown mã nguồn mở, song ngữ, có Vite + React + TypeScript, Neon/Postgres,
 Better Auth, comment có kiểm duyệt, SSR SEO, feed, media và deploy Vercel.
 
@@ -190,7 +190,7 @@ trường live của OSBlog.
 ### Timeline rút gọn
 
 1. Supervisor bootstrap goal, roster, knowledge ledger và DAG bằng UA-0001/UA-0002.
-2. Antigravity/Claude không callable trong một số thời điểm; UseAgent giữ lại
+2. Antigravity/Claude không callable trong một số thời điểm; ReleaseWitness giữ lại
    assignment, hủy đúng cách và ghi rõ Codex/supervisor-local fallback.
 3. Các worker xây scaffold, persistence, auth, CRUD, comment, SSR/SEO và UI
    theo scope riêng.
@@ -217,11 +217,11 @@ trường live của OSBlog.
 - Khoảng trống P2: Cap cần target discovery, privacy gate và content verification.
 - Overhead: ledger lớn giúp audit nhưng làm việc đọc current state tốn hơn.
 
-### Hướng cải tiến UseAgent
+### Hướng cải tiến ReleaseWitness
 
 Report freshness, evidence provenance, takeover lineage, evidence hygiene,
 source-bound QA, Git durability, safe QA và runtime readiness đã được đưa vào
-UseAgent qua UA-0048–UA-0055. Các capability ngoài trust model hiện tại như
+ReleaseWitness qua UA-0048–UA-0055. Các capability ngoài trust model hiện tại như
 sandbox/diff enforcement, identity xác thực, stale-lock recovery, CI action SHA,
 capture verification và cycle metrics không thuộc product surface đã freeze.
 Đây không phải lý do để mở rộng lại OSBlog.
@@ -232,4 +232,4 @@ capture verification và cycle metrics không thuộc product surface đã freez
 - OSBlog supervisor report: [`work/SUPERVISOR_REPORT.md`](https://github.com/thuanlyt/osblog/blob/main/work/SUPERVISOR_REPORT.md)
 - OSBlog registry: [`work/registry.json`](https://github.com/thuanlyt/osblog/blob/main/work/registry.json)
 - Existing media provenance: [`docs/media.md`](https://github.com/thuanlyt/osblog/blob/main/docs/media.md)
-- UseAgent visual/demo contract: [`knowledge/decisions/0007-visual-documentation-system.md`](../knowledge/decisions/0007-visual-documentation-system.md)
+- ReleaseWitness visual/demo contract: [`knowledge/decisions/0007-visual-documentation-system.md`](../knowledge/decisions/0007-visual-documentation-system.md)

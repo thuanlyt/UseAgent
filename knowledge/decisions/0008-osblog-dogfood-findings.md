@@ -6,7 +6,7 @@
 
 ## Context
 
-OSBlog was the first substantial real workload used to exercise UseAgent's
+OSBlog was the first substantial real workload used to exercise ReleaseWitness's
 planning, multi-runtime dispatch, fallback, review, QA, production and resume
 protocol. Its ledger contains useful positive and negative evidence: provider
 unavailability, quota exhaustion, failed no-report attempts, supervisor
@@ -16,7 +16,7 @@ Cap capture.
 OSBlog production is Vercel-only for this case study. VPS, Netlify and local
 Node are supported documentation targets, not environments that need live
 verification. Continuing to implement every OSBlog portability backlog item
-would obscure the product being evaluated: UseAgent.
+would obscure the product being evaluated: ReleaseWitness.
 
 ## Decision
 
@@ -30,7 +30,7 @@ would obscure the product being evaluated: UseAgent.
 3. Treat the OSBlog machine-readable registry and task/report evidence as the
    authority. Treat `work/SUPERVISOR_REPORT.md` as a generated convenience view
    that must advertise staleness if it no longer matches the registry.
-4. Prioritize the following UseAgent improvements: report freshness, worker
+4. Prioritize the following ReleaseWitness improvements: report freshness, worker
    runtime preflight, typed evidence provenance, CLI-managed takeover lineage,
    bounded media capture/privacy gates and compact cycle-overhead metrics.
 
@@ -46,9 +46,9 @@ would obscure the product being evaluated: UseAgent.
 
 ## Consequences
 
-- UseAgent documentation gains a real case study instead of only a replay
+- ReleaseWitness documentation gains a real case study instead of only a replay
   fixture or product diagram.
 - The case study remains honest about the difference between live Vercel
   evidence, local verification, simulation and blocked capture.
-- The next implementation work returns to UseAgent. OSBlog does not need a
+- The next implementation work returns to ReleaseWitness. OSBlog does not need a
   zero-backlog state for dogfooding to be complete.

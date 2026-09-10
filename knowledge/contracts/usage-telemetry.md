@@ -1,8 +1,8 @@
-# UseAgent Usage Telemetry Contract
+# ReleaseWitness Usage Telemetry Contract
 
 Version: 1 (UA-0059)
 
-UseAgent telemetry is a small, provider-neutral execution record. It helps the
+ReleaseWitness telemetry is a small, provider-neutral execution record. It helps the
 supervisor explain elapsed time, participation and efficiency signals after a
 task or bounded cycle. It is not billing, quota management, a dashboard or a
 quality score.
@@ -17,13 +17,13 @@ Raw diagnostics remain in the existing bounded local runtime spool.
 
 ## Normalized usage envelope
 
-Only a complete JSON object with `useagent_usage: 1` is accepted at the adapter
+Only a complete JSON object with `relwit_usage: 1` is accepted at the adapter
 boundary. The core never parses provider prose or scrapes a UI. The normalized
 shape is:
 
 ```json
 {
-  "useagent_usage": 1,
+  "relwit_usage": 1,
   "authoritative": true,
   "provider": "provider-name",
   "runtime": "runtime-name",
@@ -47,9 +47,9 @@ ambiguous usage is `unavailable`, never zero and never authoritative.
 The CLI integration point is:
 
 ```powershell
-python tools/useagent.py telemetry record --kind task --id UA-0001 `
-  --event-id task:UA-0001:attempt:1 --agent worker-a --outcome completed `
-  --usage-json '{"useagent_usage":1,"authoritative":true,"total_tokens":42}'
+relwit telemetry record --kind task --id RW-0001 `
+  --event-id task:RW-0001:attempt:1 --agent worker-a --outcome completed `
+  --usage-json '{"relwit_usage":1,"authoritative":true,"total_tokens":42}'
 ```
 
 Configured runners may emit the same complete envelope as their entire
@@ -86,7 +86,7 @@ retries and takeovers. Token status is explicitly `total`, `partial` or
 identity makes repeated report ingestion idempotent; different retry attempts
 remain distinct. No monetary cost is calculated.
 
-Use `python tools/useagent.py telemetry summary` for the same concise summary
+Use `relwit telemetry summary` for the same concise summary
 without dumping the JSON event store.
 
 ## Release interaction

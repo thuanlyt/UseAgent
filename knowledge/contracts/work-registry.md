@@ -60,7 +60,7 @@ output and is not part of the durable release-source identity.
 
 ## Invariants
 
-- `id` matches `UA-####` and is unique.
+- `id` matches `RW-####` and is unique.
 - `level` is one of `L0` through `L4`.
 - `status` is a known lifecycle state.
 - `scope` and `acceptance` are non-empty arrays.
@@ -104,4 +104,4 @@ output and is not part of the durable release-source identity.
   bounded runtime event with a retry/reassign/takeover/needs-input disposition;
   it must not create an unowned `in_progress` task, an automatic successor or
   an implicit infinite retry.
-- Updates are serialized by `tools/useagent.py`; consumers must tolerate `updated_at` changing after every transition.
+- Updates are serialized by `relwit/cli.py`; consumers must tolerate `updated_at` changing after every transition.

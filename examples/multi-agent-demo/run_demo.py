@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Run a credential-free UseAgent assignment/report conformance cycle.
+"""Run a credential-free ReleaseWitness assignment/report conformance cycle.
 
 The demo uses a temporary project root and the real CLI. The simulated worker
-is still a normal UseAgent worker: it pulls an assignment and submits a report
+is still a normal ReleaseWitness worker: it pulls an assignment and submits a report
 through the public commands. No registry or task Markdown is edited directly.
 """
 
@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-CLI = REPOSITORY_ROOT / "tools" / "useagent.py"
+CLI = REPOSITORY_ROOT / "relwit" / "cli.py"
 
 
 def run_cli(project_root: Path, *arguments: str) -> str:
@@ -44,9 +44,9 @@ def require(path: Path, label: str) -> None:
 
 def main() -> int:
     if not CLI.exists():
-        raise RuntimeError(f"cannot find UseAgent CLI: {CLI}")
+        raise RuntimeError(f"cannot find ReleaseWitness CLI: {CLI}")
 
-    with tempfile.TemporaryDirectory(prefix="useagent-conformance-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="relwit-conformance-") as temporary:
         project_root = Path(temporary)
         run_cli(project_root, "init")
 
@@ -54,7 +54,7 @@ def main() -> int:
         source_file.parent.mkdir(parents=True, exist_ok=True)
         source_file.write_text("# simulated worker scope\n", encoding="utf-8")
 
-        config_path = project_root / "useagent.config.json"
+        config_path = project_root / "relwit.config.json"
         config = json.loads(config_path.read_text(encoding="utf-8"))
         config["supervisor"]["qa_commands"] = [
             {"mode": "argv", "argv": [sys.executable, "-c", "print('demo-qa-pass')"]}

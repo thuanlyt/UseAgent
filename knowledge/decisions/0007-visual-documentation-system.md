@@ -6,7 +6,7 @@
 
 ## Context
 
-UseAgent is a coordination system with several related ledgers and runtime
+ReleaseWitness is a coordination system with several related ledgers and runtime
 roles. Text-only documentation makes the relationship between supervisor,
 workers, mailboxes, evidence and checkpoints unnecessarily hard to scan. The
 docs site also needs a shareable visual identity without adding a JavaScript
@@ -40,10 +40,10 @@ logos or third-party marks and is stored in the repository as a project asset.
 
 ## Source anchors
 
-- `docs-site/assets/useagent-supervisor-loop.svg`
-- `docs-site/assets/useagent-shared-ledger.svg`
-- `docs-site/assets/useagent-runtime-handoff.svg`
-- `docs-site/assets/useagent-control-plane-hero.webp`
+- `docs-site/assets/relwit-supervisor-loop.svg`
+- `docs-site/assets/relwit-shared-ledger.svg`
+- `docs-site/assets/relwit-runtime-handoff.svg`
+- `docs-site/assets/relwit-control-plane-hero.webp`
 - `docs-site/index.html`
 - `docs-site/build.py`
 - `tests/docs_site/test_docs_site.py:test_visual_asset_contract`

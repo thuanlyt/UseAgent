@@ -3,16 +3,16 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "useagent"
+name = "relwit"
 version = "0.1.1"
-description = "Repo-local evidence and release-assurance layer for AI coding workflows"
+description = "Source-bound evidence and release assurance for AI-written code"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
 authors = [
   { name = "Thuan Ly" },
 ]
-keywords = ["ai-agents", "multi-agent", "orchestration", "supervisor", "autopilot"]
+keywords = ["release-assurance", "evidence", "qa", "code-review", "ai-coding"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -25,15 +25,15 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/thuanlyt/UseAgent"
-Repository = "https://github.com/thuanlyt/UseAgent"
-Issues = "https://github.com/thuanlyt/UseAgent/issues"
+Homepage = "https://github.com/thuanlyt/releasewitness"
+Repository = "https://github.com/thuanlyt/releasewitness"
+Issues = "https://github.com/thuanlyt/releasewitness/issues"
 Documentation = "https://useagent.thuanlyt.id.vn/"
-Changelog = "https://github.com/thuanlyt/UseAgent/blob/main/CHANGELOG.md"
-Releases = "https://github.com/thuanlyt/UseAgent/releases"
+Changelog = "https://github.com/thuanlyt/releasewitness/blob/main/CHANGELOG.md"
+Releases = "https://github.com/thuanlyt/releasewitness/releases"
 
 [project.scripts]
-useagent = "tools.useagent:main"
+relwit = "relwit.cli:main"
 
 [tool.setuptools]
-packages = ["tools"]
+packages = ["relwit"]

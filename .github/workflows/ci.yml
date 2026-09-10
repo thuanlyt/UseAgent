@@ -25,16 +25,16 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Compile Python sources
-        run: python -m py_compile tools/useagent.py tests/test_useagent.py
+        run: python -m py_compile relwit/cli.py tests/test_relwit.py
 
       - name: Initialize local runtime scaffold
-        run: python tools/useagent.py init
+        run: python relwit/cli.py init
 
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
 
       - name: Validate project protocol
-        run: python tools/useagent.py validate
+        run: python relwit/cli.py validate
 
       - name: Validate documentation site links
         run: python docs-site/build.py --check-only
@@ -45,5 +45,5 @@ jobs:
       - name: Install and smoke-test console package
         run: |
           python -m pip install --no-deps .
-          useagent --help
-          useagent validate
+          relwit --help
+          relwit validate

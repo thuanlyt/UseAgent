@@ -6,7 +6,7 @@
 
 ## Context
 
-UseAgent must be portable across repositories and agent runtimes, recoverable after a stopped session, and cheap to understand without installing a service or rereading the whole codebase.
+ReleaseWitness must be portable across repositories and agent runtimes, recoverable after a stopped session, and cheap to understand without installing a service or rereading the whole codebase.
 
 ## Decision
 
@@ -24,11 +24,11 @@ Use Python 3.11+ standard library for the control-plane CLI and tests, JSON for 
 - JSON/Markdown merge cleanly in Git and remain readable to both humans and models.
 - The CLI does not itself launch arbitrary external agents; a compatible runtime, scheduler or human must invoke workers.
 - Large teams may later add a service adapter without changing the core file contract.
-- Users can install `useagent` while preserving the same file protocol and `python tools/useagent.py` source-checkout path.
+- Users can install `relwit` while preserving the same file protocol and `relwit` source-checkout path.
 
 ## Evidence / source anchors
 
-- `tools/useagent.py:default_root`, `tools/useagent.py:run_qa` and `tools/useagent.py:production_snapshot`
+- `relwit/cli.py:default_root`, `relwit/cli.py:run_qa` and `relwit/cli.py:production_snapshot`
 - `pyproject.toml:[project.scripts]`
-- `tests/test_useagent.py:UseAgentCliTests`
+- `tests/test_relwit.py:RelWitCliTests`
 - `.github/workflows/ci.yml`

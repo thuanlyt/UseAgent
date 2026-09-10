@@ -173,7 +173,7 @@ class DocsSiteTests(unittest.TestCase):
                 self.assertTrue(meta_by_property.get("og:image", "").strip(), page.name)
                 self.assertEqual(
                     meta_by_property.get("og:image"),
-                    f"{PRIMARY_ORIGIN}/assets/useagent-control-plane-hero.webp",
+                    f"{PRIMARY_ORIGIN}/assets/relwit-control-plane-hero.webp",
                     page.name,
                 )
                 self.assertTrue(meta_by_name.get("twitter:image", "").strip(), page.name)
@@ -193,7 +193,7 @@ class DocsSiteTests(unittest.TestCase):
                 self.assertEqual(structured_data["@type"], "SoftwareSourceCode")
                 self.assertEqual(
                     structured_data["codeRepository"],
-                    "https://github.com/thuanlyt/UseAgent",
+                    "https://github.com/thuanlyt/releasewitness",
                 )
                 self.assertEqual(structured_data["url"], INDEXABLE_URLS[page.name])
 
@@ -277,13 +277,13 @@ class DocsSiteTests(unittest.TestCase):
     def test_visual_asset_contract(self) -> None:
         assets = SITE / "assets"
         expected_assets = {
-            "useagent-control-plane-hero.webp",
-            "useagent-supervisor-loop.svg",
-            "useagent-shared-ledger.svg",
-            "useagent-runtime-handoff.svg",
+            "relwit-control-plane-hero.webp",
+            "relwit-supervisor-loop.svg",
+            "relwit-shared-ledger.svg",
+            "relwit-runtime-handoff.svg",
         }
         self.assertEqual({path.name for path in assets.iterdir() if path.is_file()}, expected_assets)
-        webp_hero = assets / "useagent-control-plane-hero.webp"
+        webp_hero = assets / "relwit-control-plane-hero.webp"
         self.assertLess(webp_hero.stat().st_size, 100_000)
         svg_assets = expected_assets - {webp_hero.name}
         for filename in svg_assets:
@@ -309,7 +309,7 @@ class DocsSiteTests(unittest.TestCase):
                 self.assertTrue(target.is_file(), f"{page.name} -> {image['src']}")
             if page.name == "index.html":
                 homepage = page.read_text(encoding="utf-8")
-                self.assertIn('<img src="assets/useagent-control-plane-hero.webp"', homepage)
+                self.assertIn('<img src="assets/relwit-control-plane-hero.webp"', homepage)
             if page.name != "index.html":
                 self.assertTrue(any(image.get("loading") == "lazy" for image in parser.images), page.name)
 

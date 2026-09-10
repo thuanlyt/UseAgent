@@ -1,6 +1,6 @@
 # Optional bounded autopilot
 
-UseAgent's primary product surface is repository-local evidence and release
+ReleaseWitness's primary product surface is repository-local evidence and release
 assurance. Autopilot is an optional supervision capability for projects that
 want a model to coordinate bounded work around those gates; it is not an
 infinite multi-agent orchestrator.
@@ -25,7 +25,7 @@ local runner/adapter, configure it on the worker and let a bounded command
 consume the mailbox:
 
 ```powershell
-python tools/useagent.py worker run --agent claude-web --max-tasks 2 --wait-seconds 600
+relwit worker run --agent claude-web --max-tasks 2 --wait-seconds 600
 ```
 
 The configured runner is an argv list containing `{assignment_path}`. The CLI
@@ -33,7 +33,7 @@ uses `shell=False`, runs from the selected project root, enforces a timeout and
 stores only bounded sanitized summaries plus a local diagnostic spool reference.
 An optional argv-only preflight can keep a task `assigned` until it returns an
 explicit `ready` state. The adapter must make the model read the assignment and
-call `task report`; if it exits without a report, UseAgent creates a failed
+call `task report`; if it exits without a report, ReleaseWitness creates a failed
 report rather than leaving an invisible active task. The default configuration
 has no runner, so manual `worker pull` remains available and no external
 process starts implicitly.
@@ -48,9 +48,9 @@ the core contract and must be tested by the project owner.
 Trước khi tạo scheduled task, chạy prompt này thủ công và xem vài lần đầu:
 
 ```text
-Use $useagent in F:\dev\UseAgent. Read AGENTS.md, knowledge/INDEX.md,
+Use $relwit in F:\dev\RelWit. Read AGENTS.md, knowledge/INDEX.md,
 work/SUPERVISOR_REPORT.md, the latest checkpoint, and work/registry.json. Run
-exactly one safe `python tools/useagent.py supervisor cycle --run-qa` cycle:
+exactly one safe `relwit supervisor cycle --run-qa` cycle:
 ingest worker report Markdown, inspect completed tasks, dispatch ready work to
 eligible mailboxes, delegate independent exploration in parallel, ask workers to
 report through the CLI, review evidence, create a debug task when QA fails,

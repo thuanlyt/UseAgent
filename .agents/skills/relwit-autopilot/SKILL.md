@@ -1,0 +1,21 @@
+---
+name: relwit-autopilot
+description: "Run one bounded, checkpointed cycle of long-running RelWit work toward a production outcome, with explicit stop conditions and no implicit deploy authority."
+---
+
+# RelWit Autopilot
+
+Use this skill when continuing a multi-milestone project, resuming after interruption, or preparing a scheduled local-project workflow.
+
+1. Read `AGENTS.md`, `knowledge/INDEX.md`, `work/SUPERVISOR_REPORT.md`, the newest checkpoint and `work/registry.json`.
+2. Apply the [Supervisor Judgment and Owner Communication contract](../../../knowledge/contracts/supervisor-judgment.md), then define this cycle's single safe outcome. Run `relwit supervisor cycle` to ingest reports, inspect status, dispatch only ready work whose dependencies are complete and whose writer scope is free, and emit a new report/checkpoint.
+3. Use the orchestrator/worker/review skills as needed. Parallelize discovery and verification; serialize overlapping writes.
+4. Require evidence for completed tasks and refresh affected knowledge. Never hide a blocker by marking work done.
+5. If the cycle was not run through the CLI, create a checkpoint with `relwit checkpoint create ...` containing summary, evidence, blockers and exactly one next action. Keep `work/SUPERVISOR_REPORT.md` as the user-facing status surface.
+6. Finish with `complete`, `blocked` or `needs_input`. If the goal and appropriate gates pass and only low-value backlog remains, recommend stop rather than dispatching another task. Stop on ambiguity, missing access, scope conflict, repeated failure or any unapproved external/destructive action.
+
+When available, use the provider-neutral telemetry contract to report measured
+timing, actual participants and authoritative/partial/unavailable token usage.
+Do not estimate tokens or dump the local telemetry store.
+
+This skill can prepare the prompt for a scheduled task, but scheduling, permissions and deployment remain product/user-controlled actions. Read [references/autopilot-cycle.md](references/autopilot-cycle.md) for the cycle contract.

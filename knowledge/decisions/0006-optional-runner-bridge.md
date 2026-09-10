@@ -19,19 +19,19 @@ not a shell string, and must receive `{assignment_path}`. `worker run` claims
 the oldest assigned task, invokes the configured adapter from the project root,
 enforces a timeout and a finite task/idle budget, records bounded output as
 evidence, and requires the adapter to submit `task report`. If the adapter
-fails or exits without a report, UseAgent writes a failed worker report rather
+fails or exits without a report, ReleaseWitness writes a failed worker report rather
 than leaving a task silently stuck in `in_progress`.
 
 The adapter owns provider-specific flags, authentication and process sandboxing.
-UseAgent does not invent Codex/Claude/Antigravity commands or launch a runner
+ReleaseWitness does not invent Codex/Claude/Antigravity commands or launch a runner
 unless the project owner explicitly configured one. A runner may optionally
 declare an argv-only, bounded `preflight` command. The core recognizes only
 the machine-readable readiness states `ready`, `unavailable`,
 `misconfigured`, `no_target` and `unknown`; `ready` is prerequisite evidence,
 not a quota prediction.
 
-Started adapters may emit a complete `useagent_runtime_result` JSON envelope.
-UseAgent normalizes its failure class and recommended finite disposition. The
+Started adapters may emit a complete `relwit_runtime_result` JSON envelope.
+ReleaseWitness normalizes its failure class and recommended finite disposition. The
 `quota_limited` and `auth_error` classes require `authoritative: true`; prose
 in stdout/stderr cannot establish either condition. A pre-start failure keeps
 the task assigned and records bounded runtime evidence, while a failure after
@@ -61,7 +61,7 @@ pull uses the existing automatic failed-report safeguard.
 
 ## Evidence / source anchors
 
-- `tools/useagent.py:runner_settings`
-- `tools/useagent.py:cmd_worker_run`
-- `tests/test_useagent.py:UseAgentCliTests.test_worker_run_invokes_runner_and_accepts_automatic_report`
+- `relwit/cli.py:runner_settings`
+- `relwit/cli.py:cmd_worker_run`
+- `tests/test_relwit.py:RelWitCliTests.test_worker_run_invokes_runner_and_accepts_automatic_report`
 - `examples/multi-runtime-conformance/run_conformance.py:simulated_runner_args`

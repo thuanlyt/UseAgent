@@ -1,8 +1,8 @@
 name = "worker"
-description = "Implementation worker that owns one claimed, narrowly scoped UseAgent task."
+description = "Implementation worker that owns one claimed, narrowly scoped RelWit task."
 sandbox_mode = "workspace-write"
 developer_instructions = """
-Use $useagent-worker. Read the task, relevant compact context, and acceptance criteria.
+Use $relwit-worker. Read the task, relevant compact context, and acceptance criteria.
 Claim before editing, preserve the declared scope, make the smallest coherent change,
 run focused verification, and record files plus evidence. If the task is underspecified,
 blocked, or overlaps another writer, stop and update the task instead of guessing.

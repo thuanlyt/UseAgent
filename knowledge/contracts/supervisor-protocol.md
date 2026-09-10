@@ -40,11 +40,11 @@ An optional preflight is an argv-only adapter probe:
 }
 ```
 
-UseAgent performs static validation and executable checks before dispatch. A
+ReleaseWitness performs static validation and executable checks before dispatch. A
 configured but clearly unavailable or malformed runner is not assigned work.
 When a task is already assigned, `worker run` executes the bounded preflight
 before changing `assigned` to `in_progress`. The probe must print one complete
-JSON object such as `{"useagent_preflight":1,"state":"ready"}`. `state` is
+JSON object such as `{"relwit_preflight":1,"state":"ready"}`. `state` is
 one of `ready`, `unavailable`, `misconfigured`, `no_target` or `unknown`.
 `ready` means only that the declared local adapter prerequisites passed; it
 does not predict provider quota or model availability. Invalid, ambiguous or
@@ -56,7 +56,7 @@ Adapters may classify a started-runner failure with one complete JSON object:
 
 ```json
 {
-  "useagent_runtime_result": 1,
+  "relwit_runtime_result": 1,
   "failure_class": "quota_limited",
   "authoritative": true,
   "disposition": "needs_input",
@@ -79,7 +79,7 @@ sanitized runtime evidence and a local-spool reference, and gives the
 supervisor a disposition. A process start failure after pull is classified and
 the existing no-report safeguard writes a failed worker report, so there is no
 unowned `in_progress` task or report-wait dead end. The adapter remains the
-provider-specific boundary: UseAgent does not invent Codex/Claude/Antigravity
+provider-specific boundary: ReleaseWitness does not invent Codex/Claude/Antigravity
 flags, call vendor APIs or claim to sandbox a vendor process.
 
 `worker run` is finite by default (`--max-tasks 1`, no idle wait). It pulls an
@@ -137,7 +137,7 @@ task `reported` qua `needs_review` đến `done`. Reviewer có thể khác với
 
 `work/registry.json` và task evidence luôn có authority cao hơn
 `work/SUPERVISOR_REPORT.md`. Report là convenience view có marker
-`<!-- useagent-report: registry_sha256=<64-hex> -->` được tính từ registry snapshot
+`<!-- relwit-report: registry_sha256=<64-hex> -->` được tính từ registry snapshot
 đã dùng để sinh report. `supervisor report --check` phải trả `fresh` (exit code 0)
 mới được xem report là đồng bộ; `stale`, `unknown` hoặc `missing` không được coi là
 trạng thái hiện tại. `context` hiển thị nhãn và cảnh báo freshness tương ứng.
@@ -201,14 +201,14 @@ Một cycle: ingest reports -> review trạng thái -> chạy QA được cấu 
 
 ## Usage telemetry contract
 
-UseAgent ghi execution metadata vào `work/telemetry/` (volatile, Git-ignored):
+ReleaseWitness ghi execution metadata vào `work/telemetry/` (volatile, Git-ignored):
 task/cycle timing, actual participants, attempts, failures, retries và
 takeover lineage. `duration_ms` là measured wall time; runner
 `execution_duration_ms` là aggregate worker-runtime signal và không thay thế
 wall time khi worker chạy song song. Event identity ổn định giúp repeated
 writes không double-count.
 
-Token usage chỉ được nhận từ complete JSON có `useagent_usage: 1` tại adapter
+Token usage chỉ được nhận từ complete JSON có `relwit_usage: 1` tại adapter
 boundary. `authoritative`, `measured`, `estimated` và `unavailable` phải được
 phân biệt; default không estimate. Provider prose, UI scrape, prompt,
 response, credential và raw provider log không được đưa vào telemetry. Report

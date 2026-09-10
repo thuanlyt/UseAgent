@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Propose a focused improvement to UseAgent
+about: Propose a focused improvement to ReleaseWitness
 title: "feature: "
 labels: enhancement
 ---

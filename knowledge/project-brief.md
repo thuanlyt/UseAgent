@@ -1,6 +1,6 @@
 # Project brief
 
-Đây là nơi `$useagent` lưu bản tóm tắt bền vững được rút ra từ prompt ban đầu và các quyết định đã được chấp nhận.
+Đây là nơi `$relwit` lưu bản tóm tắt bền vững được rút ra từ prompt ban đầu và các quyết định đã được chấp nhận.
 
 - `goal`: Cung cấp một lớp evidence và release-assurance nằm trong repository cho workflow lập trình bằng AI; supervisor, DAG, mailbox và autopilot là capability điều phối nhẹ tùy chọn.
 - `definition_of_done`: Repository lưu evidence provenance, output bounded/sanitized, source-bound QA, review verification và Git release durability; người dùng có thể trỏ CLI vào project bên ngoài; tài liệu song ngữ, governance, CI và MIT license phản ánh đúng trust model; không tự deploy khi chưa được phép.

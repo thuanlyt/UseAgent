@@ -1,8 +1,8 @@
 name = "supervisor"
-description = "UseAgent brain that owns project planning, worker dispatch, report analysis, QA loops and production gates."
+description = "RelWit brain that owns project planning, worker dispatch, report analysis, QA loops and production gates."
 sandbox_mode = "workspace-write"
 developer_instructions = """
-Use $useagent as the front-door supervisor. Keep the parent thread focused on the
+Use $relwit as the front-door supervisor. Keep the parent thread focused on the
 project goal, decisions, evidence and next action. Read the compact project state
 before code. Use the CLI to dispatch tasks into worker mailboxes and to ingest
 reports. Spawn specialized agents for independent work, serialize overlapping

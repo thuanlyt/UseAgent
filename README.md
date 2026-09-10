@@ -1,23 +1,27 @@
-# UseAgent
+# ReleaseWitness
 
 English | [Tiếng Việt](README-vi.md)
 
-[![CI](https://github.com/thuanlyt/UseAgent/actions/workflows/ci.yml/badge.svg)](https://github.com/thuanlyt/UseAgent/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/thuanlyt/UseAgent?display_name=tag&sort=semver)](https://github.com/thuanlyt/UseAgent/releases/latest)
+[![CI](https://github.com/thuanlyt/releasewitness/actions/workflows/ci.yml/badge.svg)](https://github.com/thuanlyt/releasewitness/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/thuanlyt/releasewitness?display_name=tag&sort=semver)](https://github.com/thuanlyt/releasewitness/releases/latest)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> A repo-local evidence and release-assurance layer for AI coding workflows.
-> Lightweight supervision is available when a project benefits from it.
+> Your coding agent says it's done.
+> ReleaseWitness checks the evidence behind that claim.
+>
+> Source-bound evidence and release assurance for AI-written code.
 
-![UseAgent release-assurance workflow for AI coding projects](docs-site/assets/useagent-control-plane-hero.webp)
+> ReleaseWitness was formerly released as UseAgent in the v0.1.x series.
 
-## What UseAgent is
+![ReleaseWitness release-assurance workflow for AI coding projects](docs-site/assets/relwit-control-plane-hero.webp)
 
-UseAgent keeps the proof around AI-assisted coding in the repository that is
-being changed. It records evidence provenance, bounds and sanitizes durable
-output, binds QA to a source snapshot, verifies review evidence and checks Git
-release durability before a release decision.
+## What ReleaseWitness is
+
+ReleaseWitness keeps the proof around AI-assisted coding in the repository
+that is being changed. It records evidence provenance, bounds and sanitizes
+durable output, binds QA to a source snapshot, verifies review evidence and
+checks Git release durability before a release decision.
 
 The result is a compact, inspectable trail for the questions that matter:
 
@@ -26,20 +30,20 @@ The result is a compact, inspectable trail for the questions that matter:
 - Did review and QA verify the same source that is ready to ship?
 - Is the repository clean and durable enough for the next release gate?
 
-UseAgent is provider-neutral and trusted-local. It complements the coding
-runtime rather than trying to become one.
+ReleaseWitness is provider-neutral and trusted-local. It complements the
+coding runtime rather than trying to become one.
 
 ## Current Release
 
 **v0.1.1 — Distribution & Positioning Maintenance**
 
-v0.1.1 is the current public maintenance release. It adds no new feature set:
-it cleans the public distribution and aligns the project with its
-release-assurance positioning. The feature set is now frozen; future changes
-require a concrete bug, security issue, real external-user evidence or an
-explicit owner decision.
+v0.1.1 is the current public maintenance release, published under the former
+UseAgent name. It adds no new feature set: it cleans the public distribution
+and aligns the project with its release-assurance positioning. The feature
+set is frozen; future changes require a concrete bug, security issue, real
+external-user evidence or an explicit owner decision.
 
-- [Release notes](https://github.com/thuanlyt/UseAgent/releases/tag/v0.1.1) · [All releases](https://github.com/thuanlyt/UseAgent/releases)
+- [Release notes](https://github.com/thuanlyt/releasewitness/releases/tag/v0.1.1) · [All releases](https://github.com/thuanlyt/releasewitness/releases)
 - [CHANGELOG](CHANGELOG.md) · [Documentation](https://useagent.thuanlyt.id.vn/) · [Getting started](docs/getting-started.md)
 
 The public repository does not ship a maintainer's runtime history. `work/`
@@ -47,7 +51,7 @@ is generated locally by `init` in the project being assured.
 
 ## Why teams use it
 
-| Release-assurance problem | UseAgent response |
+| Release-assurance problem | ReleaseWitness response |
 | --- | --- |
 | AI output is hard to audit later | Typed evidence provenance and source-anchored handovers |
 | A green check may belong to an older tree | Source-bound QA and explicit freshness checks |
@@ -56,22 +60,22 @@ is generated locally by `init` in the project being assured.
 | Long work loses its durable context | Compact knowledge cards, reports and checkpoints |
 | Different coding runtimes use different workflows | One repository-local contract around their output |
 
-## Why UseAgent if I already use Claude Code, Codex, Beads or worktrees?
+## Why ReleaseWitness if I already use Claude Code, Codex, Beads or worktrees?
 
-Those tools plan and execute work. UseAgent verifies the evidence and release
-state around the resulting repository. It can sit beside them without asking
-them to surrender their native planning, subagents, branches or worktree
-management:
+Those tools plan and execute work. ReleaseWitness verifies the evidence and
+release state around the resulting repository. It can sit beside them
+without asking them to surrender their native planning, subagents, branches
+or worktree management:
 
 ```text
 Claude Code / Codex / Beads / worktrees
         plan and execute
                 ↓
-UseAgent verifies evidence, source identity and release durability
+ReleaseWitness verifies evidence, source identity and release durability
 ```
 
-UseAgent is a complement, not a replacement for Beads, Spec Kit, native Claude
-or Codex subagents, Git worktree managers or a project's CI system.
+ReleaseWitness is a complement, not a replacement for Beads, Spec Kit, native
+Claude or Codex subagents, Git worktree managers or a project's CI system.
 
 ## What it verifies
 
@@ -88,7 +92,7 @@ or Codex subagents, Git worktree managers or a project's CI system.
 
 ## Optional lightweight supervision
 
-When a project wants a supervisor, `$useagent` can turn a short goal into a
+When a project wants a supervisor, `$relwit` can turn a short goal into a
 bounded workflow: record assumptions, create dependency-aware work items,
 dispatch assignments, ingest reports, inspect evidence, run QA and checkpoint
 the next action. The DAG, mailbox, role and telemetry machinery remains
@@ -121,25 +125,25 @@ diminishing returns and the trusted-local boundary.
 
 ## Quick start for an external project
 
-UseAgent is normally cloned or installed once, then pointed at the repository
-you want to assure. Do not use the UseAgent source checkout as the default
-application workspace.
+ReleaseWitness is normally cloned or installed once, then pointed at the
+repository you want to assure. Do not use the ReleaseWitness source checkout
+as the default application workspace.
 
 Requirements: Python 3.11+, Git, and an existing target repository.
 
 ```powershell
-git clone https://github.com/thuanlyt/UseAgent.git F:\tools\UseAgent
-python F:\tools\UseAgent\tools\useagent.py --root F:\dev\MyProject init
+git clone https://github.com/thuanlyt/releasewitness.git F:\tools\RelWit
+python F:\tools\RelWit\relwit\cli.py --root F:\dev\MyProject init
 ```
 
 `init` creates empty local state under `F:\dev\MyProject\work`. It does not
 copy skills or overwrite project files. For the full workflow, copy or merge
-the UseAgent control-plane files (`AGENTS.md`, `.agents/skills/`, `knowledge/`,
-`tools/useagent.py` and configuration) into the target repository, preserving
-the target project's own instructions and source. Then run:
+the ReleaseWitness control-plane files (`AGENTS.md`, `.agents/skills/`,
+`knowledge/`, `relwit/` and configuration) into the target repository,
+preserving the target project's own instructions and source. Then run:
 
 ```powershell
-python F:\tools\UseAgent\tools\useagent.py --root F:\dev\MyProject validate
+python F:\tools\RelWit\relwit\cli.py --root F:\dev\MyProject validate
 ```
 
 The `--root` boundary covers the registry, reports, evidence, checkpoints and
@@ -147,10 +151,12 @@ all configured paths. Paths that escape it are rejected. If the CLI has been
 installed, the equivalent form is:
 
 ```powershell
-python -m pip install --no-deps F:\tools\UseAgent
-useagent --root F:\dev\MyProject init
-useagent --root F:\dev\MyProject validate
+python -m pip install --no-deps F:\tools\RelWit
+relwit --root F:\dev\MyProject init
+relwit --root F:\dev\MyProject validate
 ```
+
+`python -m relwit` is equivalent to the installed `relwit` entry point.
 
 Read [getting started](docs/getting-started.md) before registering workers.
 
@@ -165,22 +171,23 @@ implement → report evidence → review → source-bound QA → Git durability 
 If supervision is enabled, the optional loop adds:
 
 ```powershell
-python tools/useagent.py supervisor cycle --run-qa
-python tools/useagent.py supervisor report --check
+relwit supervisor cycle --run-qa
+relwit supervisor report --check
 ```
 
 Workers can use the generated mailbox/report protocol, but a project may also
-use UseAgent around work planned by an external orchestrator. A worker report
-is not a release decision; the reviewer, QA and durability gates remain
-separate.
+use ReleaseWitness around work planned by an external orchestrator. A worker
+report is not a release decision; the reviewer, QA and durability gates
+remain separate.
 
 ## Trust model and concurrency boundary
 
-UseAgent is designed for a **trusted-local / trusted-repository** threat model.
-Its scope and role checks are workflow controls, not an OS sandbox, authenticated
-distributed lock or authenticated agent identity system.
+ReleaseWitness is designed for a **trusted-local / trusted-repository**
+threat model. Its scope and role checks are workflow controls, not an OS
+sandbox, authenticated distributed lock or authenticated agent identity
+system.
 
-UseAgent does not own:
+ReleaseWitness does not own:
 
 - branches, worktrees or parallel process isolation;
 - provider accounts, quotas or vendor API launch flags;
@@ -188,9 +195,9 @@ UseAgent does not own:
 - deployment or external mutations.
 
 External orchestrators may manage branches, worktrees, parallel execution and
-task graphs. UseAgent can verify the resulting repository state. The shared
-folder and mailbox workflow documented in the optional supervision guide is
-deliberately lightweight and trusted-local.
+task graphs. ReleaseWitness can verify the resulting repository state. The
+shared folder and mailbox workflow documented in the optional supervision
+guide is deliberately lightweight and trusted-local.
 
 ## Repository and documentation map
 
@@ -199,8 +206,8 @@ deliberately lightweight and trusted-local.
 | `.agents/skills/` | Optional supervisor, context, worker, review and autopilot skills |
 | `.codex/agents/` | Optional role-specific Codex profiles |
 | `knowledge/` | Compact project brief, architecture, contracts and decisions |
-| `tools/useagent.py` | Dependency-free assurance CLI and validator |
-| `useagent.config.json` | Paths, QA and production-readiness configuration |
+| `relwit/` | Dependency-free assurance CLI and validator (`relwit/cli.py`) |
+| `relwit.config.json` | Paths, QA and production-readiness configuration |
 | `work/` | Generated local registry, reports, evidence and checkpoints after `init` |
 | `docs/` | Canonical hands-on, operations, architecture and case-study docs |
 | `docs-site/` | Crawlable bilingual static documentation site |
@@ -208,17 +215,18 @@ deliberately lightweight and trusted-local.
 
 The [OSBlog dogfooding case study](docs/case-study-osblog.md) shows how a real
 workload used evidence, QA and recovery boundaries. OSBlog is a workload and
-evidence source, not the product being positioned here.
+evidence source, not the product being positioned here. The case study
+predates the rebrand and still cites the original `UA-####` work-item IDs it
+was evidenced under.
 
 ## Packaging note
 
-The current package intentionally keeps the stable public entry point
-`useagent = tools.useagent:main` and `packages = ["tools"]`. The generic
-top-level `tools` package can collide with another application's package when
-both are imported in one Python environment, although the installed CLI and
-wheel smoke path are usable. A namespace migration is a compatibility change
-and is outside this frozen pass; it should only be reconsidered with concrete
-install evidence and an explicit maintenance-release decision.
+The public entry point is `relwit = relwit.cli:main`, backed by a dedicated
+top-level `relwit` package (`packages = ["relwit"]`). This replaces the
+former `tools`-namespaced layout (`useagent = tools.useagent:main`), which
+was retired during the ReleaseWitness rebrand to remove a generic
+top-level-package collision risk. The installed CLI and wheel smoke path
+remain dependency-free.
 
 ## Contributing and license
 
@@ -230,15 +238,16 @@ the [MIT License](LICENSE).
 
 ## 💖 Support the Project
 
-UseAgent is **free and open source**. If it saves you time, please give us a ⭐ **Star** — it keeps the project alive and helps us ship more skills.
+ReleaseWitness is **free and open source**. If it saves you time, please give
+us a ⭐ **Star** — it keeps the project alive and helps us ship more skills.
 
-<a href="https://github.com/thuanlyt/UseAgent/stargazers">
-  <img src="https://img.shields.io/github/stars/thuanlyt/UseAgent?style=social" alt="GitHub Stars">
+<a href="https://github.com/thuanlyt/releasewitness/stargazers">
+  <img src="https://img.shields.io/github/stars/thuanlyt/releasewitness?style=social" alt="GitHub Stars">
 </a>
 
 ### 🤝 Community & Support
 - 📖 [Read the Docs](https://useagent.thuanlyt.id.vn/)
-- 🐛 [Report an Issue](https://github.com/thuanlyt/UseAgent/issues)
+- 🐛 [Report an Issue](https://github.com/thuanlyt/releasewitness/issues)
 - 🌐 [ThuanLYT Website](https://thuanlyt.id.vn)
 
 <p align="center"><em>Built with ❤️ by ThuanLYT</em></p>

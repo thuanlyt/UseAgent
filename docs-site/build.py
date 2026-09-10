@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and validate the dependency-light static UseAgent docs site."""
+"""Build and validate the dependency-light static ReleaseWitness docs site."""
 
 from __future__ import annotations
 

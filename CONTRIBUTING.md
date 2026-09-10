@@ -1,4 +1,4 @@
-# Contributing to UseAgent / Đóng góp cho UseAgent
+# Contributing to ReleaseWitness / Đóng góp cho ReleaseWitness
 
 ## English
 
@@ -14,9 +14,9 @@ Thank you for improving the supervisor protocol. Keep changes small, explicit an
 ### Development loop
 
 ```powershell
-python tools/useagent.py validate
+relwit validate
 python -m unittest discover -s tests -v
-python -m py_compile tools/useagent.py tests/test_useagent.py
+python -m py_compile relwit/cli.py tests/test_relwit.py
 ```
 
 Use `apply_patch` or an equivalent reviewable edit, keep the CLI dependency-free, and report the exact commands and results. A worker handover must include task id, status, files touched, evidence, blocker and next action. Do not mark a task `done` merely because implementation is complete; review owns that gate.
@@ -29,4 +29,4 @@ Cảm ơn bạn đã cải thiện giao thức supervisor. Giữ thay đổi nh�
 
 Trước khi sửa, đọc `AGENTS.md`, `knowledge/INDEX.md`, `work/registry.json`; tạo/claim work item có id, owner, scope, acceptance; kiểm tra không có writer khác cùng scope; nếu đổi kiến trúc/contract thì cập nhật decision và knowledge map.
 
-Chạy `python tools/useagent.py validate`, `python -m unittest discover -s tests -v` và `python -m py_compile tools/useagent.py tests/test_useagent.py`. Handover phải có task id, trạng thái, file, evidence, blocker và next action. Không đưa secret, runtime state cá nhân hoặc path máy vào pull request.
+Chạy `relwit validate`, `python -m unittest discover -s tests -v` và `python -m py_compile relwit/cli.py tests/test_relwit.py`. Handover phải có task id, trạng thái, file, evidence, blocker và next action. Không đưa secret, runtime state cá nhân hoặc path máy vào pull request.

@@ -21,7 +21,7 @@ makes writes idempotent. Wall timestamps and durations are separate from
 runner execution duration, and parallel worker runtime is never presented as
 wall time.
 
-Accept usage only from an explicit `useagent_usage: 1` JSON envelope at the
+Accept usage only from an explicit `relwit_usage: 1` JSON envelope at the
 adapter/CLI boundary. Normalize optional token categories and provenance
 (`authoritative`, `measured`, `estimated`, `unavailable`). Do not infer missing
 fields, estimate by default, parse provider prose, store prompts or calculate
@@ -41,7 +41,7 @@ store is never dumped into owner-facing output.
 
 ## Consequences
 
-UseAgent can report measured timing and actual participation even when token
+ReleaseWitness can report measured timing and actual participation even when token
 usage is unavailable. Partial usage is explicit. Existing runtime evidence and
 release-source freshness remain independent. Future adapters can provide
 authoritative usage without changing the core contract.
